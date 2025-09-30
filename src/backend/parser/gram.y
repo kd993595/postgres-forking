@@ -298,10 +298,10 @@ static Node *makeRecursiveViewSelect(char *relname, List *aliases, Node *query);
 		CreateFdwStmt CreateForeignServerStmt CreateForeignTableStmt
 		CreateAssertionStmt CreateTransformStmt CreateTrigStmt CreateEventTrigStmt
 		CreateUserStmt CreateUserMappingStmt CreateRoleStmt CreatePolicyStmt
-		CreatedbStmt DeclareCursorStmt DefineStmt DeleteStmt DiscardStmt DoStmt
+		CreatedbStmt  CreateForkStmt DeclareCursorStmt DefineStmt DeleteStmt DiscardStmt DoStmt
 		DropOpClassStmt DropOpFamilyStmt DropStmt
 		DropCastStmt DropRoleStmt
-		DropdbStmt DropTableSpaceStmt
+		DropdbStmt DropForkStmt DropTableSpaceStmt
 		DropTransformStmt
 		DropUserMappingStmt ExplainStmt FetchStmt
 		GrantStmt GrantRoleStmt ImportForeignSchemaStmt IndexStmt InsertStmt
@@ -1070,6 +1070,7 @@ stmt:
 			| CreateUserStmt
 			| CreateUserMappingStmt
 			| CreatedbStmt
+			| CreateForkStmt
 			| DeallocateStmt
 			| DeclareCursorStmt
 			| DefineStmt
@@ -1087,6 +1088,7 @@ stmt:
 			| DropRoleStmt
 			| DropUserMappingStmt
 			| DropdbStmt
+			| DropForkStmt
 			| ExecuteStmt
 			| ExplainStmt
 			| FetchStmt
@@ -11458,6 +11460,34 @@ drop_option:
 					$$ = makeDefElem("force", NULL, @1);
 				}
 		;
+
+/*****************************************************************************
+ *
+ *		CREATE DBFORK - pgforking
+ *
+ *****************************************************************************/
+
+CreateForkStmt: CREATE DBFORK
+			  {
+					CreateforkStmt *n = makeNode(CreateforkStmt);
+					n->forkid = 0;
+					$$ = (Node *) n;
+			  }
+		;
+
+/*****************************************************************************
+ *
+ *		DROP DBFORK - pgforking
+ *
+ *****************************************************************************/
+DropForkStmt: DROP DBFORK SignedIconst
+			{
+					DropforkStmt *n = makeNode(DropforkStmt);
+					n->forkid = $3;
+					$$ = (Node *) n;
+			}
+		;
+
 
 /*****************************************************************************
  *

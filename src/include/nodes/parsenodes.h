@@ -3769,6 +3769,16 @@ typedef struct CreatedbStmt
 	List	   *options;		/* List of DefElem nodes */
 } CreatedbStmt;
 
+/* -------------------------
+ * 		Createfork Statement - pgforking
+ * -------------------------
+ */
+typedef struct CreateforkStmt
+{
+	NodeTag type;
+	long    forkid;
+} CreateforkStmt;
+
 /* ----------------------
  *	Alter Database
  * ----------------------
@@ -3804,6 +3814,16 @@ typedef struct DropdbStmt
 	bool		missing_ok;		/* skip error if db is missing? */
 	List	   *options;		/* currently only FORCE is supported */
 } DropdbStmt;
+
+/* ------------------------
+ * 		Dropfork Statement - pgforking
+ * ------------------------
+ */
+typedef struct DropforkStmt
+{
+	NodeTag type;
+	long    forkid;
+} DropforkStmt;
 
 /* ----------------------
  *		Alter System Statement
