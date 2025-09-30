@@ -17,7 +17,10 @@
 - 
 
 
+### utility commands
+In dbcommands the dropdb and createdb are made. Seems that utility query are not optimizable and are passed with an exclusive lock for the entire database.
 
+https://github.com/kd993595/postgres-forking/blob/main/src/include/nodes/parsenodes.h
 ### links:
 https://github.com/postgres/postgres/tree/master/src/backend/parser
 https://www.postgresql.org/docs/current/install-requirements.html
@@ -33,3 +36,8 @@ https://www.postgresql.org/docs/devel/
 ### page service and wal for neon
 https://github.com/neondatabase/neon/blob/main/docs/pageserver-storage.md
 https://github.com/neondatabase/neon/blob/main/docs/walservice.md
+
+
+### extra info
+the /usr/local/pgsql is general postgres tools and logs
+the /usr/local/pgsql/data is created by me to initdb a new database and is the data storage for the actual database and should be deleted if wanna rerun
