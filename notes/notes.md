@@ -16,6 +16,8 @@
 ## WAL (xlog)
 - 
 
+## Random notes:
+both create and drop dbfork are not allowed to be run in transaction and will return error if tried similar to createdbstmt and dropdbstmt
 
 ### utility commands
 In dbcommands the dropdb and createdb are made. Seems that utility query are not optimizable and are passed with an exclusive lock for the entire database.
@@ -41,3 +43,10 @@ https://github.com/neondatabase/neon/blob/main/docs/walservice.md
 ### extra info
 the /usr/local/pgsql is general postgres tools and logs
 the /usr/local/pgsql/data is created by me to initdb a new database and is the data storage for the actual database and should be deleted if wanna rerun
+
+
+### optimizations:
+do both options and then put flag later to test the difference betwene both
+
+### lwlocks
+lwlocklist.h lwlock.c lwlock.h wait_event_names.txt
