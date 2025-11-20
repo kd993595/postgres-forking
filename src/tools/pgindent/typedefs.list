@@ -519,6 +519,7 @@ CreateExtensionStmt
 CreateFdwStmt
 CreateForeignServerStmt
 CreateForeignTableStmt
+CreateforkStmt
 CreateFunctionStmt
 CreateOpClassItem
 CreateOpClassStmt
@@ -627,6 +628,7 @@ DomainConstraintState
 DomainConstraintType
 DomainIOData
 DropBehavior
+DropforkStmt
 DropOwnedStmt
 DropReplicationSlotCmd
 DropRoleStmt
