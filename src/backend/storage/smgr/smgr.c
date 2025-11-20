@@ -193,9 +193,11 @@ smgrshutdown(int code, Datum arg)
  * transactions typically do this once per checkpoint cycle.
  *
  * This does not attempt to actually open the underlying files.
+ *
+ * Changed to take in the forkid to use when opening file since we store it in the RelFileLocatorBackend.
  */
 SMgrRelation
-smgropen(RelFileLocator rlocator, ProcNumber backend)
+smgropen(RelFileLocator rlocator, ProcNumber backend, int32 dbforkId)
 {
 	RelFileLocatorBackend brlocator;
 	SMgrRelation reln;
@@ -218,6 +220,7 @@ smgropen(RelFileLocator rlocator, ProcNumber backend)
 	/* Look up or create an entry */
 	brlocator.locator = rlocator;
 	brlocator.backend = backend;
+	brlocator.dbforkId = dbforkId;
 	reln = (SMgrRelation) hash_search(SMgrRelationHash,
 									  &brlocator,
 									  HASH_ENTER, &found);
@@ -374,6 +377,8 @@ smgrreleaseall(void)
  * This has the same effects as smgrrelease(smgropen(rlocator)), but avoids
  * uselessly creating a hashtable entry only to drop it again when no
  * such entry exists already.
+ *
+ * Note: don't need to add dbforkid since it assumes only smgr is sending the message with it filled already
  */
 void
 smgrreleaserellocator(RelFileLocatorBackend rlocator)

@@ -76,6 +76,9 @@ extern char *GetDatabasePath(Oid dbOid, Oid spcOid);
 extern char *GetRelationPath(Oid dbOid, Oid spcOid, RelFileNumber relNumber,
 							 int procNumber, ForkNumber forkNumber);
 
+/* pgforking - relation path for our dbfork files, just heap files for now being copied and associated postgres forks */
+extern char *GetDBForkRelationPath(Oid dbOid, Oid spcOid, RelFileNumber relNumber, int procNumber, ForkNumber forkNumber, int32 forkId);
+
 /*
  * Wrapper macros for GetRelationPath.  Beware of multiple
  * evaluation of the RelFileLocator or RelFileLocatorBackend argument!
@@ -93,5 +96,14 @@ extern char *GetRelationPath(Oid dbOid, Oid spcOid, RelFileNumber relNumber,
 /* First argument is a RelFileLocatorBackend */
 #define relpath(rlocator, forknum) \
 	relpathbackend((rlocator).locator, (rlocator).backend, forknum)
+
+/* 
+ * note forkNumber is not our fork but postgres fork mechanism for heaps
+ */
+#define dbforkrelpath(rlocator, forknum) \
+	GetDBForkRelationPath((rlocator).locator.dbOid, (rlocator).locator.spcOid, (rlocator).locator.relNumber, (rlocator).backend, forknum, (rlocator).dbforkId)
+
+#define dbforkrelpathperm(rlocator, forknum, dbforkId) \
+	GetDBForkRelationPath((rlocator).dbOid, (rlocator).spcOid, (rlocator).relNumber, INVALID_PROC_NUMBER, forknum, (dbforkId))
 
 #endif							/* RELPATH_H */

@@ -87,13 +87,14 @@ static MemoryContext MdCxt;		/* context for all MdfdVec objects */
 
 
 /* Populate a file tag describing an md.c segment file. */
-#define INIT_MD_FILETAG(a,xx_rlocator,xx_forknum,xx_segno) \
+#define INIT_MD_FILETAG(a,xx_rlocator,xx_forknum,xx_segno,xx_dbfork) \
 ( \
 	memset(&(a), 0, sizeof(FileTag)), \
 	(a).handler = SYNC_HANDLER_MD, \
 	(a).rlocator = (xx_rlocator), \
 	(a).forknum = (xx_forknum), \
-	(a).segno = (xx_segno) \
+	(a).segno = (xx_segno), \
+ 	(a).dbforkId = (xx_dbfork) \
 )
 
 
@@ -211,8 +212,12 @@ mdcreate(SMgrRelation reln, ForkNumber forknum, bool isRedo)
 							reln->smgr_rlocator.locator.dbOid,
 							isRedo);
 
-	path = relpath(reln->smgr_rlocator, forknum);
-
+	if(reln->smgr_rlocator.dbforkId == 0){
+		path = relpath(reln->smgr_rlocator, forknum);
+	}else{
+		path = dbforkrelpath(reln->smgr_rlocator, forknum); 
+	}
+	
 	fd = PathNameOpenFile(path, _mdfd_open_flags() | O_CREAT | O_EXCL);
 
 	if (fd < 0)
@@ -227,7 +232,7 @@ mdcreate(SMgrRelation reln, ForkNumber forknum, bool isRedo)
 			errno = save_errno;
 			ereport(ERROR,
 					(errcode_for_file_access(),
-					 errmsg("could not create file \"%s\": %m", path)));
+					 errmsg("regular could not create file \"%s\": %m", path)));
 		}
 	}
 
@@ -240,6 +245,32 @@ mdcreate(SMgrRelation reln, ForkNumber forknum, bool isRedo)
 
 	if (!SmgrIsTemp(reln))
 		register_dirty_segment(reln, forknum, mdfd);
+}
+
+/*
+ * mdcreatedbfork() - pgforking - create the new dbfork file for the specific RelFileNumber given
+ * TODO: modify to follow md.c guidelines for storing files
+ */
+void mdcreatedbfork(RelFileNumber relNumber, int64 forkId)
+{
+	char *path;
+	File fd;
+
+	path = GetDBForkRelationPath(MyDatabaseId, 1663, relNumber, INVALID_PROC_NUMBER, MAIN_FORKNUM, forkId); /* note: using this function will never return null since defaultablespace guaranteed (1663 lookup pg_tablespace_d.h)*/
+	fd = PathNameOpenFile(path, _mdfd_open_flags() | O_CREAT | O_EXCL);
+
+	if(fd < 0)
+	{
+		ereport(ERROR,
+		  		(errcode_for_file_access(),
+				 errmsg("custom could not create file \"%s\": %m", path)));
+		return;
+	}
+
+
+	FileClose(fd); /* Immediately close new fork file since we don't need it rn */
+	pfree(path);
+	/* Don't do all the smgr relation things since we don't necessarily need it here for now */	
 }
 
 /*
@@ -347,8 +378,12 @@ mdunlinkfork(RelFileLocatorBackend rlocator, ForkNumber forknum, bool isRedo)
 	int			ret;
 	int			save_errno;
 
-	path = relpath(rlocator, forknum);
-
+	if(rlocator.dbforkId == 0){
+		path = relpath(rlocator, forknum);
+	}else{
+		path = dbforkrelpath(rlocator, forknum);
+	}
+	
 	/*
 	 * Truncate and then unlink the first segment, or just register a request
 	 * to unlink it later, as described in the comments for mdunlink().
@@ -644,7 +679,11 @@ mdopenfork(SMgrRelation reln, ForkNumber forknum, int behavior)
 	if (reln->md_num_open_segs[forknum] > 0)
 		return &reln->md_seg_fds[forknum][0];
 
-	path = relpath(reln->smgr_rlocator, forknum);
+	if(reln->smgr_rlocator.dbforkId == 0){
+		path = relpath(reln->smgr_rlocator, forknum);
+	}else{
+		path = dbforkrelpath(reln->smgr_rlocator, forknum);
+	}
 
 	fd = PathNameOpenFile(path, _mdfd_open_flags());
 
@@ -1356,7 +1395,7 @@ register_dirty_segment(SMgrRelation reln, ForkNumber forknum, MdfdVec *seg)
 {
 	FileTag		tag;
 
-	INIT_MD_FILETAG(tag, reln->smgr_rlocator.locator, forknum, seg->mdfd_segno);
+	INIT_MD_FILETAG(tag, reln->smgr_rlocator.locator, forknum, seg->mdfd_segno, reln->smgr_rlocator.dbforkId);
 
 	/* Temp relations should never be fsync'd */
 	Assert(!SmgrIsTemp(reln));
@@ -1401,7 +1440,7 @@ register_unlink_segment(RelFileLocatorBackend rlocator, ForkNumber forknum,
 {
 	FileTag		tag;
 
-	INIT_MD_FILETAG(tag, rlocator.locator, forknum, segno);
+	INIT_MD_FILETAG(tag, rlocator.locator, forknum, segno, rlocator.dbforkId);
 
 	/* Should never be used with temp relations */
 	Assert(!RelFileLocatorBackendIsTemp(rlocator));
@@ -1418,7 +1457,7 @@ register_forget_request(RelFileLocatorBackend rlocator, ForkNumber forknum,
 {
 	FileTag		tag;
 
-	INIT_MD_FILETAG(tag, rlocator.locator, forknum, segno);
+	INIT_MD_FILETAG(tag, rlocator.locator, forknum, segno, rlocator.dbforkId);
 
 	RegisterSyncRequest(&tag, SYNC_FORGET_REQUEST, true /* retryOnError */ );
 }
@@ -1436,7 +1475,7 @@ ForgetDatabaseSyncRequests(Oid dbid)
 	rlocator.spcOid = 0;
 	rlocator.relNumber = 0;
 
-	INIT_MD_FILETAG(tag, rlocator, InvalidForkNumber, InvalidBlockNumber);
+	INIT_MD_FILETAG(tag, rlocator, InvalidForkNumber, InvalidBlockNumber, 0);
 
 	RegisterSyncRequest(&tag, SYNC_FILTER_REQUEST, true /* retryOnError */ );
 }
@@ -1453,7 +1492,7 @@ DropRelationFiles(RelFileLocator *delrels, int ndelrels, bool isRedo)
 	srels = palloc(sizeof(SMgrRelation) * ndelrels);
 	for (i = 0; i < ndelrels; i++)
 	{
-		SMgrRelation srel = smgropen(delrels[i], INVALID_PROC_NUMBER);
+		SMgrRelation srel = smgropen(delrels[i], INVALID_PROC_NUMBER, 0); /* TODO: check if we want to drop just main database since ours get garbage collected */
 
 		if (isRedo)
 		{
@@ -1530,7 +1569,11 @@ _mdfd_segpath(SMgrRelation reln, ForkNumber forknum, BlockNumber segno)
 	char	   *path,
 			   *fullpath;
 
-	path = relpath(reln->smgr_rlocator, forknum);
+	if(reln->smgr_rlocator.dbforkId == 0){
+		path = relpath(reln->smgr_rlocator, forknum);
+	}else{
+		path = dbforkrelpath(reln->smgr_rlocator, forknum);
+	}
 
 	if (segno > 0)
 	{
@@ -1747,7 +1790,7 @@ _mdnblocks(SMgrRelation reln, ForkNumber forknum, MdfdVec *seg)
 int
 mdsyncfiletag(const FileTag *ftag, char *path)
 {
-	SMgrRelation reln = smgropen(ftag->rlocator, INVALID_PROC_NUMBER);
+	SMgrRelation reln = smgropen(ftag->rlocator, INVALID_PROC_NUMBER, ftag->dbforkId);
 	File		file;
 	instr_time	io_start;
 	bool		need_to_close;
@@ -1803,7 +1846,11 @@ mdunlinkfiletag(const FileTag *ftag, char *path)
 	char	   *p;
 
 	/* Compute the path. */
-	p = relpathperm(ftag->rlocator, MAIN_FORKNUM);
+	if(ftag->dbforkId == 0){
+		p = relpathperm(ftag->rlocator, MAIN_FORKNUM);
+	}else{
+		p = dbforkrelpathperm(ftag->rlocator, MAIN_FORKNUM, ftag->dbforkId);
+	}
 	strlcpy(path, p, MAXPGPATH);
 	pfree(p);
 

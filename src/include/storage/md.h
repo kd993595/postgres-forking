@@ -45,6 +45,9 @@ extern void mdtruncate(SMgrRelation reln, ForkNumber forknum,
 extern void mdimmedsync(SMgrRelation reln, ForkNumber forknum);
 extern void mdregistersync(SMgrRelation reln, ForkNumber forknum);
 
+/* pgforking - specifically for creating files for our custom fork heap table */
+extern void mdcreatedbfork(RelFileNumber relNumber, int64 forkId);
+
 extern void ForgetDatabaseSyncRequests(Oid dbid);
 extern void DropRelationFiles(RelFileLocator *delrels, int ndelrels, bool isRedo);
 

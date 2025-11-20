@@ -74,6 +74,7 @@ typedef struct RelFileLocatorBackend
 {
 	RelFileLocator locator;
 	ProcNumber	backend;
+	int32 		dbforkId; /* adding 8 bytes should not matter since it will be 24 bytes may want to change later so be careful to make sure no padding */
 } RelFileLocatorBackend;
 
 #define RelFileLocatorBackendIsTemp(rlocator) \
@@ -95,6 +96,7 @@ typedef struct RelFileLocatorBackend
 	((locator1).locator.relNumber == (locator2).locator.relNumber && \
 	 (locator1).locator.dbOid == (locator2).locator.dbOid && \
 	 (locator1).backend == (locator2).backend && \
-	 (locator1).locator.spcOid == (locator2).locator.spcOid)
+	 (locator1).locator.spcOid == (locator2).locator.spcOid && \
+	 (locator1).dbforkId == (locator2).dbforkId)
 
 #endif							/* RELFILELOCATOR_H */

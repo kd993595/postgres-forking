@@ -74,7 +74,7 @@ typedef SMgrRelationData *SMgrRelation;
 	RelFileLocatorBackendIsTemp((smgr)->smgr_rlocator)
 
 extern void smgrinit(void);
-extern SMgrRelation smgropen(RelFileLocator rlocator, ProcNumber backend);
+extern SMgrRelation smgropen(RelFileLocator rlocator, ProcNumber backend, int32 dbforkId);
 extern bool smgrexists(SMgrRelation reln, ForkNumber forknum);
 extern void smgrpin(SMgrRelation reln);
 extern void smgrunpin(SMgrRelation reln);
@@ -99,6 +99,13 @@ extern void smgrwritev(SMgrRelation reln, ForkNumber forknum,
 					   BlockNumber blocknum,
 					   const void **buffers, BlockNumber nblocks,
 					   bool skipFsync);
+/*extern void smgrreaddirectv(SMgrRelation reln, ForkNumber forknum,
+					  BlockNumber blocknum,
+					  void **buffers, BlockNumber nblocks, int64 dbforkId);
+extern void smgrwritedirectv(SMgrRelation reln, ForkNumber forknum,
+					   BlockNumber blocknum,
+					   const void **buffers, BlockNumber nblocks,
+					   bool skipFsync, int64 dbforkId);*/
 extern void smgrwriteback(SMgrRelation reln, ForkNumber forknum,
 						  BlockNumber blocknum, BlockNumber nblocks);
 extern BlockNumber smgrnblocks(SMgrRelation reln, ForkNumber forknum);
