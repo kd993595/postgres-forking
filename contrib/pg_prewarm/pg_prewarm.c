@@ -123,7 +123,7 @@ pg_prewarm(PG_FUNCTION_ARGS)
 	forkNumber = forkname_to_number(forkString);
 
 	/* Open relation and check privileges. */
-	rel = relation_open(relOid, AccessShareLock);
+	rel = relation_open(relOid, AccessShareLock, 0);
 	aclresult = pg_class_aclcheck(relOid, GetUserId(), ACL_SELECT);
 	if (aclresult != ACLCHECK_OK)
 		aclcheck_error(aclresult, get_relkind_objtype(rel->rd_rel->relkind), get_rel_name(relOid));

@@ -287,7 +287,7 @@ verify_heapam(PG_FUNCTION_ARGS)
 	ctx.tupstore = rsinfo->setResult;
 
 	/* Open relation, check relkind and access method */
-	ctx.rel = relation_open(relid, AccessShareLock);
+	ctx.rel = relation_open(relid, AccessShareLock, 0);
 
 	/*
 	 * Check that a relation's relkind and access method are both supported.

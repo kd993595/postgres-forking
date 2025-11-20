@@ -29,7 +29,7 @@ pg_freespace(PG_FUNCTION_ARGS)
 	int16		freespace;
 	Relation	rel;
 
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0);
 
 	if (!RELKIND_HAS_STORAGE(rel->rd_rel->relkind))
 		ereport(ERROR,

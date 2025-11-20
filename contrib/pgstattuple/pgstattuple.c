@@ -177,7 +177,7 @@ pgstattuple(PG_FUNCTION_ARGS)
 
 	/* open relation */
 	relrv = makeRangeVarFromNameList(textToQualifiedNameList(relname));
-	rel = relation_openrv(relrv, AccessShareLock);
+	rel = relation_openrv(relrv, AccessShareLock, 0);
 
 	PG_RETURN_DATUM(pgstat_relation(rel, fcinfo));
 }
@@ -198,7 +198,7 @@ pgstattuple_v1_5(PG_FUNCTION_ARGS)
 
 	/* open relation */
 	relrv = makeRangeVarFromNameList(textToQualifiedNameList(relname));
-	rel = relation_openrv(relrv, AccessShareLock);
+	rel = relation_openrv(relrv, AccessShareLock, 0);
 
 	PG_RETURN_DATUM(pgstat_relation(rel, fcinfo));
 }
@@ -216,7 +216,7 @@ pgstattuplebyid(PG_FUNCTION_ARGS)
 				 errmsg("must be superuser to use pgstattuple functions")));
 
 	/* open relation */
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0);
 
 	PG_RETURN_DATUM(pgstat_relation(rel, fcinfo));
 }
@@ -229,7 +229,7 @@ pgstattuplebyid_v1_5(PG_FUNCTION_ARGS)
 	Relation	rel;
 
 	/* open relation */
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0);
 
 	PG_RETURN_DATUM(pgstat_relation(rel, fcinfo));
 }

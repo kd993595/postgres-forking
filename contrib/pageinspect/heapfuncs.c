@@ -323,7 +323,7 @@ tuple_data_split_internal(Oid relid, char *tupdata,
 	TupleDesc	tupdesc;
 
 	/* Get tuple descriptor from relation OID */
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0);
 	tupdesc = RelationGetDescr(rel);
 
 	raw_attrs = initArrayResult(BYTEAOID, CurrentMemoryContext, false);

@@ -502,7 +502,7 @@ autoprewarm_database_main(Datum main_arg)
 			StartTransactionCommand();
 			reloid = RelidByRelfilenumber(blk->tablespace, blk->filenumber);
 			if (OidIsValid(reloid))
-				rel = try_relation_open(reloid, AccessShareLock);
+				rel = try_relation_open(reloid, AccessShareLock, 0);
 
 			if (!rel)
 				CommitTransactionCommand();

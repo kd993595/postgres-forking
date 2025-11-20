@@ -268,7 +268,7 @@ pgstattuple_approx_internal(Oid relid, FunctionCallInfo fcinfo)
 	if (tupdesc->natts != NUM_OUTPUT_COLUMNS)
 		elog(ERROR, "incorrect number of output arguments");
 
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0);
 
 	/*
 	 * Reject attempts to read non-local temporary relations; we would be

@@ -100,7 +100,7 @@ heap_force_common(FunctionCallInfo fcinfo, HeapTupleForceOption heap_force_opt)
 	/* Check inputs. */
 	sanity_check_tid_array(ta, &ntids);
 
-	rel = relation_open(relid, RowExclusiveLock);
+	rel = relation_open(relid, RowExclusiveLock, 0);
 
 	/*
 	 * Check target relation.

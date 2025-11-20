@@ -78,7 +78,7 @@ pg_visibility_map(PG_FUNCTION_ARGS)
 	Datum		values[2];
 	bool		nulls[2] = {0};
 
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0);
 
 	/* Only some relkinds have a visibility map */
 	check_relation_relkind(rel);
@@ -119,7 +119,7 @@ pg_visibility(PG_FUNCTION_ARGS)
 	Datum		values[3];
 	bool		nulls[3] = {0};
 
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0);
 
 	/* Only some relkinds have a visibility map */
 	check_relation_relkind(rel);
@@ -265,7 +265,7 @@ pg_visibility_map_summary(PG_FUNCTION_ARGS)
 	Datum		values[2];
 	bool		nulls[2] = {0};
 
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0);
 
 	/* Only some relkinds have a visibility map */
 	check_relation_relkind(rel);
@@ -382,7 +382,7 @@ pg_truncate_visibility_map(PG_FUNCTION_ARGS)
 	BlockNumber block;
 	BlockNumber old_block;
 
-	rel = relation_open(relid, AccessExclusiveLock);
+	rel = relation_open(relid, AccessExclusiveLock, 0);
 
 	/* Only some relkinds have a visibility map */
 	check_relation_relkind(rel);
@@ -495,7 +495,7 @@ collect_visibility_data(Oid relid, bool include_pd)
 	Buffer		vmbuffer = InvalidBuffer;
 	BufferAccessStrategy bstrategy = GetAccessStrategy(BAS_BULKREAD);
 
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0);
 
 	/* Only some relkinds have a visibility map */
 	check_relation_relkind(rel);
@@ -631,7 +631,7 @@ collect_corrupt_items(Oid relid, bool all_visible, bool all_frozen)
 	BufferAccessStrategy bstrategy = GetAccessStrategy(BAS_BULKREAD);
 	TransactionId OldestXmin = InvalidTransactionId;
 
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0);
 
 	/* Only some relkinds have a visibility map */
 	check_relation_relkind(rel);

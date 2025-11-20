@@ -79,7 +79,7 @@ pgrowlocks(PG_FUNCTION_ARGS)
 
 	/* Access the table */
 	relrv = makeRangeVarFromNameList(textToQualifiedNameList(relname));
-	rel = relation_openrv(relrv, AccessShareLock);
+	rel = relation_openrv(relrv, AccessShareLock, 0);
 
 	if (rel->rd_rel->relkind == RELKIND_PARTITIONED_TABLE)
 		ereport(ERROR,

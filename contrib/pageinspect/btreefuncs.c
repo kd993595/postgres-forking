@@ -278,7 +278,7 @@ bt_page_stats_internal(PG_FUNCTION_ARGS, enum pageinspect_version ext_version)
 				 errmsg("must be superuser to use pageinspect functions")));
 
 	relrv = makeRangeVarFromNameList(textToQualifiedNameList(relname));
-	rel = relation_openrv(relrv, AccessShareLock);
+	rel = relation_openrv(relrv, AccessShareLock, 0);
 
 	bt_index_block_validate(rel, blkno);
 
@@ -364,7 +364,7 @@ bt_multi_page_stats(PG_FUNCTION_ARGS)
 		fctx = SRF_FIRSTCALL_INIT();
 
 		relrv = makeRangeVarFromNameList(textToQualifiedNameList(relname));
-		rel = relation_openrv(relrv, AccessShareLock);
+		rel = relation_openrv(relrv, AccessShareLock, 0);
 
 		/* Check that rel is a valid btree index and 1st block number is OK */
 		bt_index_block_validate(rel, blkno);
@@ -405,7 +405,7 @@ bt_multi_page_stats(PG_FUNCTION_ARGS)
 	uargs = fctx->user_fctx;
 
 	/* We should have lock already */
-	rel = relation_open(uargs->relid, NoLock);
+	rel = relation_open(uargs->relid, NoLock, 0);
 
 	/* In all-pages mode, recheck the index length each time */
 	if (uargs->allpages)
@@ -647,7 +647,7 @@ bt_page_items_internal(PG_FUNCTION_ARGS, enum pageinspect_version ext_version)
 		fctx = SRF_FIRSTCALL_INIT();
 
 		relrv = makeRangeVarFromNameList(textToQualifiedNameList(relname));
-		rel = relation_openrv(relrv, AccessShareLock);
+		rel = relation_openrv(relrv, AccessShareLock, 0);
 
 		bt_index_block_validate(rel, blkno);
 
@@ -857,7 +857,7 @@ bt_metap(PG_FUNCTION_ARGS)
 				 errmsg("must be superuser to use pageinspect functions")));
 
 	relrv = makeRangeVarFromNameList(textToQualifiedNameList(relname));
-	rel = relation_openrv(relrv, AccessShareLock);
+	rel = relation_openrv(relrv, AccessShareLock, 0);
 
 	if (!IS_INDEX(rel) || !IS_BTREE(rel))
 		ereport(ERROR,

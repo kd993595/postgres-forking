@@ -154,7 +154,7 @@ pgstatindex(PG_FUNCTION_ARGS)
 				 errmsg("must be superuser to use pgstattuple functions")));
 
 	relrv = makeRangeVarFromNameList(textToQualifiedNameList(relname));
-	rel = relation_openrv(relrv, AccessShareLock);
+	rel = relation_openrv(relrv, AccessShareLock, 0);
 
 	PG_RETURN_DATUM(pgstatindex_impl(rel, fcinfo));
 }
@@ -174,7 +174,7 @@ pgstatindex_v1_5(PG_FUNCTION_ARGS)
 	RangeVar   *relrv;
 
 	relrv = makeRangeVarFromNameList(textToQualifiedNameList(relname));
-	rel = relation_openrv(relrv, AccessShareLock);
+	rel = relation_openrv(relrv, AccessShareLock, 0);
 
 	PG_RETURN_DATUM(pgstatindex_impl(rel, fcinfo));
 }
@@ -195,7 +195,7 @@ pgstatindexbyid(PG_FUNCTION_ARGS)
 				(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 				 errmsg("must be superuser to use pgstattuple functions")));
 
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0);
 
 	PG_RETURN_DATUM(pgstatindex_impl(rel, fcinfo));
 }
@@ -207,7 +207,7 @@ pgstatindexbyid_v1_5(PG_FUNCTION_ARGS)
 	Oid			relid = PG_GETARG_OID(0);
 	Relation	rel;
 
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0);
 
 	PG_RETURN_DATUM(pgstatindex_impl(rel, fcinfo));
 }
@@ -404,7 +404,7 @@ pg_relpages(PG_FUNCTION_ARGS)
 				 errmsg("must be superuser to use pgstattuple functions")));
 
 	relrv = makeRangeVarFromNameList(textToQualifiedNameList(relname));
-	rel = relation_openrv(relrv, AccessShareLock);
+	rel = relation_openrv(relrv, AccessShareLock, 0);
 
 	PG_RETURN_INT64(pg_relpages_impl(rel));
 }
@@ -418,7 +418,7 @@ pg_relpages_v1_5(PG_FUNCTION_ARGS)
 	RangeVar   *relrv;
 
 	relrv = makeRangeVarFromNameList(textToQualifiedNameList(relname));
-	rel = relation_openrv(relrv, AccessShareLock);
+	rel = relation_openrv(relrv, AccessShareLock, 0);
 
 	PG_RETURN_INT64(pg_relpages_impl(rel));
 }
@@ -435,7 +435,7 @@ pg_relpagesbyid(PG_FUNCTION_ARGS)
 				(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 				 errmsg("must be superuser to use pgstattuple functions")));
 
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0);
 
 	PG_RETURN_INT64(pg_relpages_impl(rel));
 }
@@ -447,7 +447,7 @@ pg_relpagesbyid_v1_5(PG_FUNCTION_ARGS)
 	Oid			relid = PG_GETARG_OID(0);
 	Relation	rel;
 
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0);
 
 	PG_RETURN_INT64(pg_relpages_impl(rel));
 }
@@ -517,7 +517,7 @@ pgstatginindex_internal(Oid relid, FunctionCallInfo fcinfo)
 	bool		nulls[3] = {false, false, false};
 	Datum		result;
 
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0);
 
 	if (!IS_INDEX(rel) || !IS_GIN(rel))
 		ereport(ERROR,
@@ -600,7 +600,7 @@ pgstathashindex(PG_FUNCTION_ARGS)
 	float8		free_percent;
 	uint64		total_space;
 
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0);
 
 	if (!IS_INDEX(rel) || !IS_HASH(rel))
 		ereport(ERROR,

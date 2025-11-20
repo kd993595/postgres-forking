@@ -153,7 +153,7 @@ get_raw_page_internal(text *relname, ForkNumber forknum, BlockNumber blkno)
 				 errmsg("must be superuser to use raw page functions")));
 
 	relrv = makeRangeVarFromNameList(textToQualifiedNameList(relname));
-	rel = relation_openrv(relrv, AccessShareLock);
+	rel = relation_openrv(relrv, AccessShareLock, 0);
 
 	if (!RELKIND_HAS_STORAGE(rel->rd_rel->relkind))
 		ereport(ERROR,
