@@ -43,3 +43,14 @@ extern void CheckpointerShmemInit(void);
 extern bool FirstCallSinceLastCheckpoint(void);
 
 #endif							/* _BGWRITER_H */
+
+#ifndef _DBFORKCOUNTER_H
+#define _DBFORKCOUNTER_H
+
+/* Adding the global dbfork counter here for now since in both ipci.c and dbcommands.c - pgforking*/
+extern Size DBForkShmemSize(void);
+extern void DBForkShmemInit(void);
+extern int32 DBForkNewId(void);
+extern int32 DBForkSetNewIdExpensive(int32 newId);
+
+#endif
