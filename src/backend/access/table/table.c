@@ -20,6 +20,7 @@
  */
 
 #include "postgres.h"
+// #include "miscadmin.h" /*check for globals.c to include mydbforkid*/
 
 #include "access/relation.h"
 #include "access/table.h"
@@ -41,7 +42,7 @@ table_open(Oid relationId, LOCKMODE lockmode)
 {
 	Relation	r;
 
-	r = relation_open(relationId, lockmode);
+	r = relation_open(relationId, lockmode, 0);
 
 	validate_relation_kind(r);
 
@@ -61,7 +62,7 @@ try_table_open(Oid relationId, LOCKMODE lockmode)
 {
 	Relation	r;
 
-	r = try_relation_open(relationId, lockmode);
+	r = try_relation_open(relationId, lockmode, 0);
 
 	/* leave if table does not exist */
 	if (!r)
@@ -84,7 +85,7 @@ table_openrv(const RangeVar *relation, LOCKMODE lockmode)
 {
 	Relation	r;
 
-	r = relation_openrv(relation, lockmode);
+	r = relation_openrv(relation, lockmode, 0);
 
 	validate_relation_kind(r);
 
@@ -105,7 +106,7 @@ table_openrv_extended(const RangeVar *relation, LOCKMODE lockmode,
 {
 	Relation	r;
 
-	r = relation_openrv_extended(relation, lockmode, missing_ok);
+	r = relation_openrv_extended(relation, lockmode, missing_ok, 0);
 
 	if (r)
 		validate_relation_kind(r);

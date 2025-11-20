@@ -42,6 +42,7 @@
  */
 
 #include "postgres.h"
+#include "miscadmin.h"
 
 #include "access/amapi.h"
 #include "access/relation.h"
@@ -134,7 +135,7 @@ index_open(Oid relationId, LOCKMODE lockmode)
 {
 	Relation	r;
 
-	r = relation_open(relationId, lockmode);
+	r = relation_open(relationId, lockmode, MyDBForkId); //check MyDBForkId later
 
 	validate_relation_kind(r);
 
@@ -153,7 +154,7 @@ try_index_open(Oid relationId, LOCKMODE lockmode)
 {
 	Relation	r;
 
-	r = try_relation_open(relationId, lockmode);
+	r = try_relation_open(relationId, lockmode, MyDBForkId);
 
 	/* leave if index does not exist */
 	if (!r)

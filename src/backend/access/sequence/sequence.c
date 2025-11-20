@@ -23,6 +23,7 @@
 #include "access/relation.h"
 #include "access/sequence.h"
 #include "storage/lmgr.h"
+#include "miscadmin.h"
 
 static inline void validate_relation_kind(Relation r);
 
@@ -38,7 +39,7 @@ sequence_open(Oid relationId, LOCKMODE lockmode)
 {
 	Relation	r;
 
-	r = relation_open(relationId, lockmode);
+	r = relation_open(relationId, lockmode, MyDBForkId); /*probably won't work since sequence not supported in create*/
 
 	validate_relation_kind(r);
 

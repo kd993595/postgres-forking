@@ -398,6 +398,7 @@ initscan(HeapScanDesc scan, ScanKey key, bool keep_startblock)
 	ItemPointerSetInvalid(&scan->rs_ctup.t_self);
 	scan->rs_cbuf = InvalidBuffer;
 	scan->rs_cblock = InvalidBlockNumber;
+	scan->rs_dbfork = MyDBForkId;
 
 	/*
 	 * Initialize to ForwardScanDirection because it is most common and
@@ -625,7 +626,46 @@ heap_fetch_next_buffer(HeapScanDesc scan, ScanDirection dir)
 
 	scan->rs_dir = dir;
 
+continue_read_stream:
 	scan->rs_cbuf = read_stream_next_buffer(scan->rs_read_stream, NULL);
+
+	/*need to set start block, new smgr for the relation and nblocks for total blocks in relation*/
+	if(scan->rs_dbfork != 0 && DBForkPath != NULL && !BufferIsValid(scan->rs_cbuf))
+	{
+		bool isSet = false;
+		int i = 1;
+		int numForks = (int)DBForkPath[0];
+		for(;i<numForks;i++){
+			if(DBForkPath[i] == scan->rs_dbfork){
+				if(i == 1){
+					scan->rs_dbfork = 0;
+				}else{
+					scan->rs_dbfork = DBForkPath[i-1];
+				}
+				isSet = true;
+			}
+		}
+		if(!isSet){/*whatever reason fork not found just switch to main and ignore other logic*/
+			scan->rs_dbfork = 0;
+		}else{
+			smgrunpin(scan->rs_base.rs_rd->rd_smgr);
+			scan->rs_base.rs_rd->rd_smgr = NULL;
+			scan->rs_base.rs_rd->rd_dbforkId = scan->rs_dbfork;
+			scan->rs_base.rs_rd->rd_smgr = RelationGetSmgr(scan->rs_base.rs_rd);
+			
+			scan->rs_nblocks = RelationGetNumberOfBlocks(scan->rs_base.rs_rd);
+			scan->rs_startblock = 0; /*assume they all start a 0 for heapscan maybe change later for more accurate*/
+			scan->rs_numblocks = InvalidBlockNumber;
+			goto continue_read_stream; /*wanna do goto since the parent fork may have no data in this relation so we keep moving up*/
+		}
+	}else if(scan->rs_dbfork == 0 && !BufferIsValid(scan->rs_cbuf))
+	{ /* means we reached end of main branch data so we want to reset relation to what it was before all this hacking */
+		smgrunpin(scan->rs_base.rs_rd->rd_smgr);
+		scan->rs_base.rs_rd->rd_smgr = NULL;
+		scan->rs_base.rs_rd->rd_dbforkId = MyDBForkId;
+		scan->rs_base.rs_rd->rd_smgr = RelationGetSmgr(scan->rs_base.rs_rd);
+	}
+
 	if (BufferIsValid(scan->rs_cbuf))
 		scan->rs_cblock = BufferGetBlockNumber(scan->rs_cbuf);
 }
