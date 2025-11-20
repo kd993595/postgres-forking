@@ -208,6 +208,11 @@ extern PGDLLIMPORT Oid MyDatabaseTableSpace;
 
 extern PGDLLIMPORT bool MyDatabaseHasLoginEventTriggers;
 
+extern PGDLLIMPORT int32 MyDBForkId;
+extern PGDLLIMPORT int32 MyParentForkId;
+extern PGDLLIMPORT TimestampTz ForkCurrentTimestamp;
+extern PGDLLIMPORT int32 *DBForkPath;
+
 /*
  * Date/Time Configuration
  *

@@ -2035,6 +2035,8 @@ InitProcessGlobals(void)
 {
 	MyStartTimestamp = GetCurrentTimestamp();
 	MyStartTime = timestamptz_to_time_t(MyStartTimestamp);
+	MyDBForkId = 0;
+	DBForkPath = NULL;
 
 	/*
 	 * Set a different global seed in every process.  We want something
