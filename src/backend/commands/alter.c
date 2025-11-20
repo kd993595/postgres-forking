@@ -616,13 +616,19 @@ AlterObjectNamespace_oid(Oid classId, Oid objid, Oid nspOid,
 {
 	Oid			oldNspOid = InvalidOid;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot AlterObjectNamespace_oid from non main fork")));
+	}
+
 	switch (classId)
 	{
 		case RelationRelationId:
 			{
 				Relation	rel;
 
-				rel = relation_open(objid, AccessExclusiveLock);
+				rel = relation_open(objid, AccessExclusiveLock, 0);
 				oldNspOid = RelationGetNamespace(rel);
 
 				AlterTableNamespaceInternal(rel, oldNspOid, nspOid, objsMoved);

@@ -1469,7 +1469,12 @@ renametrig(RenameStmt *stmt)
 	ScanKeyData key[2];
 	Oid			relid;
 	ObjectAddress address;
-
+	
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("trying to call rename trigger from non main fork")));
+	}
 	/*
 	 * Look up name, check permissions, and acquire lock (which we will NOT
 	 * release until end of transaction).
@@ -1480,7 +1485,7 @@ renametrig(RenameStmt *stmt)
 									 NULL);
 
 	/* Have lock already, so just need to build relcache entry. */
-	targetrel = relation_open(relid, NoLock);
+	targetrel = relation_open(relid, NoLock, 0);
 
 	/*
 	 * On partitioned tables, this operation recurses to partitions.  Lock all
@@ -1728,7 +1733,12 @@ EnableDisableTrigger(Relation rel, const char *tgname, Oid tgparent,
 	HeapTuple	tuple;
 	bool		found;
 	bool		changed;
-
+	
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("trying to call ENableDisableTrigger from non main fork")));
+	}
 	/* Scan the relevant entries in pg_triggers */
 	tgrel = table_open(TriggerRelationId, RowExclusiveLock);
 
@@ -1808,7 +1818,7 @@ EnableDisableTrigger(Relation rel, const char *tgname, Oid tgparent,
 			{
 				Relation	part;
 
-				part = relation_open(partdesc->oids[i], lockmode);
+				part = relation_open(partdesc->oids[i], lockmode, 0);
 				/* Match on child triggers' tgparentid, not their name */
 				EnableDisableTrigger(part, NULL, oldtrig->oid,
 									 fires_when, skip_system, recurse,

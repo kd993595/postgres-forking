@@ -350,7 +350,7 @@ pg_relation_size(PG_FUNCTION_ARGS)
 	Relation	rel;
 	int64		size;
 
-	rel = try_relation_open(relOid, AccessShareLock);
+	rel = try_relation_open(relOid, AccessShareLock, 0); /*should really only care about main fork for dbsize*/
 
 	/*
 	 * Before 9.2, we used to throw an error if the relation didn't exist, but
@@ -383,7 +383,7 @@ calculate_toast_table_size(Oid toastrelid)
 	ListCell   *lc;
 	List	   *indexlist;
 
-	toastRel = relation_open(toastrelid, AccessShareLock);
+	toastRel = relation_open(toastrelid, AccessShareLock, 0);
 
 	/* toast heap size, including FSM and VM size */
 	for (forkNum = 0; forkNum <= MAX_FORKNUM; forkNum++)
@@ -399,7 +399,7 @@ calculate_toast_table_size(Oid toastrelid)
 		Relation	toastIdxRel;
 
 		toastIdxRel = relation_open(lfirst_oid(lc),
-									AccessShareLock);
+									AccessShareLock, 0);
 		for (forkNum = 0; forkNum <= MAX_FORKNUM; forkNum++)
 			size += calculate_relation_size(&(toastIdxRel->rd_locator),
 											toastIdxRel->rd_backend, forkNum);
@@ -466,7 +466,7 @@ calculate_indexes_size(Relation rel)
 			Relation	idxRel;
 			ForkNumber	forkNum;
 
-			idxRel = relation_open(idxOid, AccessShareLock);
+			idxRel = relation_open(idxOid, AccessShareLock, 0);
 
 			for (forkNum = 0; forkNum <= MAX_FORKNUM; forkNum++)
 				size += calculate_relation_size(&(idxRel->rd_locator),
@@ -489,7 +489,7 @@ pg_table_size(PG_FUNCTION_ARGS)
 	Relation	rel;
 	int64		size;
 
-	rel = try_relation_open(relOid, AccessShareLock);
+	rel = try_relation_open(relOid, AccessShareLock, 0);
 
 	if (rel == NULL)
 		PG_RETURN_NULL();
@@ -508,7 +508,7 @@ pg_indexes_size(PG_FUNCTION_ARGS)
 	Relation	rel;
 	int64		size;
 
-	rel = try_relation_open(relOid, AccessShareLock);
+	rel = try_relation_open(relOid, AccessShareLock, 0);
 
 	if (rel == NULL)
 		PG_RETURN_NULL();
@@ -550,7 +550,7 @@ pg_total_relation_size(PG_FUNCTION_ARGS)
 	Relation	rel;
 	int64		size;
 
-	rel = try_relation_open(relOid, AccessShareLock);
+	rel = try_relation_open(relOid, AccessShareLock, 0);
 
 	if (rel == NULL)
 		PG_RETURN_NULL();

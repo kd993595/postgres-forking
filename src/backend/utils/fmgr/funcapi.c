@@ -1877,7 +1877,7 @@ RelationNameGetTupleDesc(const char *relname)
 	/* Open relation and copy the tuple description */
 	relname_list = stringToQualifiedNameList(relname, NULL);
 	relvar = makeRangeVarFromNameList(relname_list);
-	rel = relation_openrv(relvar, AccessShareLock);
+	rel = relation_openrv(relvar, AccessShareLock, 0); /*for stuff like tupledesc we just want the info from main branch dont really care for fork*/
 	tupdesc = CreateTupleDescCopy(RelationGetDescr(rel));
 	relation_close(rel, AccessShareLock);
 

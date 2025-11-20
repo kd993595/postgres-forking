@@ -30,6 +30,7 @@
 #include "catalog/pg_authid.h"
 #include "catalog/pg_database.h"
 #include "catalog/pg_db_role_setting.h"
+#include "catalog/pg_dbfork.h"
 #include "catalog/pg_largeobject.h"
 #include "catalog/pg_namespace.h"
 #include "catalog/pg_parameter_acl.h"
@@ -283,7 +284,8 @@ IsSharedRelation(Oid relationId)
 		relationId == SharedDescriptionRelationId ||
 		relationId == SharedSecLabelRelationId ||
 		relationId == SubscriptionRelationId ||
-		relationId == TableSpaceRelationId)
+		relationId == TableSpaceRelationId ||
+		relationId == SharedDBForkIDRelation)
 		return true;
 	/* These are their indexes */
 	if (relationId == AuthIdOidIndexId ||
@@ -306,7 +308,8 @@ IsSharedRelation(Oid relationId)
 		relationId == SubscriptionNameIndexId ||
 		relationId == SubscriptionObjectIndexId ||
 		relationId == TablespaceNameIndexId ||
-		relationId == TablespaceOidIndexId)
+		relationId == TablespaceOidIndexId ||
+		relationId == SharedDBForkOidIndexId)
 		return true;
 	/* These are their toast tables and toast indexes */
 	if (relationId == PgAuthidToastTable ||

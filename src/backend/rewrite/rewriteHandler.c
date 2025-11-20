@@ -2865,7 +2865,7 @@ relation_is_updatable(Oid reloid,
 	/* Since this function recurses, it could be driven to stack overflow */
 	check_stack_depth();
 
-	rel = try_relation_open(reloid, AccessShareLock);
+	rel = try_relation_open(reloid, AccessShareLock, 0); /*for this function really only care abt the metadata for main fork relation*/
 
 	/*
 	 * If the relation doesn't exist, return zero rather than throwing an

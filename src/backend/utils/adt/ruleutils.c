@@ -2721,7 +2721,7 @@ pg_get_expr_worker(text *expr, Oid relid, int prettyFlags)
 	 */
 	if (OidIsValid(relid))
 	{
-		rel = try_relation_open(relid, AccessShareLock);
+		rel = try_relation_open(relid, AccessShareLock, 0); /*just trying to parse node tree to convert to sql so don't care abt forking*/
 		if (rel == NULL)
 			return NULL;
 		context = deparse_context_for(RelationGetRelationName(rel), relid);
@@ -4328,7 +4328,7 @@ set_relation_column_names(deparse_namespace *dpns, RangeTblEntry *rte,
 		Relation	rel;
 		TupleDesc	tupdesc;
 
-		rel = relation_open(rte->relid, AccessShareLock);
+		rel = relation_open(rte->relid, AccessShareLock, 0); /*just care abt main fork metadata*/
 		tupdesc = RelationGetDescr(rel);
 
 		ncolumns = tupdesc->natts;

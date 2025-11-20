@@ -718,6 +718,11 @@ DefineRelation(CreateStmt *stmt, char relkind, Oid ownerId,
 	LOCKMODE	parentLockmode;
 	Oid			accessMethodId = InvalidOid;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot create table from non main fork")));
+	}
 	/*
 	 * Truncate relname to appropriate length (probably a waste of time, as
 	 * parser should have done this already).
@@ -1020,7 +1025,7 @@ DefineRelation(CreateStmt *stmt, char relkind, Oid ownerId,
 	 * the new rel anyway until we commit), but it keeps the lock manager from
 	 * complaining about deadlock risks.
 	 */
-	rel = relation_open(relationId, AccessExclusiveLock);
+	rel = relation_open(relationId, AccessExclusiveLock, 0);
 
 	/*
 	 * Now add any newly specified column default and generation expressions
@@ -1927,7 +1932,12 @@ ExecuteTruncateGuts(List *explicit_rels,
 	SubTransactionId mySubid;
 	ListCell   *cell;
 	Oid		   *logrelids;
-
+	
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot ExecuteTruncateGuts from non main fork")));
+	}
 	/*
 	 * Check the explicitly-specified relations.
 	 *
@@ -2002,7 +2012,7 @@ ExecuteTruncateGuts(List *explicit_rels,
 				Oid			seq_relid = lfirst_oid(seqcell);
 				Relation	seq_rel;
 
-				seq_rel = relation_open(seq_relid, AccessExclusiveLock);
+				seq_rel = relation_open(seq_relid, AccessExclusiveLock, 0);
 
 				/* This check must match AlterSequence! */
 				if (!object_ownercheck(RelationRelationId, seq_relid, GetUserId()))
@@ -2166,7 +2176,7 @@ ExecuteTruncateGuts(List *explicit_rels,
 			if (OidIsValid(toast_relid))
 			{
 				Relation	toastrel = relation_open(toast_relid,
-													 AccessExclusiveLock);
+													 AccessExclusiveLock, 0);
 
 				RelationSetNewRelfilenumber(toastrel,
 											toastrel->rd_rel->relpersistence);
@@ -3723,11 +3733,16 @@ renameatt_internal(Oid myrelid,
 	Form_pg_attribute attform;
 	AttrNumber	attnum;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot renameatt_internal from non main fork")));
+	}
 	/*
 	 * Grab an exclusive lock on the target table, which we will NOT release
 	 * until end of transaction.
 	 */
-	targetrelation = relation_open(myrelid, AccessExclusiveLock);
+	targetrelation = relation_open(myrelid, AccessExclusiveLock, 0);
 	renameatt_check(myrelid, RelationGetForm(targetrelation), recursing);
 
 	/*
@@ -3927,6 +3942,11 @@ rename_constraint_internal(Oid myrelid,
 	ObjectAddress address;
 
 	Assert(!myrelid || !mytypid);
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot rename_constrain_internal from non main fork")));
+	}
 
 	if (mytypid)
 	{
@@ -3934,7 +3954,7 @@ rename_constraint_internal(Oid myrelid,
 	}
 	else
 	{
-		targetrelation = relation_open(myrelid, AccessExclusiveLock);
+		targetrelation = relation_open(myrelid, AccessExclusiveLock, 0);
 
 		/*
 		 * don't tell it whether we're recursing; we allow changing typed
@@ -4141,6 +4161,11 @@ RenameRelationInternal(Oid myrelid, const char *newrelname, bool is_internal, bo
 	Form_pg_class relform;
 	Oid			namespaceId;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot RenameRelationInternal from non main fork")));
+	}
 	/*
 	 * Grab a lock on the target relation, which we will NOT release until end
 	 * of transaction.  We need at least a self-exclusive lock so that
@@ -4151,7 +4176,7 @@ RenameRelationInternal(Oid myrelid, const char *newrelname, bool is_internal, bo
 	 * reduced lock level because RelationReloadIndexInfo() handles indexes
 	 * specially.
 	 */
-	targetrelation = relation_open(myrelid, is_index ? ShareUpdateExclusiveLock : AccessExclusiveLock);
+	targetrelation = relation_open(myrelid, is_index ? ShareUpdateExclusiveLock : AccessExclusiveLock, 0);
 	namespaceId = RelationGetNamespace(targetrelation);
 
 	/*
@@ -4401,8 +4426,13 @@ AlterTable(AlterTableStmt *stmt, LOCKMODE lockmode,
 {
 	Relation	rel;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot AlterTable from non main fork")));
+	}
 	/* Caller is required to provide an adequate lock. */
-	rel = relation_open(context->relid, NoLock);
+	rel = relation_open(context->relid, NoLock, 0);
 
 	CheckAlterTableIsSafe(rel);
 
@@ -4430,7 +4460,12 @@ AlterTableInternal(Oid relid, List *cmds, bool recurse)
 	Relation	rel;
 	LOCKMODE	lockmode = AlterTableGetLockLevel(cmds);
 
-	rel = relation_open(relid, lockmode);
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot create table from non main fork")));
+	}
+	rel = relation_open(relid, lockmode, 0);
 
 	EventTriggerAlterTableRelid(relid);
 
@@ -5184,7 +5219,7 @@ ATRewriteCatalogs(List **wqueue, LOCKMODE lockmode,
 			 * close and reopen, if necessary.  Appropriate lock was obtained
 			 * by phase 1, needn't get it again.
 			 */
-			tab->rel = relation_open(tab->relid, NoLock);
+			tab->rel = relation_open(tab->relid, NoLock, 0); /*already checked from above alter table/internal functions*/
 
 			foreach(lcmd, subcmds)
 				ATExecCmd(wqueue, tab,
@@ -6619,6 +6654,11 @@ ATSimpleRecursion(List **wqueue, Relation rel,
 				  AlterTableCmd *cmd, bool recurse, LOCKMODE lockmode,
 				  AlterTableUtilityContext *context)
 {
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot ATSimpleRecursion from non main fork")));
+	}
 	/*
 	 * Propagate to children, if desired and if there are (or might be) any
 	 * children.
@@ -6644,7 +6684,7 @@ ATSimpleRecursion(List **wqueue, Relation rel,
 			if (childrelid == relid)
 				continue;
 			/* find_all_inheritors already got lock */
-			childrel = relation_open(childrelid, NoLock);
+			childrel = relation_open(childrelid, NoLock, 0);
 			CheckAlterTableIsSafe(childrel);
 			ATPrepCmd(wqueue, childrel, cmd, false, true, lockmode, context);
 			relation_close(childrel, NoLock);
@@ -6697,7 +6737,11 @@ ATTypedTableRecursion(List **wqueue, Relation rel, AlterTableCmd *cmd,
 	List	   *children;
 
 	Assert(rel->rd_rel->relkind == RELKIND_COMPOSITE_TYPE);
-
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot ATTypedTableRecursion from non main fork")));
+	}
 	children = find_typed_table_dependencies(rel->rd_rel->reltype,
 											 RelationGetRelationName(rel),
 											 cmd->behavior);
@@ -6707,7 +6751,7 @@ ATTypedTableRecursion(List **wqueue, Relation rel, AlterTableCmd *cmd,
 		Oid			childrelid = lfirst_oid(child);
 		Relation	childrel;
 
-		childrel = relation_open(childrelid, lockmode);
+		childrel = relation_open(childrelid, lockmode, 0);
 		CheckAlterTableIsSafe(childrel);
 		ATPrepCmd(wqueue, childrel, cmd, true, true, lockmode, context);
 		relation_close(childrel, NoLock);
@@ -6789,7 +6833,7 @@ find_composite_type_dependencies(Oid typeOid, Relation origRelation,
 		if (pg_depend->classid != RelationRelationId)
 			continue;
 
-		rel = relation_open(pg_depend->objid, AccessShareLock);
+		rel = relation_open(pg_depend->objid, AccessShareLock, 0); /*metadata function for checking alter table queries*/
 		tupleDesc = RelationGetDescr(rel);
 
 		/*
@@ -6952,7 +6996,7 @@ check_of_type(HeapTuple typetuple)
 		Relation	typeRelation;
 
 		Assert(OidIsValid(typ->typrelid));
-		typeRelation = relation_open(typ->typrelid, AccessShareLock);
+		typeRelation = relation_open(typ->typrelid, AccessShareLock, 0); /*type checking function don't care*/
 		typeOk = (typeRelation->rd_rel->relkind == RELKIND_COMPOSITE_TYPE);
 
 		/*
@@ -12830,6 +12874,11 @@ ATPrepAlterColumnType(List **wqueue,
 				(errcode(ERRCODE_WRONG_OBJECT_TYPE),
 				 errmsg("cannot alter column type of typed table")));
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot ATPrepAlterColumnType from non main fork")));
+	}
 	/* lookup the attribute so we can check inheritance status */
 	tuple = SearchSysCacheAttName(RelationGetRelid(rel), colName);
 	if (!HeapTupleIsValid(tuple))
@@ -13013,7 +13062,7 @@ ATPrepAlterColumnType(List **wqueue,
 				continue;
 
 			/* find_all_inheritors already got lock */
-			childrel = relation_open(childrelid, NoLock);
+			childrel = relation_open(childrelid, NoLock, 0);
 			CheckAlterTableIsSafe(childrel);
 
 			/*
@@ -14013,6 +14062,11 @@ ATPostAlterTypeParse(Oid oldId, Oid oldRelId, Oid refRelId, char *cmd,
 	ListCell   *list_item;
 	Relation	rel;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot ATPostAlterTypeParse from non main fork")));
+	}
 	/*
 	 * We expect that we will get only ALTER TABLE and CREATE INDEX
 	 * statements. Hence, there is no need to pass them through
@@ -14055,7 +14109,7 @@ ATPostAlterTypeParse(Oid oldId, Oid oldRelId, Oid refRelId, char *cmd,
 	}
 
 	/* Caller should already have acquired whatever lock we need. */
-	rel = relation_open(oldRelId, NoLock);
+	rel = relation_open(oldRelId, NoLock, 0);
 
 	/*
 	 * Attach each generated command to the proper place in the work queue.
@@ -14457,11 +14511,16 @@ ATExecChangeOwner(Oid relationOid, Oid newOwnerId, bool recursing, LOCKMODE lock
 	HeapTuple	tuple;
 	Form_pg_class tuple_class;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot ATExecChangeOwner from non main fork")));
+	}
 	/*
 	 * Get exclusive lock till end of transaction on the target table. Use
 	 * relation_open so that we can work on indexes and sequences.
 	 */
-	target_rel = relation_open(relationOid, lockmode);
+	target_rel = relation_open(relationOid, lockmode, 0);
 
 	/* Get its pg_class tuple, too */
 	class_rel = table_open(RelationRelationId, RowExclusiveLock);
@@ -14795,7 +14854,7 @@ change_owner_recurse_to_sequences(Oid relationOid, Oid newOwnerId, LOCKMODE lock
 			continue;
 
 		/* Use relation_open just in case it's an index */
-		seqRel = relation_open(depForm->objid, lockmode);
+		seqRel = relation_open(depForm->objid, lockmode, 0); /*already checked in parent function*/
 
 		/* skip non-sequence relations */
 		if (RelationGetForm(seqRel)->relkind != RELKIND_SEQUENCE)
@@ -15236,10 +15295,15 @@ ATExecSetTableSpace(Oid tableOid, Oid newTableSpace, LOCKMODE lockmode)
 	List	   *reltoastidxids = NIL;
 	ListCell   *lc;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot ATExecSetTableSpace from non main fork")));
+	}
 	/*
 	 * Need lock here in case we are recursing to toast table or index
 	 */
-	rel = relation_open(tableOid, lockmode);
+	rel = relation_open(tableOid, lockmode, 0);
 
 	/* Check first if relation can be moved to new tablespace */
 	if (!CheckRelationTableSpaceMove(rel, newTableSpace))
@@ -15254,7 +15318,7 @@ ATExecSetTableSpace(Oid tableOid, Oid newTableSpace, LOCKMODE lockmode)
 	/* Fetch the list of indexes on toast relation if necessary */
 	if (OidIsValid(reltoastrelid))
 	{
-		Relation	toastRel = relation_open(reltoastrelid, lockmode);
+		Relation	toastRel = relation_open(reltoastrelid, lockmode, 0);
 
 		reltoastidxids = RelationGetIndexList(toastRel);
 		relation_close(toastRel, lockmode);
@@ -17069,6 +17133,11 @@ ATPrepChangePersistence(Relation rel, bool toLogged)
 	SysScanDesc scan;
 	ScanKeyData skey[1];
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot ATPrepChangePersistence from non main fork")));
+	}
 	/*
 	 * Disallow changing status for a temp table.  Also verify whether we can
 	 * get away with doing nothing; in such cases we don't need to run the
@@ -17143,7 +17212,7 @@ ATPrepChangePersistence(Relation rel, bool toLogged)
 			if (RelationGetRelid(rel) == foreignrelid)
 				continue;
 
-			foreignrel = relation_open(foreignrelid, AccessShareLock);
+			foreignrel = relation_open(foreignrelid, AccessShareLock, 0);
 
 			if (toLogged)
 			{
@@ -17191,6 +17260,11 @@ AlterTableNamespace(AlterObjectSchemaStmt *stmt, Oid *oldschema)
 	ObjectAddresses *objsMoved;
 	ObjectAddress myself;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot AlterTableNamespace from non main fork")));
+	}
 	relid = RangeVarGetRelidExtended(stmt->relation, AccessExclusiveLock,
 									 stmt->missing_ok ? RVR_MISSING_OK : 0,
 									 RangeVarCallbackForAlterRelation,
@@ -17204,7 +17278,7 @@ AlterTableNamespace(AlterObjectSchemaStmt *stmt, Oid *oldschema)
 		return InvalidObjectAddress;
 	}
 
-	rel = relation_open(relid, NoLock);
+	rel = relation_open(relid, NoLock, 0);
 
 	oldNspOid = RelationGetNamespace(rel);
 
@@ -17420,6 +17494,11 @@ AlterSeqNamespaces(Relation classRel, Relation rel,
 	ScanKeyData key[2];
 	HeapTuple	tup;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot AlterSeqNamespaces from non main fork")));
+	}
 	/*
 	 * SERIAL sequences are those having an auto dependency on one of the
 	 * table's columns (we don't care *which* column, exactly).
@@ -17452,7 +17531,7 @@ AlterSeqNamespaces(Relation classRel, Relation rel,
 			continue;
 
 		/* Use relation_open just in case it's an index */
-		seqRel = relation_open(depForm->objid, lockmode);
+		seqRel = relation_open(depForm->objid, lockmode, 0);
 
 		/* skip non-sequence relations */
 		if (RelationGetForm(seqRel)->relkind != RELKIND_SEQUENCE)
@@ -19122,6 +19201,11 @@ ATExecDetachPartition(List **wqueue, AlteredTableInfo *tab, Relation rel,
 	ObjectAddress address;
 	Oid			defaultPartOid;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("trying to call alter table detach partition from non main fork not allowed")));
+	}
 	/*
 	 * We must lock the default partition, because detaching this partition
 	 * will change its partition constraint.
@@ -19246,8 +19330,8 @@ ATExecDetachPartition(List **wqueue, AlteredTableInfo *tab, Relation rel,
 		 * Now acquire locks in both relations again.  Note they may have been
 		 * removed in the meantime, so care is required.
 		 */
-		rel = try_relation_open(parentrelid, ShareUpdateExclusiveLock);
-		partRel = try_relation_open(partrelid, AccessExclusiveLock);
+		rel = try_relation_open(parentrelid, ShareUpdateExclusiveLock, 0);
+		partRel = try_relation_open(partrelid, AccessExclusiveLock, 0);
 
 		/* If the relations aren't there, something bad happened; bail out */
 		if (rel == NULL)
@@ -19825,6 +19909,11 @@ ATExecAttachPartitionIdx(List **wqueue, Relation parentIdx, RangeVar *name)
 	Oid			currParent;
 	struct AttachIndexCallbackState state;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot ATExecAttachPartitionIdx from non main fork")));
+	}
 	/*
 	 * We need to obtain lock on the index 'name' to modify it, but we also
 	 * need to read its owning table's tuple descriptor -- so we need to lock
@@ -19846,11 +19935,11 @@ ATExecAttachPartitionIdx(List **wqueue, Relation parentIdx, RangeVar *name)
 				 errmsg("index \"%s\" does not exist", name->relname)));
 
 	/* no deadlock risk: RangeVarGetRelidExtended already acquired the lock */
-	partIdx = relation_open(partIdxId, AccessExclusiveLock);
+	partIdx = relation_open(partIdxId, AccessExclusiveLock, 0);
 
 	/* we already hold locks on both tables, so this is safe: */
-	parentTbl = relation_open(parentIdx->rd_index->indrelid, AccessShareLock);
-	partTbl = relation_open(partIdx->rd_index->indrelid, NoLock);
+	parentTbl = relation_open(parentIdx->rd_index->indrelid, AccessShareLock, 0);
+	partTbl = relation_open(partIdx->rd_index->indrelid, NoLock, 0);
 
 	ObjectAddressSet(address, RelationRelationId, RelationGetRelid(partIdx));
 
@@ -20078,8 +20167,8 @@ validatePartitionedIndex(Relation partedIdx, Relation partedTbl)
 
 		parentIdxId = get_partition_parent(RelationGetRelid(partedIdx), false);
 		parentTblId = get_partition_parent(RelationGetRelid(partedTbl), false);
-		parentIdx = relation_open(parentIdxId, AccessExclusiveLock);
-		parentTbl = relation_open(parentTblId, AccessExclusiveLock);
+		parentIdx = relation_open(parentIdxId, AccessExclusiveLock, 0); /*should be checked by parents already*/
+		parentTbl = relation_open(parentTblId, AccessExclusiveLock, 0);
 		Assert(!parentIdx->rd_index->indisvalid);
 
 		validatePartitionedIndex(parentIdx, parentTbl);

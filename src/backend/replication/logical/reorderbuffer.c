@@ -2248,7 +2248,7 @@ ReorderBufferProcessTXN(ReorderBuffer *rb, ReorderBufferTXN *txn,
 							 relpathperm(change->data.tp.rlocator,
 										 MAIN_FORKNUM));
 
-					relation = RelationIdGetRelation(reloid);
+					relation = RelationIdGetRelation(reloid, 0);/*part of logical replication*/
 
 					if (!RelationIsValid(relation))
 						elog(ERROR, "could not open relation with OID %u (for filenumber \"%s\")",
@@ -2393,7 +2393,7 @@ ReorderBufferProcessTXN(ReorderBuffer *rb, ReorderBufferTXN *txn,
 							Oid			relid = change->data.truncate.relids[i];
 							Relation	rel;
 
-							rel = RelationIdGetRelation(relid);
+							rel = RelationIdGetRelation(relid, 0); /*TODO: check this only affects logical replication*/
 
 							if (!RelationIsValid(rel))
 								elog(ERROR, "could not open relation with OID %u", relid);
@@ -4826,7 +4826,7 @@ ReorderBufferToastReplace(ReorderBuffer *rb, ReorderBufferTXN *txn,
 
 	desc = RelationGetDescr(relation);
 
-	toast_rel = RelationIdGetRelation(relation->rd_rel->reltoastrelid);
+	toast_rel = RelationIdGetRelation(relation->rd_rel->reltoastrelid, 0); /*part of logical replication*/
 	if (!RelationIsValid(toast_rel))
 		elog(ERROR, "could not open toast relation with OID %u (base relation \"%s\")",
 			 relation->rd_rel->reltoastrelid, RelationGetRelationName(relation));

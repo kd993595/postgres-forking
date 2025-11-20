@@ -13,6 +13,7 @@
  *-------------------------------------------------------------------------
  */
 #include "postgres.h"
+#include "miscadmin.h"
 
 #include "access/relation.h"
 #include "access/xact.h"
@@ -51,6 +52,11 @@ DefineVirtualRelation(RangeVar *relation, List *tlist, bool replace,
 	List	   *attrList;
 	ListCell   *t;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("views cannot be created from non main fork")));
+	}
 	/*
 	 * create a list of ColumnDef nodes based on the names and types of the
 	 * (non-junk) targetlist items from the view's SELECT list.
@@ -105,7 +111,7 @@ DefineVirtualRelation(RangeVar *relation, List *tlist, bool replace,
 		ObjectAddress address;
 
 		/* Relation is already locked, but we must build a relcache entry. */
-		rel = relation_open(viewOid, NoLock);
+		rel = relation_open(viewOid, NoLock, 0);
 
 		/* Make sure it *is* a view. */
 		if (rel->rd_rel->relkind != RELKIND_VIEW)

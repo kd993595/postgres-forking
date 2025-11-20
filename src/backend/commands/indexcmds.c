@@ -4272,10 +4272,16 @@ IndexSetParentIndex(Relation partitionIdx, Oid parentOid)
 	Assert(partitionIdx->rd_rel->relkind == RELKIND_INDEX ||
 		   partitionIdx->rd_rel->relkind == RELKIND_PARTITIONED_INDEX);
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot IndexSetParentIndex from non main fork")));
+	}
+
 	/*
 	 * Scan pg_inherits for rows linking our index to some parent.
 	 */
-	pg_inherits = relation_open(InheritsRelationId, RowExclusiveLock);
+	pg_inherits = relation_open(InheritsRelationId, RowExclusiveLock, 0);
 	ScanKeyInit(&key[0],
 				Anum_pg_inherits_inhrelid,
 				BTEqualStrategyNumber, F_OIDEQ,

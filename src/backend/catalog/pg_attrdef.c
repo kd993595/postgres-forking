@@ -13,6 +13,7 @@
  *-------------------------------------------------------------------------
  */
 #include "postgres.h"
+#include "miscadmin.h" 
 
 #include "access/genam.h"
 #include "access/relation.h"
@@ -282,6 +283,9 @@ RemoveAttrDefaultById(Oid attrdefId)
 	Oid			myrelid;
 	AttrNumber	myattnum;
 
+	if(MyDBForkId != 0){
+		elog(ERROR, "cannot call RemoveAttrDefaultById from non main fork");
+	}
 	/* Grab an appropriate lock on the pg_attrdef relation */
 	attrdef_rel = table_open(AttrDefaultRelationId, RowExclusiveLock);
 
@@ -302,7 +306,7 @@ RemoveAttrDefaultById(Oid attrdefId)
 	myattnum = ((Form_pg_attrdef) GETSTRUCT(tuple))->adnum;
 
 	/* Get an exclusive lock on the relation owning the attribute */
-	myrel = relation_open(myrelid, AccessExclusiveLock);
+	myrel = relation_open(myrelid, AccessExclusiveLock, 0);
 
 	/* Now we can delete the pg_attrdef row */
 	CatalogTupleDelete(attrdef_rel, &tuple->t_self);

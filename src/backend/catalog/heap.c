@@ -618,7 +618,7 @@ CheckAttributeType(const char *attname,
 
 		containing_rowtypes = lappend_oid(containing_rowtypes, atttypid);
 
-		relation = relation_open(get_typ_typrelid(atttypid), AccessShareLock);
+		relation = relation_open(get_typ_typrelid(atttypid), AccessShareLock, 0);
 
 		tupdesc = RelationGetDescr(relation);
 
@@ -1674,13 +1674,18 @@ RemoveAttributeById(Oid relid, AttrNumber attnum)
 	bool		nullsAtt[Natts_pg_attribute] = {0};
 	bool		replacesAtt[Natts_pg_attribute] = {0};
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("cannot call RemoveAttributeById from non main fork")));
+	}
 	/*
 	 * Grab an exclusive lock on the target table, which we will NOT release
 	 * until end of transaction.  (In the simple case where we are directly
 	 * dropping this column, ATExecDropColumn already did this ... but when
 	 * cascading from a drop of some other object, we may not have any lock.)
 	 */
-	rel = relation_open(relid, AccessExclusiveLock);
+	rel = relation_open(relid, AccessExclusiveLock, 0);
 
 	attr_rel = table_open(AttributeRelationId, RowExclusiveLock);
 
@@ -1771,6 +1776,11 @@ heap_drop_with_catalog(Oid relid)
 	Oid			parentOid = InvalidOid,
 				defaultPartOid = InvalidOid;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("cannot call heap_drop_with_catalog from non main fork")));
+	}
 	/*
 	 * To drop a partition safely, we must grab exclusive lock on its parent,
 	 * because another backend might be about to execute a query on the parent
@@ -1808,7 +1818,7 @@ heap_drop_with_catalog(Oid relid)
 	/*
 	 * Open and lock the relation.
 	 */
-	rel = relation_open(relid, AccessExclusiveLock);
+	rel = relation_open(relid, AccessExclusiveLock, 0);
 
 	/*
 	 * There can no longer be anyone *else* touching the relation, but we

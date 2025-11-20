@@ -774,11 +774,14 @@ vacuum_open_relation(Oid relid, RangeVar *relation, bits32 options,
 	 *
 	 * If we've been asked not to wait for the relation lock, acquire it first
 	 * in non-blocking mode, before calling try_relation_open().
+	 *
+	 * Really only care about vacumming the main database not the forks so never call for forks
+	 * since those collected in drop fork stmt
 	 */
 	if (!(options & VACOPT_SKIP_LOCKED))
-		rel = try_relation_open(relid, lmode);
+		rel = try_relation_open(relid, lmode, 0);
 	else if (ConditionalLockRelationOid(relid, lmode))
-		rel = try_relation_open(relid, NoLock);
+		rel = try_relation_open(relid, NoLock, 0);
 	else
 	{
 		rel = NULL;

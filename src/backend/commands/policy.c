@@ -589,7 +589,12 @@ CreatePolicy(CreatePolicyStmt *stmt)
 	ObjectAddress target;
 	ObjectAddress myself;
 	int			i;
-
+	
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("trying to call transformAlterTableStmt from non main fork")));
+	}
 	/* Parse command */
 	polcmd = parse_policy_command(stmt->cmd_name);
 
@@ -630,7 +635,7 @@ CreatePolicy(CreatePolicyStmt *stmt)
 										(void *) stmt);
 
 	/* Open target_table to build quals. No additional lock is necessary. */
-	target_table = relation_open(table_id, NoLock);
+	target_table = relation_open(table_id, NoLock, 0);
 
 	/* Add for the regular security quals */
 	nsitem = addRangeTableEntryForRelation(qual_pstate, target_table,
@@ -791,7 +796,12 @@ AlterPolicy(AlterPolicyStmt *stmt)
 	char		polcmd;
 	bool		polcmd_isnull;
 	int			i;
-
+	
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("trying to call transformAlterTableStmt from non main fork")));
+	}
 	/* Parse role_ids */
 	if (stmt->roles != NULL)
 	{
@@ -805,7 +815,7 @@ AlterPolicy(AlterPolicyStmt *stmt)
 										RangeVarCallbackForPolicy,
 										(void *) stmt);
 
-	target_table = relation_open(table_id, NoLock);
+	target_table = relation_open(table_id, NoLock, 0);
 
 	/* Parse the using policy clause */
 	if (stmt->qual)
@@ -1103,14 +1113,19 @@ rename_policy(RenameStmt *stmt)
 	SysScanDesc sscan;
 	HeapTuple	policy_tuple;
 	ObjectAddress address;
-
+	
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("trying to call rename_policy from non main fork")));
+	}
 	/* Get id of table.  Also handles permissions checks. */
 	table_id = RangeVarGetRelidExtended(stmt->relation, AccessExclusiveLock,
 										0,
 										RangeVarCallbackForPolicy,
 										(void *) stmt);
 
-	target_table = relation_open(table_id, NoLock);
+	target_table = relation_open(table_id, NoLock, 0);
 
 	pg_policy_rel = table_open(PolicyRelationId, RowExclusiveLock);
 

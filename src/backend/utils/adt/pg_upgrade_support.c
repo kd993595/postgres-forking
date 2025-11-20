@@ -338,6 +338,9 @@ binary_upgrade_add_sub_rel_state(PG_FUNCTION_ARGS)
 	if (PG_ARGISNULL(0) || PG_ARGISNULL(1) || PG_ARGISNULL(2))
 		elog(ERROR, "null argument to binary_upgrade_add_sub_rel_state is not allowed");
 
+	if(MyDBForkId != 0){
+		elog(ERROR, "cannot call binary_upgrade_add_sub_rel_state from non main fork");
+	}
 	subname = text_to_cstring(PG_GETARG_TEXT_PP(0));
 	relid = PG_GETARG_OID(1);
 	relstate = PG_GETARG_CHAR(2);
@@ -345,7 +348,7 @@ binary_upgrade_add_sub_rel_state(PG_FUNCTION_ARGS)
 
 	subrel = table_open(SubscriptionRelationId, RowExclusiveLock);
 	subid = get_subscription_oid(subname, false);
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0); /*todo: check that this is ok*/
 
 	/*
 	 * Since there are no concurrent ALTER/DROP SUBSCRIPTION commands during

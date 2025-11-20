@@ -1341,8 +1341,14 @@ get_relation_by_qualified_name(ObjectType objtype, List *object,
 	address.objectId = InvalidOid;
 	address.objectSubId = 0;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("ObjectAddress attempt to call from DDL command in non main fork not allowed")));
+
+	}
 	relation = relation_openrv_extended(makeRangeVarFromNameList(object),
-										lockmode, missing_ok);
+										lockmode, missing_ok, 0);
 	if (!relation)
 		return address;
 
@@ -1507,10 +1513,15 @@ get_object_address_attribute(ObjectType objtype, List *object,
 		ereport(ERROR,
 				(errcode(ERRCODE_SYNTAX_ERROR),
 				 errmsg("column name must be qualified")));
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("ObjectAddress attempt to call from DDL command in non main fork not allowed")));
+	}
 	attname = strVal(llast(object));
 	relname = list_copy_head(object, list_length(object) - 1);
 	/* XXX no missing_ok support here */
-	relation = relation_openrv(makeRangeVarFromNameList(relname), lockmode);
+	relation = relation_openrv(makeRangeVarFromNameList(relname), lockmode, 0);
 	reloid = RelationGetRelid(relation);
 
 	/* Look up attribute and construct return value. */
@@ -1560,10 +1571,15 @@ get_object_address_attrdef(ObjectType objtype, List *object,
 		ereport(ERROR,
 				(errcode(ERRCODE_SYNTAX_ERROR),
 				 errmsg("column name must be qualified")));
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("ObjectAddress attempt to call from DDL command in non main fork not allowed")));
+	}
 	attname = strVal(llast(object));
 	relname = list_copy_head(object, list_length(object) - 1);
 	/* XXX no missing_ok support here */
-	relation = relation_openrv(makeRangeVarFromNameList(relname), lockmode);
+	relation = relation_openrv(makeRangeVarFromNameList(relname), lockmode, 0);
 	reloid = RelationGetRelid(relation);
 
 	tupdesc = RelationGetDescr(relation);
@@ -1871,9 +1887,14 @@ get_object_address_publication_rel(List *object,
 
 	ObjectAddressSet(address, PublicationRelRelationId, InvalidOid);
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("Object address attempt to be called from non main fork in ddl statmenet")));
+	}
 	relname = linitial(object);
 	relation = relation_openrv_extended(makeRangeVarFromNameList(relname),
-										AccessShareLock, missing_ok);
+										AccessShareLock, missing_ok, 0);
 	if (!relation)
 		return address;
 

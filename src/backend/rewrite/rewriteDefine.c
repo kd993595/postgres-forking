@@ -801,6 +801,11 @@ RenameRewriteRule(RangeVar *relation, const char *oldName,
 	Oid			ruleOid;
 	ObjectAddress address;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_UNDEFINED_OBJECT),
+				 errmsg("Cannot do rewrite rule in non main fork")));
+	}
 	/*
 	 * Look up name, check permissions, and acquire lock (which we will NOT
 	 * release until end of transaction).
@@ -811,7 +816,7 @@ RenameRewriteRule(RangeVar *relation, const char *oldName,
 									 NULL);
 
 	/* Have lock already, so just need to build relcache entry. */
-	targetrel = relation_open(relid, NoLock);
+	targetrel = relation_open(relid, NoLock, 0); /*for these operations really only care abt main fork*/
 
 	/* Prepare to modify pg_rewrite */
 	pg_rewrite_desc = table_open(RewriteRelationId, RowExclusiveLock);

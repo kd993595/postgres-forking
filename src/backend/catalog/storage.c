@@ -116,6 +116,7 @@ AddPendingSync(const RelFileLocator *rlocator)
  * transaction aborts later on, the storage will be destroyed.  A caller
  * that does not want the storage to be destroyed in case of an abort may
  * pass register_delete = false.
+ * TODO: verify this only is called when making a new relation like create table and therefore only in main fork allowed
  */
 SMgrRelation
 RelationCreateStorage(RelFileLocator rlocator, char relpersistence,
@@ -146,7 +147,12 @@ RelationCreateStorage(RelFileLocator rlocator, char relpersistence,
 			return NULL;		/* placate compiler */
 	}
 
-	srel = smgropen(rlocator, procNumber);
+	if(MyDBForkId != 0){
+		elog(ERROR, "invalid call to create storage outside of main fork");
+		return NULL;
+	}
+
+	srel = smgropen(rlocator, procNumber, 0);
 	smgrcreate(srel, MAIN_FORKNUM, false);
 
 	if (needs_wal)
@@ -652,6 +658,7 @@ RestorePendingSyncs(char *startAddress)
  * no physical storage in any fork. In particular, it's possible that we're
  * cleaning up an old temporary relation for which RemovePgTempFiles has
  * already recovered the physical storage.
+ * TODO: verify that this only called on creating storage and therefore only main fork
  */
 void
 smgrDoPendingDeletes(bool isCommit)
@@ -685,7 +692,7 @@ smgrDoPendingDeletes(bool isCommit)
 			{
 				SMgrRelation srel;
 
-				srel = smgropen(pending->rlocator, pending->procNumber);
+				srel = smgropen(pending->rlocator, pending->procNumber, 0);
 
 				/* allocate the initial array, or extend it, if needed */
 				if (maxrels == 0)
@@ -766,7 +773,7 @@ smgrDoPendingSyncs(bool isCommit, bool isParallelWorker)
 		uint64		total_blocks = 0;
 		SMgrRelation srel;
 
-		srel = smgropen(pendingsync->rlocator, INVALID_PROC_NUMBER);
+		srel = smgropen(pendingsync->rlocator, INVALID_PROC_NUMBER, 0); /*TODO: also verify only in create should be true since not called many places*/
 
 		/*
 		 * We emit newpage WAL records for smaller relations.
@@ -975,7 +982,7 @@ smgr_redo(XLogReaderState *record)
 		xl_smgr_create *xlrec = (xl_smgr_create *) XLogRecGetData(record);
 		SMgrRelation reln;
 
-		reln = smgropen(xlrec->rlocator, INVALID_PROC_NUMBER);
+		reln = smgropen(xlrec->rlocator, INVALID_PROC_NUMBER, 0); /*TODO: part of fixing wal to support forks*/
 		smgrcreate(reln, xlrec->forkNum, true);
 	}
 	else if (info == XLOG_SMGR_TRUNCATE)
@@ -989,7 +996,7 @@ smgr_redo(XLogReaderState *record)
 		int			nforks = 0;
 		bool		need_fsm_vacuum = false;
 
-		reln = smgropen(xlrec->rlocator, INVALID_PROC_NUMBER);
+		reln = smgropen(xlrec->rlocator, INVALID_PROC_NUMBER, 0);
 
 		/*
 		 * Forcibly create relation if it doesn't exist (which suggests that

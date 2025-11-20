@@ -1567,11 +1567,16 @@ index_concurrently_swap(Oid newIndexId, Oid oldIndexId, const char *oldName)
 	List	   *constraintOids = NIL;
 	ListCell   *lc;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot swap index in a concurrent create index in non main fork")));
+	}
 	/*
 	 * Take a necessary lock on the old and new index before swapping them.
 	 */
-	oldClassRel = relation_open(oldIndexId, ShareUpdateExclusiveLock);
-	newClassRel = relation_open(newIndexId, ShareUpdateExclusiveLock);
+	oldClassRel = relation_open(oldIndexId, ShareUpdateExclusiveLock, 0);
+	newClassRel = relation_open(newIndexId, ShareUpdateExclusiveLock, 0);
 
 	/* Now swap names and dependencies of those indexes */
 	pg_class = table_open(RelationRelationId, RowExclusiveLock);

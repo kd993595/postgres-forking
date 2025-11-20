@@ -317,6 +317,11 @@ cluster_rel(Oid tableOid, Oid indexOid, ClusterParams *params)
 	bool		verbose = ((params->options & CLUOPT_VERBOSE) != 0);
 	bool		recheck = ((params->options & CLUOPT_RECHECK) != 0);
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot cluster from non main fork")));
+	}
 	/* Check for user-requested abort. */
 	CHECK_FOR_INTERRUPTS();
 
@@ -334,7 +339,7 @@ cluster_rel(Oid tableOid, Oid indexOid, ClusterParams *params)
 	 * case, since cluster() already did it.)  The index lock is taken inside
 	 * check_index_is_clusterable.
 	 */
-	OldHeap = try_relation_open(tableOid, AccessExclusiveLock);
+	OldHeap = try_relation_open(tableOid, AccessExclusiveLock, 0);
 
 	/* If the table has gone away, we can skip processing it */
 	if (!OldHeap)
@@ -1077,6 +1082,11 @@ swap_relation_files(Oid r1, Oid r2, bool target_is_pg_class,
 	Oid			relam1,
 				relam2;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("cannot call this swap_relation_files from non main fork since mainly in altering schema stuff")));
+	}
 	/* We need writable copies of both pg_class tuples. */
 	relRelation = table_open(RelationRelationId, RowExclusiveLock);
 
@@ -1192,8 +1202,8 @@ swap_relation_files(Oid r1, Oid r2, bool target_is_pg_class,
 		Relation	rel1,
 					rel2;
 
-		rel1 = relation_open(r1, NoLock);
-		rel2 = relation_open(r2, NoLock);
+		rel1 = relation_open(r1, NoLock, 0);
+		rel2 = relation_open(r2, NoLock, 0);
 		rel2->rd_createSubid = rel1->rd_createSubid;
 		rel2->rd_newRelfilelocatorSubid = rel1->rd_newRelfilelocatorSubid;
 		rel2->rd_firstRelfilelocatorSubid = rel1->rd_firstRelfilelocatorSubid;

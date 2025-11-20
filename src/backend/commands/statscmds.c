@@ -121,7 +121,7 @@ CreateStatistics(CreateStatsStmt *stmt)
 		 * conflicting with ANALYZE and other DDL that sets statistical
 		 * information, but not with normal queries.
 		 */
-		rel = relation_openrv((RangeVar *) rln, ShareUpdateExclusiveLock);
+		rel = relation_openrv((RangeVar *) rln, ShareUpdateExclusiveLock, 0); /*statistics functions should really only be involving main fork*/
 
 		/* Restrict to allowed relation types */
 		if (rel->rd_rel->relkind != RELKIND_RELATION &&

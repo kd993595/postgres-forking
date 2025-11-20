@@ -755,7 +755,7 @@ maybe_send_schema(LogicalDecodingContext *ctx,
 	 */
 	if (relentry->publish_as_relid != RelationGetRelid(relation))
 	{
-		Relation	ancestor = RelationIdGetRelation(relentry->publish_as_relid);
+		Relation	ancestor = RelationIdGetRelation(relentry->publish_as_relid, 0); /*TODO: like wal logical replication assume main fork and fix later*/
 
 		send_relation_and_attrs(ancestor, xid, ctx, relentry->columns);
 		RelationClose(ancestor);
@@ -878,7 +878,7 @@ pgoutput_ensure_entry_cxt(PGOutputData *data, RelationSyncEntry *entry)
 	if (entry->entry_cxt)
 		return;
 
-	relation = RelationIdGetRelation(entry->publish_as_relid);
+	relation = RelationIdGetRelation(entry->publish_as_relid, 0);
 
 	entry->entry_cxt = AllocSetContextCreate(data->cachectx,
 											 "entry private context",
@@ -1003,7 +1003,7 @@ pgoutput_row_filter_init(PGOutputData *data, List *publications,
 
 	if (has_filter)
 	{
-		Relation	relation = RelationIdGetRelation(entry->publish_as_relid);
+		Relation	relation = RelationIdGetRelation(entry->publish_as_relid, 0);
 
 		pgoutput_ensure_entry_cxt(data, entry);
 
@@ -1043,7 +1043,7 @@ pgoutput_column_list_init(PGOutputData *data, List *publications,
 {
 	ListCell   *lc;
 	bool		first = true;
-	Relation	relation = RelationIdGetRelation(entry->publish_as_relid);
+	Relation	relation = RelationIdGetRelation(entry->publish_as_relid, 0);
 
 	/*
 	 * Find if there are any column lists for this relation. If there are,
@@ -1180,7 +1180,7 @@ init_tuple_slot(PGOutputData *data, Relation relation,
 	 */
 	if (entry->publish_as_relid != RelationGetRelid(relation))
 	{
-		Relation	ancestor = RelationIdGetRelation(entry->publish_as_relid);
+		Relation	ancestor = RelationIdGetRelation(entry->publish_as_relid, 0);
 		TupleDesc	indesc = RelationGetDescr(relation);
 		TupleDesc	outdesc = RelationGetDescr(ancestor);
 
@@ -1491,7 +1491,7 @@ pgoutput_change(LogicalDecodingContext *ctx, ReorderBufferTXN *txn,
 	if (relentry->publish_as_relid != RelationGetRelid(relation))
 	{
 		Assert(relation->rd_rel->relispartition);
-		ancestor = RelationIdGetRelation(relentry->publish_as_relid);
+		ancestor = RelationIdGetRelation(relentry->publish_as_relid, 0);
 		targetrel = ancestor;
 	}
 
