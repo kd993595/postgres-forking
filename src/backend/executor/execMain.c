@@ -302,7 +302,7 @@ ExecutorRun(QueryDesc *queryDesc,
 			bool execute_once)
 {
 	if (ExecutorRun_hook)
-		(*ExecutorRun_hook) (queryDesc, direction, count, execute_once);
+		(*ExecutorRun_hook) (queryDesc, direction, count, execute_once);/*check this hook to disable plugins in the future from modifying my executor*/
 	else
 		standard_ExecutorRun(queryDesc, direction, count, execute_once);
 }

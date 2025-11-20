@@ -66,6 +66,7 @@ typedef struct HeapScanDescData
 	BlockNumber rs_cblock;		/* current block # in scan, if any */
 	Buffer		rs_cbuf;		/* current buffer in scan, if any */
 	/* NB: if rs_cbuf is not InvalidBuffer, we hold a pin on that buffer */
+	int32 		rs_dbfork;
 
 	BufferAccessStrategy rs_strategy;	/* access strategy for reads */
 
