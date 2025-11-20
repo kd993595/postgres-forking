@@ -37,7 +37,7 @@ typedef Relation *RelationPtr;
 /*
  * Routines to open (lookup) and close a relcache entry
  */
-extern Relation RelationIdGetRelation(Oid relationId);
+extern Relation RelationIdGetRelation(Oid relationId, int32 dbforkId);
 extern void RelationClose(Relation relation);
 
 /*

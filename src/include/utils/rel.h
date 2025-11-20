@@ -58,6 +58,7 @@ typedef struct RelationData
 	SMgrRelation rd_smgr;		/* cached file handle, or NULL */
 	int			rd_refcnt;		/* reference count */
 	ProcNumber	rd_backend;		/* owning backend's proc number, if temp rel */
+	int32 		rd_dbforkId; 	/* dbfork id for a given relation */
 	bool		rd_islocaltemp; /* rel is a temp rel of this session */
 	bool		rd_isnailed;	/* rel is nailed in cache */
 	bool		rd_isvalid;		/* relcache entry is valid */
@@ -568,7 +569,7 @@ RelationGetSmgr(Relation rel)
 {
 	if (unlikely(rel->rd_smgr == NULL))
 	{
-		rel->rd_smgr = smgropen(rel->rd_locator, rel->rd_backend);
+		rel->rd_smgr = smgropen(rel->rd_locator, rel->rd_backend, rel->rd_dbforkId);
 		smgrpin(rel->rd_smgr);
 	}
 	return rel->rd_smgr;

@@ -44,7 +44,7 @@
  * ----------------
  */
 Relation
-relation_open(Oid relationId, LOCKMODE lockmode)
+relation_open(Oid relationId, LOCKMODE lockmode, int32 dbforkId)
 {
 	Relation	r;
 
@@ -55,7 +55,7 @@ relation_open(Oid relationId, LOCKMODE lockmode)
 		LockRelationOid(relationId, lockmode);
 
 	/* The relcache does all the real work... */
-	r = RelationIdGetRelation(relationId);
+	r = RelationIdGetRelation(relationId, dbforkId);
 
 	if (!RelationIsValid(r))
 		elog(ERROR, "could not open relation with OID %u", relationId);
@@ -85,7 +85,7 @@ relation_open(Oid relationId, LOCKMODE lockmode)
  * ----------------
  */
 Relation
-try_relation_open(Oid relationId, LOCKMODE lockmode)
+try_relation_open(Oid relationId, LOCKMODE lockmode, int32 dbforkId)
 {
 	Relation	r;
 
@@ -109,7 +109,7 @@ try_relation_open(Oid relationId, LOCKMODE lockmode)
 	}
 
 	/* Should be safe to do a relcache load */
-	r = RelationIdGetRelation(relationId);
+	r = RelationIdGetRelation(relationId, dbforkId);
 
 	if (!RelationIsValid(r))
 		elog(ERROR, "could not open relation with OID %u", relationId);
@@ -134,7 +134,7 @@ try_relation_open(Oid relationId, LOCKMODE lockmode)
  * ----------------
  */
 Relation
-relation_openrv(const RangeVar *relation, LOCKMODE lockmode)
+relation_openrv(const RangeVar *relation, LOCKMODE lockmode, int32 dbforkId)
 {
 	Oid			relOid;
 
@@ -156,7 +156,7 @@ relation_openrv(const RangeVar *relation, LOCKMODE lockmode)
 	relOid = RangeVarGetRelid(relation, lockmode, false);
 
 	/* Let relation_open do the rest */
-	return relation_open(relOid, NoLock);
+	return relation_open(relOid, NoLock, dbforkId);
 }
 
 /* ----------------
@@ -170,7 +170,7 @@ relation_openrv(const RangeVar *relation, LOCKMODE lockmode)
  */
 Relation
 relation_openrv_extended(const RangeVar *relation, LOCKMODE lockmode,
-						 bool missing_ok)
+						 bool missing_ok, int32 dbforkId)
 {
 	Oid			relOid;
 
@@ -189,7 +189,7 @@ relation_openrv_extended(const RangeVar *relation, LOCKMODE lockmode,
 		return NULL;
 
 	/* Let relation_open do the rest */
-	return relation_open(relOid, NoLock);
+	return relation_open(relOid, NoLock, dbforkId);
 }
 
 /* ----------------

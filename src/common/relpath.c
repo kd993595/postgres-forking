@@ -208,3 +208,83 @@ GetRelationPath(Oid dbOid, Oid spcOid, RelFileNumber relNumber,
 	}
 	return path;
 }
+
+/*
+ * GetDBForkRelationPath - construct path to a relation's file in a specific dbfork
+ *
+ * Result is a palloc'd string.
+ *
+ * Note: ideally, procNumber would be declared as type ProcNumber, but
+ * relpath.h would have to include a backend-only header to do that; doesn't
+ * seem worth the trouble considering ProcNumber is just int anyway.
+ * Note: only DEFAULTTABLESPACE_OID accepted since global should use above functions GetRelationPath/GetDatabasePath
+ * since no forks should be present in those files. Other tablespaces currently not accepted.
+ * TODO: accept spcOid other than DEFAULTTABLESPACE_OID.
+ */
+
+char *GetDBForkRelationPath(Oid dbOid, Oid spcOid, RelFileNumber relNumber, int procNumber, ForkNumber forkNumber, int32 forkId)
+{
+	char	   *path;
+
+	if(spcOid == GLOBALTABLESPACE_OID){
+#ifndef FRONTEND
+		ereport(ERROR,
+			(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+			 errmsg("invalid spdOid should be using function above for global paths")));
+#endif
+		path = NULL;
+	}else if (spcOid == DEFAULTTABLESPACE_OID)
+	{
+		/* The default tablespace is {datadir}/base */
+		if (procNumber == INVALID_PROC_NUMBER)
+		{
+			if (forkNumber != MAIN_FORKNUM)
+				path = psprintf("base/%u/%d$%u_%s",
+								dbOid, forkId, relNumber,
+								forkNames[forkNumber]);
+			else
+				path = psprintf("base/%u/%d$%u",
+								dbOid, forkId, relNumber);
+		}
+		else
+		{
+			if (forkNumber != MAIN_FORKNUM)
+				path = psprintf("base/%u/t%d_%d$%u_%s",
+								dbOid, procNumber, forkId, relNumber,
+								forkNames[forkNumber]);
+			else
+				path = psprintf("base/%u/t%d_%d$%u",
+								dbOid, procNumber, forkId, relNumber);
+		}
+	}
+	else
+	{
+		/* All other tablespaces are accessed via symlinks */
+		if (procNumber == INVALID_PROC_NUMBER)
+		{
+			if (forkNumber != MAIN_FORKNUM)
+				path = psprintf("pg_tblspc/%u/%s/%u/%d$%u_%s",
+								spcOid, TABLESPACE_VERSION_DIRECTORY,
+								dbOid, forkId, relNumber,
+								forkNames[forkNumber]);
+			else
+				path = psprintf("pg_tblspc/%u/%s/%u/%d$%u",
+								spcOid, TABLESPACE_VERSION_DIRECTORY,
+								dbOid, forkId, relNumber);
+		}
+		else
+		{
+			if (forkNumber != MAIN_FORKNUM)
+				path = psprintf("pg_tblspc/%u/%s/%u/t%d_%d$%u_%s",
+								spcOid, TABLESPACE_VERSION_DIRECTORY,
+								dbOid, procNumber, forkId, relNumber,
+								forkNames[forkNumber]);
+			else
+				path = psprintf("pg_tblspc/%u/%s/%u/t%d_%d$%u",
+								spcOid, TABLESPACE_VERSION_DIRECTORY,
+								dbOid, procNumber, forkId, relNumber);
+		}
+	}
+	return path;
+}
+
