@@ -3021,7 +3021,7 @@ expandRelation(Oid relid, Alias *eref, int rtindex, int sublevels_up,
 	Relation	rel;
 
 	/* Get the tupledesc and turn it over to expandTupleDesc */
-	rel = relation_open(relid, AccessShareLock);
+	rel = relation_open(relid, AccessShareLock, 0); /*only care about metadata from main fork*/
 	expandTupleDesc(rel->rd_att, eref, rel->rd_att->natts, 0,
 					rtindex, sublevels_up,
 					location, include_dropped,

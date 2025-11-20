@@ -192,6 +192,7 @@ ClassifyUtilityCommandAsReadOnly(Node *parsetree)
 		case T_CreateTrigStmt:
 		case T_CreateUserMappingStmt:
 		case T_CreatedbStmt:
+		case T_CreateforkStmt:
 		case T_DefineStmt:
 		case T_DropOwnedStmt:
 		case T_DropRoleStmt:
@@ -200,6 +201,7 @@ ClassifyUtilityCommandAsReadOnly(Node *parsetree)
 		case T_DropTableSpaceStmt:
 		case T_DropUserMappingStmt:
 		case T_DropdbStmt:
+		case T_DropforkStmt:
 		case T_GrantRoleStmt:
 		case T_GrantStmt:
 		case T_ImportForeignSchemaStmt:
@@ -769,6 +771,11 @@ standard_ProcessUtility(PlannedStmt *pstmt,
 			createdb(pstate, (CreatedbStmt *) parsetree);
 			break;
 
+		case T_CreateforkStmt:
+			PreventInTransactionBlock(isTopLevel,"CREATE DBFORK");
+			createfork(pstate, (CreateforkStmt *) parsetree);
+			break;
+
 		case T_AlterDatabaseStmt:
 			/* no event triggers for global objects */
 			AlterDatabase(pstate, (AlterDatabaseStmt *) parsetree, isTopLevel);
@@ -788,6 +795,11 @@ standard_ProcessUtility(PlannedStmt *pstmt,
 			/* no event triggers for global objects */
 			PreventInTransactionBlock(isTopLevel, "DROP DATABASE");
 			DropDatabase(pstate, (DropdbStmt *) parsetree);
+			break;
+
+		case T_DropforkStmt:
+			PreventInTransactionBlock(isTopLevel, "DROP DBFORK");
+			dropfork(pstate, (DropforkStmt *) parsetree);
 			break;
 
 			/* Query-level asynchronous notification */
@@ -1530,7 +1542,7 @@ ProcessUtilitySlow(ParseState *pstate,
 					 * must treat it like ALTER TABLE ADD INDEX, not CREATE.
 					 * (This is a bit grotty, but currently it doesn't seem
 					 * worth adding a separate bool field for the purpose.)
-					 */
+	*/
 					is_alter_table = stmt->transformed;
 
 					/* Run parse analysis ... */
@@ -2825,6 +2837,10 @@ CreateCommandTag(Node *parsetree)
 			tag = CMDTAG_CREATE_DATABASE;
 			break;
 
+		case T_CreateforkStmt:
+			tag = CMDTAG_CREATE_DBFORK;
+			break;
+
 		case T_AlterDatabaseStmt:
 		case T_AlterDatabaseRefreshCollStmt:
 		case T_AlterDatabaseSetStmt:
@@ -2833,6 +2849,10 @@ CreateCommandTag(Node *parsetree)
 
 		case T_DropdbStmt:
 			tag = CMDTAG_DROP_DATABASE;
+			break;
+
+		case T_DropforkStmt:
+			tag = CMDTAG_DROP_DBFORK;
 			break;
 
 		case T_NotifyStmt:
@@ -3473,6 +3493,10 @@ GetCommandLogLevel(Node *parsetree)
 			lev = LOGSTMT_DDL;
 			break;
 
+		case T_CreateforkStmt:
+			lev = LOGSTMT_DDL;
+			break;
+
 		case T_AlterDatabaseStmt:
 		case T_AlterDatabaseRefreshCollStmt:
 		case T_AlterDatabaseSetStmt:
@@ -3480,6 +3504,10 @@ GetCommandLogLevel(Node *parsetree)
 			break;
 
 		case T_DropdbStmt:
+			lev = LOGSTMT_DDL;
+			break;
+
+		case T_DropforkStmt:
 			lev = LOGSTMT_DDL;
 			break;
 

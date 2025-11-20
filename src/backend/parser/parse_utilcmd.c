@@ -995,8 +995,13 @@ transformTableLikeClause(CreateStmtContext *cxt, TableLikeClause *table_like_cla
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("LIKE is not supported for creating foreign tables")));
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("trying to call create table with like from non main fork")));
+	}
 	/* Open the relation referenced by the LIKE clause */
-	relation = relation_openrv(table_like_clause->relation, AccessShareLock);
+	relation = relation_openrv(table_like_clause->relation, AccessShareLock, 0);
 
 	if (relation->rd_rel->relkind != RELKIND_RELATION &&
 		relation->rd_rel->relkind != RELKIND_VIEW &&
@@ -1188,7 +1193,13 @@ expandTableLikeClause(RangeVar *heapRel, TableLikeClause *table_like_clause)
 	if (!OidIsValid(table_like_clause->relationOid))
 		elog(ERROR, "expandTableLikeClause called on untransformed LIKE clause");
 
-	relation = relation_open(table_like_clause->relationOid, NoLock);
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("trying to call expand table with like from non main fork")));
+	}
+
+	relation = relation_open(table_like_clause->relationOid, NoLock, 0);
 
 	tupleDesc = RelationGetDescr(relation);
 	constr = tupleDesc->constr;
@@ -1196,7 +1207,7 @@ expandTableLikeClause(RangeVar *heapRel, TableLikeClause *table_like_clause)
 	/*
 	 * Open the newly-created child relation; we have lock on that too.
 	 */
-	childrel = relation_openrv(heapRel, NoLock);
+	childrel = relation_openrv(heapRel, NoLock, 0);
 
 	/*
 	 * Construct a map from the LIKE relation's attnos to the child rel's.
@@ -2805,6 +2816,11 @@ transformIndexStmt(Oid relid, IndexStmt *stmt, const char *queryString)
 	if (stmt->transformed)
 		return stmt;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+					 errmsg("can't call transform index type of stmt from non main fork")));
+	}
 	/* Set up pstate */
 	pstate = make_parsestate(NULL);
 	pstate->p_sourcetext = queryString;
@@ -2814,7 +2830,7 @@ transformIndexStmt(Oid relid, IndexStmt *stmt, const char *queryString)
 	 * to its fields without qualification.  Caller is responsible for locking
 	 * relation, but we still need to open it.
 	 */
-	rel = relation_open(relid, NoLock);
+	rel = relation_open(relid, NoLock, 0);
 	nsitem = addRangeTableEntryForRelation(pstate, rel,
 										   AccessShareLock,
 										   NULL, false, true);
@@ -2899,7 +2915,12 @@ transformStatsStmt(Oid relid, CreateStatsStmt *stmt, const char *queryString)
 	/* Nothing to do if statement already transformed. */
 	if (stmt->transformed)
 		return stmt;
-
+	
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("trying to call from non main fork for transformStatsStmt")));
+	}
 	/* Set up pstate */
 	pstate = make_parsestate(NULL);
 	pstate->p_sourcetext = queryString;
@@ -2909,7 +2930,7 @@ transformStatsStmt(Oid relid, CreateStatsStmt *stmt, const char *queryString)
 	 * to its fields without qualification.  Caller is responsible for locking
 	 * relation, but we still need to open it.
 	 */
-	rel = relation_open(relid, NoLock);
+	rel = relation_open(relid, NoLock, 0);
 	nsitem = addRangeTableEntryForRelation(pstate, rel,
 										   AccessShareLock,
 										   NULL, false, true);
@@ -3285,9 +3306,14 @@ transformAlterTableStmt(Oid relid, AlterTableStmt *stmt,
 	bool		skipValidation = true;
 	AlterTableCmd *newcmd;
 	ParseNamespaceItem *nsitem;
-
+	
+	if(MyDBForkId != 0){
+		ereport(ERROR,
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("trying to call transformAlterTableStmt from non main fork")));
+	}
 	/* Caller is responsible for locking the relation */
-	rel = relation_open(relid, NoLock);
+	rel = relation_open(relid, NoLock, 0);
 	tupdesc = RelationGetDescr(rel);
 
 	/* Set up pstate */
