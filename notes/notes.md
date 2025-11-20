@@ -50,3 +50,7 @@ do both options and then put flag later to test the difference betwene both
 
 ### lwlocks
 lwlocklist.h lwlock.c lwlock.h wait_event_names.txt
+
+### global file
+
+new file 6347 for dbfork id global file
