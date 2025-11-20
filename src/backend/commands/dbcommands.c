@@ -64,6 +64,7 @@
 #include "utils/acl.h"
 #include "utils/builtins.h"
 #include "utils/fmgroids.h"
+#include "utils/memutils.h"
 #include "utils/pg_locale.h"
 #include "utils/relmapper.h"
 #include "utils/snapmgr.h"
@@ -213,7 +214,7 @@ CreateDatabaseUsingWalLog(Oid src_dboid, Oid dst_dboid,
 		LockRelationId(&dstrelid, AccessShareLock);
 
 		/* Copy relation storage from source to the destination. */
-		CreateAndCopyRelationData(srcrlocator, dstrlocator, relinfo->permanent);
+		CreateAndCopyRelationData(srcrlocator, dstrlocator, relinfo->permanent, 0); /*database copying should be on main fork only*/
 
 		/* Release the relation locks. */
 		UnlockRelationId(&srcrelid, AccessShareLock);
@@ -275,7 +276,7 @@ ScanSourceDatabasePgClass(Oid tbid, Oid dbid, char *srcpath)
 	rlocator.dbOid = dbid;
 	rlocator.relNumber = relfilenumber;
 
-	smgr = smgropen(rlocator, INVALID_PROC_NUMBER);
+	smgr = smgropen(rlocator, INVALID_PROC_NUMBER, 0); /* pg_class should always be from the main database */
 	nblocks = smgrnblocks(smgr, MAIN_FORKNUM);
 	smgrclose(smgr);
 
@@ -296,7 +297,7 @@ ScanSourceDatabasePgClass(Oid tbid, Oid dbid, char *srcpath)
 		CHECK_FOR_INTERRUPTS();
 
 		buf = ReadBufferWithoutRelcache(rlocator, MAIN_FORKNUM, blkno,
-										RBM_NORMAL, bstrategy, true);
+										RBM_NORMAL, bstrategy, true, 0);
 
 		LockBuffer(buf, BUFFER_LOCK_SHARE);
 		page = BufferGetPage(buf);
@@ -1532,6 +1533,73 @@ createdb(ParseState *pstate, const CreatedbStmt *stmt)
 }
 
 /*
+ * CREATE DBFORK - pgforking
+ */
+int32 createfork(ParseState *pstate, const CreateforkStmt *stmt)
+{
+
+	/* Ignore metadata like relcache and just copy tables in same database directory to a new file */
+	Relation pg_class_rel;
+	TableScanDesc scan;
+	HeapTuple tuple;
+
+	/* Get a new unique fork id from the main process and store here */
+	int32 newForkId = DBForkNewId();
+	DBForkSetNewIdExpensive(newForkId);
+
+	pg_class_rel = table_open(RelationRelationId, AccessShareLock);
+	scan = table_beginscan_catalog(pg_class_rel, 0, NULL);
+
+	while((tuple = heap_getnext(scan,ForwardScanDirection)) != NULL)
+	{ /* look at vacuum.c it has an example like this */
+		Form_pg_class classForm = (Form_pg_class) GETSTRUCT(tuple);
+
+		if(classForm->relfilenode == InvalidRelFileNumber)
+			continue;
+
+		if(classForm->relkind == RELKIND_RELATION) /*filter for regular tables*/
+		{
+			Relation newRel;
+			/*Oid namespaceoid = classForm->relnamespace;
+			char *nspname = get_namespace_name(namespaceoid);
+			if(strcmp(nspname, "pg_catalog")==0 || strcmp(nspname,"information_schema")==0 || strcmp(nspname, "pg_toast")==0)
+				continue;*/
+
+			/* Create a new fork file for the relation - using md should probably change to smgr later */
+			ereport(LOG,
+					(errmsg("Found table: %s (RelFileNumber %u))", NameStr(classForm->relname), classForm->relfilenode)));
+
+			// mdcreatedbfork(classForm->relfilenode, newForkId);
+			newRel = relation_open(classForm->oid, AccessExclusiveLock, newForkId);
+			mdcreate(RelationGetSmgr(newRel), MAIN_FORKNUM, false);
+			relation_close(newRel, AccessExclusiveLock);
+
+			/*pfree(nspname);*/
+		}else if(classForm->relkind == RELKIND_INDEX)
+		{/* index relations */
+			Relation newRel;
+			ereport(LOG,
+					(errmsg("Found index: %s (RelFileNumber %u))", NameStr(classForm->relname), classForm->relfilenode)));
+
+			//mdcreatedbfork(classForm->relfilenode, newForkId);
+			/*fork initilization process*/
+			newRel = relation_open(classForm->oid, AccessExclusiveLock, newForkId);
+			mdcreate(RelationGetSmgr(newRel), MAIN_FORKNUM, false);
+			mdcreate(RelationGetSmgr(newRel), INIT_FORKNUM, false);
+			newRel->rd_indam->ambuildempty(newRel);
+			relation_close(newRel, AccessExclusiveLock);
+		}
+
+	}
+	ereport(LOG, (errmsg("Current fork id globally: %d", MyDBForkId)));
+
+	table_endscan(scan);
+	table_close(pg_class_rel, AccessShareLock);
+	return newForkId;	
+}
+
+
+/*
  * Check whether chosen encoding matches chosen locale settings.  This
  * restriction is necessary because libc's locale-specific code usually
  * fails when presented with data in an encoding it's not expecting. We
@@ -1854,6 +1922,25 @@ dropdb(const char *dbname, bool missing_ok, bool force)
 	 */
 	ForceSyncCommit();
 }
+
+/*
+ * DROP DBFORK <int> - pgforking
+ */
+void dropfork(ParseState *pstate, const DropforkStmt *stmt)
+{
+	if(stmt->forkid == 0){
+		MemoryContext oldCtxt;
+		oldCtxt = MemoryContextSwitchTo(TopMemoryContext);
+		pfree(DBForkPath);
+		DBForkPath = NULL;
+		MyDBForkId = 0;
+		MemoryContextSwitchTo(oldCtxt);
+	}else{
+		DBForkSetNewIdExpensive(stmt->forkid);
+	}
+	return;
+}
+
 
 
 /*
