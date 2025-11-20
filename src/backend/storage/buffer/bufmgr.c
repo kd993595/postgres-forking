@@ -529,10 +529,10 @@ static void FlushBuffer(BufferDesc *buf, SMgrRelation reln,
 static void FindAndDropRelationBuffers(RelFileLocator rlocator,
 									   ForkNumber forkNum,
 									   BlockNumber nForkBlock,
-									   BlockNumber firstDelBlock);
+									   BlockNumber firstDelBlock, int32 dbforkId);
 static void RelationCopyStorageUsingBuffer(RelFileLocator srclocator,
 										   RelFileLocator dstlocator,
-										   ForkNumber forkNum, bool permanent);
+										   ForkNumber forkNum, bool permanent, int32 dbforkId);
 static void AtProcExit_Buffers(int code, Datum arg);
 static void CheckForBufferLeaks(void);
 static int	rlocator_comparator(const void *p1, const void *p2);
@@ -559,7 +559,7 @@ PrefetchSharedBuffer(SMgrRelation smgr_reln,
 
 	/* create a tag so we can lookup the buffer */
 	InitBufferTag(&newTag, &smgr_reln->smgr_rlocator.locator,
-				  forkNum, blockNum);
+				  forkNum, blockNum, MyDBForkId);
 
 	/* determine its hash code and partition lock ID */
 	newHash = BufTableHashCode(&newTag);
@@ -678,7 +678,7 @@ ReadRecentBuffer(RelFileLocator rlocator, ForkNumber forkNum, BlockNumber blockN
 
 	ResourceOwnerEnlarge(CurrentResourceOwner);
 	ReservePrivateRefCountEntry();
-	InitBufferTag(&tag, &rlocator, forkNum, blockNum);
+	InitBufferTag(&tag, &rlocator, forkNum, blockNum, MyDBForkId);
 
 	if (BufferIsLocal(recent_buffer))
 	{
@@ -828,9 +828,9 @@ ReadBufferExtended(Relation reln, ForkNumber forkNum, BlockNumber blockNum,
 Buffer
 ReadBufferWithoutRelcache(RelFileLocator rlocator, ForkNumber forkNum,
 						  BlockNumber blockNum, ReadBufferMode mode,
-						  BufferAccessStrategy strategy, bool permanent)
+						  BufferAccessStrategy strategy, bool permanent, int32 dbforkId)
 {
-	SMgrRelation smgr = smgropen(rlocator, INVALID_PROC_NUMBER);
+	SMgrRelation smgr = smgropen(rlocator, INVALID_PROC_NUMBER, dbforkId);
 
 	return ReadBuffer_common(NULL, smgr,
 							 permanent ? RELPERSISTENCE_PERMANENT : RELPERSISTENCE_UNLOGGED,
@@ -1609,7 +1609,7 @@ BufferAlloc(SMgrRelation smgr, char relpersistence, ForkNumber forkNum,
 	ReservePrivateRefCountEntry();
 
 	/* create a tag so we can lookup the buffer */
-	InitBufferTag(&newTag, &smgr->smgr_rlocator.locator, forkNum, blockNum);
+	InitBufferTag(&newTag, &smgr->smgr_rlocator.locator, forkNum, blockNum, MyDBForkId);
 
 	/* determine its hash code and partition lock ID */
 	newHash = BufTableHashCode(&newTag);
@@ -2297,7 +2297,7 @@ ExtendBufferedRelShared(BufferManagerRelation bmr,
 		ResourceOwnerEnlarge(CurrentResourceOwner);
 		ReservePrivateRefCountEntry();
 
-		InitBufferTag(&tag, &bmr.smgr->smgr_rlocator.locator, fork, first_block + i);
+		InitBufferTag(&tag, &bmr.smgr->smgr_rlocator.locator, fork, first_block + i, MyDBForkId);
 		hash = BufTableHashCode(&tag);
 		partition_lock = BufMappingPartitionLock(hash);
 
@@ -2605,7 +2605,8 @@ ReleaseAndReadBuffer(Buffer buffer,
 			/* we have pin, so it's ok to examine tag without spinlock */
 			if (bufHdr->tag.blockNum == blockNum &&
 				BufTagMatchesRelFileLocator(&bufHdr->tag, &relation->rd_locator) &&
-				BufTagGetForkNum(&bufHdr->tag) == forkNum)
+				BufTagGetForkNum(&bufHdr->tag) == forkNum &&
+				BufTagGetDBForkId(&bufHdr->tag) == MyDBForkId)
 				return buffer;
 			UnpinBuffer(bufHdr);
 		}
@@ -2961,6 +2962,7 @@ BufferSync(int flags)
 			item->relNumber = BufTagGetRelNumber(&bufHdr->tag);
 			item->forkNum = BufTagGetForkNum(&bufHdr->tag);
 			item->blockNum = bufHdr->tag.blockNum;
+			item->dbforkId = bufHdr->tag.dbforkId;
 		}
 
 		UnlockBufHdr(bufHdr, buf_state);
@@ -3796,7 +3798,7 @@ FlushBuffer(BufferDesc *buf, SMgrRelation reln, IOObject io_object,
 
 	/* Find smgr relation for buffer */
 	if (reln == NULL)
-		reln = smgropen(BufTagGetRelFileLocator(&buf->tag), INVALID_PROC_NUMBER);
+		reln = smgropen(BufTagGetRelFileLocator(&buf->tag), INVALID_PROC_NUMBER, BufTagGetDBForkId(&buf->tag));
 
 	TRACE_POSTGRESQL_BUFFER_FLUSH_START(BufTagGetForkNum(&buf->tag),
 										buf->tag.blockNum,
@@ -4087,7 +4089,7 @@ DropRelationBuffers(SMgrRelation smgr_reln, ForkNumber *forkNum,
 	{
 		for (j = 0; j < nforks; j++)
 			FindAndDropRelationBuffers(rlocator.locator, forkNum[j],
-									   nForkBlock[j], firstDelBlock[j]);
+									   nForkBlock[j], firstDelBlock[j], rlocator.dbforkId);
 		return;
 	}
 
@@ -4121,7 +4123,8 @@ DropRelationBuffers(SMgrRelation smgr_reln, ForkNumber *forkNum,
 		{
 			if (BufTagMatchesRelFileLocator(&bufHdr->tag, &rlocator.locator) &&
 				BufTagGetForkNum(&bufHdr->tag) == forkNum[j] &&
-				bufHdr->tag.blockNum >= firstDelBlock[j])
+				bufHdr->tag.blockNum >= firstDelBlock[j] &&
+				BufTagGetDBForkId(&bufHdr->tag) == rlocator.dbforkId)
 			{
 				InvalidateBuffer(bufHdr);	/* releases spinlock */
 				break;
@@ -4138,6 +4141,7 @@ DropRelationBuffers(SMgrRelation smgr_reln, ForkNumber *forkNum,
  *		This function removes from the buffer pool all the pages of all
  *		forks of the specified relations.  It's equivalent to calling
  *		DropRelationBuffers once per fork per relation with firstDelBlock = 0.
+ *		TODO: check if i need to add dbforkid to this function
  *		--------------------------------------------------------------------
  */
 void
@@ -4227,7 +4231,7 @@ DropRelationsAllBuffers(SMgrRelation *smgr_reln, int nlocators)
 
 				/* drop all the buffers for a particular relation fork */
 				FindAndDropRelationBuffers(rels[i]->smgr_rlocator.locator,
-										   j, block[i][j], 0);
+										   j, block[i][j], 0, rels[i]->smgr_rlocator.dbforkId);
 			}
 		}
 
@@ -4314,7 +4318,7 @@ DropRelationsAllBuffers(SMgrRelation *smgr_reln, int nlocators)
 static void
 FindAndDropRelationBuffers(RelFileLocator rlocator, ForkNumber forkNum,
 						   BlockNumber nForkBlock,
-						   BlockNumber firstDelBlock)
+						   BlockNumber firstDelBlock, int32 dbforkId)
 {
 	BlockNumber curBlock;
 
@@ -4328,7 +4332,7 @@ FindAndDropRelationBuffers(RelFileLocator rlocator, ForkNumber forkNum,
 		uint32		buf_state;
 
 		/* create a tag so we can lookup the buffer */
-		InitBufferTag(&bufTag, &rlocator, forkNum, curBlock);
+		InitBufferTag(&bufTag, &rlocator, forkNum, curBlock, MyDBForkId);
 
 		/* determine its hash code and partition lock ID */
 		bufHash = BufTableHashCode(&bufTag);
@@ -4354,7 +4358,8 @@ FindAndDropRelationBuffers(RelFileLocator rlocator, ForkNumber forkNum,
 
 		if (BufTagMatchesRelFileLocator(&bufHdr->tag, &rlocator) &&
 			BufTagGetForkNum(&bufHdr->tag) == forkNum &&
-			bufHdr->tag.blockNum >= firstDelBlock)
+			bufHdr->tag.blockNum >= firstDelBlock && 
+			BufTagGetDBForkId(&bufHdr->tag) == dbforkId)
 			InvalidateBuffer(bufHdr);	/* releases spinlock */
 		else
 			UnlockBufHdr(bufHdr, buf_state);
@@ -4679,7 +4684,7 @@ FlushRelationsAllBuffers(SMgrRelation *smgrs, int nrels)
 static void
 RelationCopyStorageUsingBuffer(RelFileLocator srclocator,
 							   RelFileLocator dstlocator,
-							   ForkNumber forkNum, bool permanent)
+							   ForkNumber forkNum, bool permanent, int32 dbforkId)
 {
 	Buffer		srcBuf;
 	Buffer		dstBuf;
@@ -4700,7 +4705,7 @@ RelationCopyStorageUsingBuffer(RelFileLocator srclocator,
 	use_wal = XLogIsNeeded() && (permanent || forkNum == INIT_FORKNUM);
 
 	/* Get number of blocks in the source relation. */
-	nblocks = smgrnblocks(smgropen(srclocator, INVALID_PROC_NUMBER),
+	nblocks = smgrnblocks(smgropen(srclocator, INVALID_PROC_NUMBER, dbforkId),
 						  forkNum);
 
 	/* Nothing to copy; just return. */
@@ -4712,7 +4717,7 @@ RelationCopyStorageUsingBuffer(RelFileLocator srclocator,
 	 * relation before starting to copy block by block.
 	 */
 	memset(buf.data, 0, BLCKSZ);
-	smgrextend(smgropen(dstlocator, INVALID_PROC_NUMBER), forkNum, nblocks - 1,
+	smgrextend(smgropen(dstlocator, INVALID_PROC_NUMBER, dbforkId), forkNum, nblocks - 1,
 			   buf.data, true);
 
 	/* This is a bulk operation, so use buffer access strategies. */
@@ -4727,13 +4732,13 @@ RelationCopyStorageUsingBuffer(RelFileLocator srclocator,
 		/* Read block from source relation. */
 		srcBuf = ReadBufferWithoutRelcache(srclocator, forkNum, blkno,
 										   RBM_NORMAL, bstrategy_src,
-										   permanent);
+										   permanent, dbforkId);
 		LockBuffer(srcBuf, BUFFER_LOCK_SHARE);
 		srcPage = BufferGetPage(srcBuf);
 
 		dstBuf = ReadBufferWithoutRelcache(dstlocator, forkNum, blkno,
 										   RBM_ZERO_AND_LOCK, bstrategy_dst,
-										   permanent);
+										   permanent, dbforkId);
 		dstPage = BufferGetPage(dstBuf);
 
 		START_CRIT_SECTION();
@@ -4769,7 +4774,7 @@ RelationCopyStorageUsingBuffer(RelFileLocator srclocator,
  */
 void
 CreateAndCopyRelationData(RelFileLocator src_rlocator,
-						  RelFileLocator dst_rlocator, bool permanent)
+						  RelFileLocator dst_rlocator, bool permanent, int32 dbforkId)
 {
 	char		relpersistence;
 	SMgrRelation src_rel;
@@ -4779,8 +4784,8 @@ CreateAndCopyRelationData(RelFileLocator src_rlocator,
 	relpersistence = permanent ?
 		RELPERSISTENCE_PERMANENT : RELPERSISTENCE_UNLOGGED;
 
-	src_rel = smgropen(src_rlocator, INVALID_PROC_NUMBER);
-	dst_rel = smgropen(dst_rlocator, INVALID_PROC_NUMBER);
+	src_rel = smgropen(src_rlocator, INVALID_PROC_NUMBER, dbforkId);
+	dst_rel = smgropen(dst_rlocator, INVALID_PROC_NUMBER, dbforkId);
 
 	/*
 	 * Create and copy all forks of the relation.  During create database we
@@ -4792,7 +4797,7 @@ CreateAndCopyRelationData(RelFileLocator src_rlocator,
 
 	/* copy main fork. */
 	RelationCopyStorageUsingBuffer(src_rlocator, dst_rlocator, MAIN_FORKNUM,
-								   permanent);
+								   permanent, dbforkId);
 
 	/* copy those extra forks that exist */
 	for (ForkNumber forkNum = MAIN_FORKNUM + 1;
@@ -4811,7 +4816,7 @@ CreateAndCopyRelationData(RelFileLocator src_rlocator,
 
 			/* Copy a fork's data, block by block. */
 			RelationCopyStorageUsingBuffer(src_rlocator, dst_rlocator, forkNum,
-										   permanent);
+										   permanent, dbforkId);
 		}
 	}
 }
@@ -5810,6 +5815,11 @@ buffertag_comparator(const BufferTag *ba, const BufferTag *bb)
 	if (ba->blockNum > bb->blockNum)
 		return 1;
 
+	if(ba->dbforkId < bb->dbforkId)
+		return -1;
+	if(ba->dbforkId > bb->dbforkId)
+		return 1;
+
 	return 0;
 }
 
@@ -5836,6 +5846,11 @@ ckpt_buforder_comparator(const CkptSortItem *a, const CkptSortItem *b)
 	else if (a->forkNum < b->forkNum)
 		return -1;
 	else if (a->forkNum > b->forkNum)
+		return 1;
+	/* compare dbfork id */
+	else if(a->dbforkId < b->dbforkId)
+		return -1;
+	else if(a->dbforkId > b->dbforkId)
 		return 1;
 	/* compare block number */
 	else if (a->blockNum < b->blockNum)
@@ -5997,7 +6012,7 @@ IssuePendingWritebacks(WritebackContext *wb_context, IOContext io_context)
 		i += ahead;
 
 		/* and finally tell the kernel to write the data to storage */
-		reln = smgropen(currlocator, INVALID_PROC_NUMBER);
+		reln = smgropen(currlocator, INVALID_PROC_NUMBER, BufTagGetDBForkId(&tag));
 		smgrwriteback(reln, BufTagGetForkNum(&tag), tag.blockNum, nblocks);
 	}
 

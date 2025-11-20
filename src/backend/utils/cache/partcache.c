@@ -303,7 +303,7 @@ get_partition_qual_relid(Oid relid)
 	/* Do the work only if this relation exists and is a partition. */
 	if (get_rel_relispartition(relid))
 	{
-		Relation	rel = relation_open(relid, AccessShareLock);
+		Relation	rel = relation_open(relid, AccessShareLock, 0); /*just care abt main fork metdata*/
 		List	   *and_args;
 
 		and_args = generate_partition_qual(rel);
@@ -359,7 +359,7 @@ generate_partition_qual(Relation rel)
 	 * descriptor that includes it.
 	 */
 	parentrelid = get_partition_parent(RelationGetRelid(rel), true);
-	parent = relation_open(parentrelid, AccessShareLock);
+	parent = relation_open(parentrelid, AccessShareLock, 0);/*just care abt main fork metadata*/
 
 	/* Get pg_class.relpartbound */
 	tuple = SearchSysCache1(RELOID,

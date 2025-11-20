@@ -124,10 +124,12 @@ static const FormData_pg_attribute Desc_pg_subscription[Natts_pg_subscription] =
  *
  *		We used to index the cache by both name and OID, but now there
  *		is only an index by OID.
+ *
+ *		Index is now by OID and dbfork id but most information is copied between relations of same OID
  */
 typedef struct relidcacheent
 {
-	Oid			reloid;
+	Oid 		reloid;
 	Relation	reldesc;
 } RelIdCacheEnt;
 
@@ -299,7 +301,7 @@ static HeapTuple ScanPgRelation(Oid targetRelId, bool indexOK, bool force_non_hi
 static Relation AllocateRelationDesc(Form_pg_class relp);
 static void RelationParseRelOptions(Relation relation, HeapTuple tuple);
 static void RelationBuildTupleDesc(Relation relation);
-static Relation RelationBuildDesc(Oid targetRelId, bool insertIt);
+static Relation RelationBuildDesc(Oid targetRelId, int32 dbforkId, bool insertIt);
 static void RelationInitPhysicalAddr(Relation relation);
 static void load_critical_index(Oid indexoid, Oid heapoid);
 static TupleDesc GetPgClassDescriptor(void);
@@ -1037,7 +1039,7 @@ equalRSDesc(RowSecurityDesc *rsdesc1, RowSecurityDesc *rsdesc2)
  *		Any other error is reported via elog.
  */
 static Relation
-RelationBuildDesc(Oid targetRelId, bool insertIt)
+RelationBuildDesc(Oid targetRelId, int32 dbforkId, bool insertIt)
 {
 	int			in_progress_offset;
 	Relation	relation;
@@ -1258,6 +1260,8 @@ retry:
 
 	/* make sure relation is marked as having no open file yet */
 	relation->rd_smgr = NULL;
+	/* set dbforkId to given value */
+	relation->rd_dbforkId = dbforkId;
 
 	/*
 	 * now we can free the memory allocated for pg_class_tuple
@@ -2060,7 +2064,7 @@ formrdesc(const char *relationName, Oid relationReltype,
  *		that happens by calling RelationClose().)
  */
 Relation
-RelationIdGetRelation(Oid relationId)
+RelationIdGetRelation(Oid relationId, int32 dbforkId)
 {
 	Relation	rd;
 
@@ -2106,6 +2110,12 @@ RelationIdGetRelation(Oid relationId)
 			Assert(rd->rd_isvalid ||
 				   (rd->rd_isnailed && !criticalRelcachesBuilt));
 		}
+
+		/*change relation smgr if incorrect fork*/
+		if(rd->rd_dbforkId != dbforkId){
+			RelationCloseSmgr(rd);
+			RelationGetSmgr(rd);
+		}
 		return rd;
 	}
 
@@ -2113,7 +2123,7 @@ RelationIdGetRelation(Oid relationId)
 	 * no reldesc in the cache, so have RelationBuildDesc() build one and add
 	 * it.
 	 */
-	rd = RelationBuildDesc(relationId, true);
+	rd = RelationBuildDesc(relationId, dbforkId, true);
 	if (RelationIsValid(rd))
 		RelationIncrementReferenceCount(rd);
 	return rd;
@@ -2695,7 +2705,7 @@ RelationClearRelation(Relation relation, bool rebuild)
 		bool		keep_partkey;
 
 		/* Build temporary entry, but don't link it into hashtable */
-		newrel = RelationBuildDesc(save_relid, false);
+		newrel = RelationBuildDesc(save_relid, relation->rd_dbforkId, false);
 
 		/*
 		 * Between here and the end of the swap, don't add code that does or
@@ -3196,7 +3206,7 @@ AssertPendingSyncs_RelationCache(void)
 			LOCKTAG_RELATION)
 			continue;
 		relid = ObjectIdGetDatum(locallock->tag.lock.locktag_field2);
-		r = RelationIdGetRelation(relid);
+		r = RelationIdGetRelation(relid, MyDBForkId); /* use the current dbforkid for the transaction to determine this check later if right?*/
 		if (!RelationIsValid(r))
 			continue;
 		if (nrels >= maxrels)
@@ -3844,7 +3854,7 @@ RelationSetNewRelfilenumber(Relation relation, char persistence)
 		 * fails at this stage, the new cluster will need to be recreated
 		 * anyway.
 		 */
-		srel = smgropen(relation->rd_locator, relation->rd_backend);
+		srel = smgropen(relation->rd_locator, relation->rd_backend, relation->rd_dbforkId);
 		smgrdounlinkall(&srel, 1, false);
 		smgrclose(srel);
 	}
@@ -4396,7 +4406,7 @@ load_critical_index(Oid indexoid, Oid heapoid)
 	 */
 	LockRelationOid(heapoid, AccessShareLock);
 	LockRelationOid(indexoid, AccessShareLock);
-	ird = RelationBuildDesc(indexoid, true);
+	ird = RelationBuildDesc(indexoid, 0, true); /* system index should be part of main fork make sure double check */
 	if (ird == NULL)
 		ereport(PANIC,
 				errcode(ERRCODE_DATA_CORRUPTED),
@@ -5545,7 +5555,7 @@ RelationGetIdentityKeyBitmap(Relation relation)
 		return NULL;
 
 	/* Look up the description for the replica identity index */
-	indexDesc = RelationIdGetRelation(replidindex);
+	indexDesc = RelationIdGetRelation(replidindex, 0); /*used during logical replication so assume main branch*/
 
 	if (!RelationIsValid(indexDesc))
 		elog(ERROR, "could not open relation with OID %u",

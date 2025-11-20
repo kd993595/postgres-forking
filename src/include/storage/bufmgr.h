@@ -212,7 +212,7 @@ extern Buffer ReadBufferExtended(Relation reln, ForkNumber forkNum,
 extern Buffer ReadBufferWithoutRelcache(RelFileLocator rlocator,
 										ForkNumber forkNum, BlockNumber blockNum,
 										ReadBufferMode mode, BufferAccessStrategy strategy,
-										bool permanent);
+										bool permanent, int32 dbforkId);
 
 extern bool StartReadBuffer(ReadBuffersOperation *operation,
 							Buffer *buffer,
@@ -265,7 +265,7 @@ extern void FlushRelationBuffers(Relation rel);
 extern void FlushRelationsAllBuffers(struct SMgrRelationData **smgrs, int nrels);
 extern void CreateAndCopyRelationData(RelFileLocator src_rlocator,
 									  RelFileLocator dst_rlocator,
-									  bool permanent);
+									  bool permanent, int32 dbforkId);
 extern void FlushDatabaseBuffers(Oid dbid);
 extern void DropRelationBuffers(struct SMgrRelationData *smgr_reln,
 								ForkNumber *forkNum,

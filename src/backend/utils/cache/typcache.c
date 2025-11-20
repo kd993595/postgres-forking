@@ -884,7 +884,7 @@ load_typcache_tupdesc(TypeCacheEntry *typentry)
 	if (!OidIsValid(typentry->typrelid))	/* should not happen */
 		elog(ERROR, "invalid typrelid for composite type %u",
 			 typentry->type_id);
-	rel = relation_open(typentry->typrelid, AccessShareLock);
+	rel = relation_open(typentry->typrelid, AccessShareLock, 0); /*for tupdesc really only care from main fork*/
 	Assert(rel->rd_rel->reltype == typentry->type_id);
 
 	/*
