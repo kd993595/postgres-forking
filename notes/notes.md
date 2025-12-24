@@ -54,3 +54,8 @@ lwlocklist.h lwlock.c lwlock.h wait_event_names.txt
 ### global file
 
 new file 6347 for dbfork id global file
+
+
+### why forks must not copy over catalog/system tables
+tables like pg_namespace, accessmethodrelationid, or pg_type should remain one table while others like relationrelationid for pg_class shoudl be multiple so each one needs
+to be given its custom path for what a fork looks like since some of them are not about the data but just general stuff like authuser stuff is independent of any fork or data.
