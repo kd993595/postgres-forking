@@ -324,8 +324,9 @@ initscan(HeapScanDesc scan, ScanKey key, bool keep_startblock)
 		bpscan = (ParallelBlockTableScanDesc) scan->rs_base.rs_parallel;
 		scan->rs_nblocks = bpscan->phs_nblocks;
 	}
-	else
+	else{
 		scan->rs_nblocks = RelationGetNumberOfBlocks(scan->rs_base.rs_rd);
+	}
 
 	/*
 	 * If the table is large relative to NBuffers, use a bulk-read access
@@ -398,7 +399,7 @@ initscan(HeapScanDesc scan, ScanKey key, bool keep_startblock)
 	ItemPointerSetInvalid(&scan->rs_ctup.t_self);
 	scan->rs_cbuf = InvalidBuffer;
 	scan->rs_cblock = InvalidBlockNumber;
-	scan->rs_dbfork = MyDBForkId;
+	scan->rs_dbfork = scan->rs_base.rs_rd->rd_dbforkId;
 
 	/*
 	 * Initialize to ForwardScanDirection because it is most common and
@@ -629,41 +630,62 @@ heap_fetch_next_buffer(HeapScanDesc scan, ScanDirection dir)
 continue_read_stream:
 	scan->rs_cbuf = read_stream_next_buffer(scan->rs_read_stream, NULL);
 
-	/*need to set start block, new smgr for the relation and nblocks for total blocks in relation*/
-	if(scan->rs_dbfork != 0 && DBForkPath != NULL && !BufferIsValid(scan->rs_cbuf))
-	{
-		bool isSet = false;
-		int i = 1;
-		int numForks = (int)DBForkPath[0];
-		for(;i<numForks;i++){
-			if(DBForkPath[i] == scan->rs_dbfork){
-				if(i == 1){
-					scan->rs_dbfork = 0;
-				}else{
-					scan->rs_dbfork = DBForkPath[i-1];
+	if(scan->rs_dbfork != 0)
+	{ /*need to set start block, new smgr for the relation and nblocks for total blocks in relation*/
+		int32 current_rel_fork = scan->rs_base.rs_rd->rd_dbforkId;
+		if(current_rel_fork != 0 && DBForkPath != NULL && !BufferIsValid(scan->rs_cbuf))
+		{
+			ReadStreamBlockNumberCB cb;
+			int32 newfork;
+			bool isSet = false;
+			int i = 1;
+			int numForks = (int)DBForkPath[0];
+			for(;i<numForks;i++){
+				if(DBForkPath[i] == current_rel_fork){
+					if(i == 1){
+						newfork = 0;
+					}else{
+						newfork = DBForkPath[i-1];
+					}
+					isSet = true;
+					break;
 				}
-				isSet = true;
 			}
-		}
-		if(!isSet){/*whatever reason fork not found just switch to main and ignore other logic*/
-			scan->rs_dbfork = 0;
-		}else{
-			smgrunpin(scan->rs_base.rs_rd->rd_smgr);
-			scan->rs_base.rs_rd->rd_smgr = NULL;
+			if(!isSet){/*whatever reason fork not found just switch to main and ignore other logic*/
+				RelationCloseSmgr(scan->rs_base.rs_rd);
+				scan->rs_base.rs_rd->rd_dbforkId = 0;
+				scan->rs_base.rs_rd->rd_smgr = RelationGetSmgr(scan->rs_base.rs_rd);
+			}else{
+				RelationCloseSmgr(scan->rs_base.rs_rd);
+				//smgrunpin(scan->rs_base.rs_rd->rd_smgr); /*maybe use RelationCloseSmgr instead*/
+				//scan->rs_base.rs_rd->rd_smgr = NULL;
+				scan->rs_base.rs_rd->rd_dbforkId = newfork;
+				scan->rs_base.rs_rd->rd_smgr = RelationGetSmgr(scan->rs_base.rs_rd);
+			}
+			// scan->rs_nblocks = RelationGetNumberOfBlocks(scan->rs_base.rs_rd);
+			// scan->rs_startblock = 0; /*assume they all start a 0 for heapscan maybe change later for more accurate*/
+			// scan->rs_numblocks = InvalidBlockNumber;
+			/*must initialize read_stream here again since otherwise buffers invalid*/
+			if (scan->rs_base.rs_parallel)
+				cb = heap_scan_stream_read_next_parallel;
+			else
+				cb = heap_scan_stream_read_next_serial;
+
+			scan->rs_prefetch_block = scan->rs_cblock;
+			read_stream_reset(scan->rs_read_stream);
+			scan->rs_dir = dir;
+			initscan(scan, NULL, false);
+			scan->rs_read_stream = read_stream_begin_relation(READ_STREAM_SEQUENTIAL, scan->rs_strategy, scan->rs_base.rs_rd, MAIN_FORKNUM, cb, scan, 0);
+			goto continue_read_stream; /*wanna do goto since the parent fork may have no data in this relation so we keep moving up*/
+		}else if(current_rel_fork == 0 && !BufferIsValid(scan->rs_cbuf))
+		{ // means we reached end of main branch data so we want to reset relation to what it was before all this hacking, probably don't want to do this since rescan should take care of it 
+			RelationCloseSmgr(scan->rs_base.rs_rd);
+			//smgrunpin(scan->rs_base.rs_rd->rd_smgr);
+			//scan->rs_base.rs_rd->rd_smgr = NULL;
 			scan->rs_base.rs_rd->rd_dbforkId = scan->rs_dbfork;
 			scan->rs_base.rs_rd->rd_smgr = RelationGetSmgr(scan->rs_base.rs_rd);
-			
-			scan->rs_nblocks = RelationGetNumberOfBlocks(scan->rs_base.rs_rd);
-			scan->rs_startblock = 0; /*assume they all start a 0 for heapscan maybe change later for more accurate*/
-			scan->rs_numblocks = InvalidBlockNumber;
-			goto continue_read_stream; /*wanna do goto since the parent fork may have no data in this relation so we keep moving up*/
+			scan->rs_dbfork = 0; /*want to signal end of heapscan by setting to 0*/
 		}
-	}else if(scan->rs_dbfork == 0 && !BufferIsValid(scan->rs_cbuf))
-	{ /* means we reached end of main branch data so we want to reset relation to what it was before all this hacking */
-		smgrunpin(scan->rs_base.rs_rd->rd_smgr);
-		scan->rs_base.rs_rd->rd_smgr = NULL;
-		scan->rs_base.rs_rd->rd_dbforkId = MyDBForkId;
-		scan->rs_base.rs_rd->rd_smgr = RelationGetSmgr(scan->rs_base.rs_rd);
 	}
 
 	if (BufferIsValid(scan->rs_cbuf))
@@ -896,6 +918,7 @@ heapgettup(HeapScanDesc scan,
 	OffsetNumber lineoff;
 	int			linesleft;
 
+
 	if (likely(scan->rs_inited))
 	{
 		/* continue from previously returned page/tuple */
@@ -1005,6 +1028,7 @@ heapgettup_pagemode(HeapScanDesc scan,
 	Page		page;
 	int			lineindex;
 	int			linesleft;
+
 
 	if (likely(scan->rs_inited))
 	{
@@ -2117,7 +2141,7 @@ heap_insert(Relation relation, HeapTuple tup, CommandId cid,
 
 	MarkBufferDirty(buffer);
 
-	/* XLOG stuff */
+	/* XLOG stuff TODO: modify wal to safely have dbforkid */
 	if (RelationNeedsWAL(relation))
 	{
 		xl_heap_insert xlrec;
@@ -4221,7 +4245,7 @@ check_lock_if_inplace_updateable_rel(Relation relation,
 
 				if (classForm->relkind == RELKIND_INDEX)
 				{
-					Relation	irel = index_open(relid, AccessShareLock);
+					Relation	irel = index_open(relid, AccessShareLock, 0); /*seems to be about catalog files so keep 0*/
 
 					SET_LOCKTAG_RELATION(tag, dbid, irel->rd_index->indrelid);
 					index_close(irel, AccessShareLock);
@@ -4275,7 +4299,7 @@ check_inplace_rel_lock(HeapTuple oldtup)
 
 	if (classForm->relkind == RELKIND_INDEX)
 	{
-		Relation	irel = index_open(relid, AccessShareLock);
+		Relation	irel = index_open(relid, AccessShareLock, 0);
 
 		SET_LOCKTAG_RELATION(tag, dbid, irel->rd_index->indrelid);
 		index_close(irel, AccessShareLock);
