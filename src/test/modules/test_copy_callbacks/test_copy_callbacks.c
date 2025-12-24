@@ -33,7 +33,7 @@ PG_FUNCTION_INFO_V1(test_copy_to_callback);
 Datum
 test_copy_to_callback(PG_FUNCTION_ARGS)
 {
-	Relation	rel = table_open(PG_GETARG_OID(0), AccessShareLock);
+	Relation	rel = table_open(PG_GETARG_OID(0), AccessShareLock, 0);
 	CopyToState cstate;
 	int64		processed;
 

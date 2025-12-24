@@ -48,7 +48,7 @@ removable_cutoff(PG_FUNCTION_ARGS)
 
 	/* could take other relkinds callee takes, but we've not yet needed it */
 	if (!PG_ARGISNULL(0))
-		rel = table_open(PG_GETARG_OID(0), AccessShareLock);
+		rel = table_open(PG_GETARG_OID(0), AccessShareLock, 0);
 
 	if (!rel->rd_rel->relisshared && autovacuum_start_daemon)
 		elog(WARNING,
