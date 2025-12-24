@@ -646,7 +646,7 @@ AggregateCreate(const char *aggName,
 	/*
 	 * Okay to create the pg_aggregate entry.
 	 */
-	aggdesc = table_open(AggregateRelationId, RowExclusiveLock);
+	aggdesc = table_open(AggregateRelationId, RowExclusiveLock, 0);
 	tupDesc = aggdesc->rd_att;
 
 	/* initialize nulls and values */

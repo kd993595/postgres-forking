@@ -292,7 +292,7 @@ CheckIndexCompatible(Oid oldId,
 		return false;
 
 	/* For polymorphic opcintype, column type changes break compatibility. */
-	irel = index_open(oldId, AccessShareLock);	/* caller probably has a lock */
+	irel = index_open(oldId, AccessShareLock, 0);	/* caller probably has a lock */
 	for (i = 0; i < old_natts; i++)
 	{
 		if (IsPolymorphicType(get_opclass_input_type(opclassIds[i])) &&
@@ -676,7 +676,7 @@ DefineIndex(Oid tableId,
 	 * functions will need to be updated, too.
 	 */
 	lockmode = concurrent ? ShareUpdateExclusiveLock : ShareLock;
-	rel = table_open(tableId, lockmode);
+	rel = table_open(tableId, lockmode, 0); /*indexes should only be made in main database should probably check this higher up*/
 
 	/*
 	 * Switch to the table owner's userid, so that any index functions are run
@@ -1307,7 +1307,7 @@ DefineIndex(Oid tableId,
 			 * IndexInfo that will match those for child indexes is to build
 			 * it the same way, using BuildIndexInfo().
 			 */
-			parentIndex = index_open(indexRelationId, lockmode);
+			parentIndex = index_open(indexRelationId, lockmode, 0);
 			indexInfo = BuildIndexInfo(parentIndex);
 
 			parentDesc = RelationGetDescr(rel);
@@ -1332,7 +1332,7 @@ DefineIndex(Oid tableId,
 				AttrMap    *attmap;
 				bool		found = false;
 
-				childrel = table_open(childRelid, lockmode);
+				childrel = table_open(childRelid, lockmode, 0);
 
 				GetUserIdAndSecContext(&child_save_userid,
 									   &child_save_sec_context);
@@ -1379,7 +1379,7 @@ DefineIndex(Oid tableId,
 					if (has_superclass(cldidxid))
 						continue;
 
-					cldidx = index_open(cldidxid, lockmode);
+					cldidx = index_open(cldidxid, lockmode, 0);
 					cldIdxInfo = BuildIndexInfo(cldidx);
 					if (CompareIndexInfo(cldIdxInfo, indexInfo,
 										 cldidx->rd_indcollation,
@@ -1508,7 +1508,7 @@ DefineIndex(Oid tableId,
 			 */
 			if (invalidate_parent)
 			{
-				Relation	pg_index = table_open(IndexRelationId, RowExclusiveLock);
+				Relation	pg_index = table_open(IndexRelationId, RowExclusiveLock, 0);
 				HeapTuple	tup,
 							newtup;
 
@@ -2304,7 +2304,7 @@ GetDefaultOpClass(Oid type_id, Oid am_id)
 	 * we need a tiebreaker.)  If we find more than one exact match, then
 	 * someone put bogus entries in pg_opclass.
 	 */
-	rel = table_open(OperatorClassRelationId, AccessShareLock);
+	rel = table_open(OperatorClassRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey[0],
 				Anum_pg_opclass_opcmethod,
@@ -3034,7 +3034,7 @@ ReindexMultipleTables(const ReindexStmt *stmt, const ReindexParams *params)
 	 * We only consider plain relations and materialized views here (toast
 	 * rels will be processed indirectly by reindex_relation).
 	 */
-	relationRelation = table_open(RelationRelationId, AccessShareLock);
+	relationRelation = table_open(RelationRelationId, AccessShareLock, 0);
 	scan = table_beginscan_catalog(relationRelation, num_keys, scan_keys);
 	while ((tuple = heap_getnext(scan, ForwardScanDirection)) != NULL)
 	{
@@ -3430,6 +3430,10 @@ ReindexRelationConcurrently(const ReindexStmt *stmt, Oid relationOid, const Rein
 	};
 	int64		progress_vals[4];
 
+	if(MyDBForkId != 0){
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot reindex system catalogs concurrently for mydbforkid != 0")));
+	}
+
 	/*
 	 * Create a memory context that will survive forced transaction commits we
 	 * do below.  Since it is a child of PortalContext, it will go away
@@ -3488,14 +3492,14 @@ ReindexRelationConcurrently(const ReindexStmt *stmt, Oid relationOid, const Rein
 				if ((params->options & REINDEXOPT_MISSING_OK) != 0)
 				{
 					heapRelation = try_table_open(relationOid,
-												  ShareUpdateExclusiveLock);
+												  ShareUpdateExclusiveLock, 0);
 					/* leave if relation does not exist */
 					if (!heapRelation)
 						break;
 				}
 				else
 					heapRelation = table_open(relationOid,
-											  ShareUpdateExclusiveLock);
+											  ShareUpdateExclusiveLock, 0);
 
 				if (OidIsValid(params->tablespaceOid) &&
 					IsSystemRelation(heapRelation))
@@ -3509,7 +3513,7 @@ ReindexRelationConcurrently(const ReindexStmt *stmt, Oid relationOid, const Rein
 				{
 					Oid			cellOid = lfirst_oid(lc);
 					Relation	indexRelation = index_open(cellOid,
-														   ShareUpdateExclusiveLock);
+														   ShareUpdateExclusiveLock, 0);
 
 					if (!indexRelation->rd_index->indisvalid)
 						ereport(WARNING,
@@ -3548,7 +3552,7 @@ ReindexRelationConcurrently(const ReindexStmt *stmt, Oid relationOid, const Rein
 				{
 					Oid			toastOid = heapRelation->rd_rel->reltoastrelid;
 					Relation	toastRelation = table_open(toastOid,
-														   ShareUpdateExclusiveLock);
+														   ShareUpdateExclusiveLock, 0);
 
 					/* Save the list of relation OIDs in private context */
 					oldcontext = MemoryContextSwitchTo(private_context);
@@ -3562,7 +3566,7 @@ ReindexRelationConcurrently(const ReindexStmt *stmt, Oid relationOid, const Rein
 					{
 						Oid			cellOid = lfirst_oid(lc2);
 						Relation	indexRelation = index_open(cellOid,
-															   ShareUpdateExclusiveLock);
+															   ShareUpdateExclusiveLock, 0);
 
 						if (!indexRelation->rd_index->indisvalid)
 							ereport(WARNING,
@@ -3634,14 +3638,14 @@ ReindexRelationConcurrently(const ReindexStmt *stmt, Oid relationOid, const Rein
 				if ((params->options & REINDEXOPT_MISSING_OK) != 0)
 				{
 					heapRelation = try_table_open(heapId,
-												  ShareUpdateExclusiveLock);
+												  ShareUpdateExclusiveLock, 0);
 					/* leave if relation does not exist */
 					if (!heapRelation)
 						break;
 				}
 				else
 					heapRelation = table_open(heapId,
-											  ShareUpdateExclusiveLock);
+											  ShareUpdateExclusiveLock, 0);
 
 				if (OidIsValid(params->tablespaceOid) &&
 					IsSystemRelation(heapRelation))
@@ -3740,9 +3744,9 @@ ReindexRelationConcurrently(const ReindexStmt *stmt, Oid relationOid, const Rein
 		LockRelId  *lockrelid;
 		Oid			tablespaceid;
 
-		indexRel = index_open(idx->indexId, ShareUpdateExclusiveLock);
+		indexRel = index_open(idx->indexId, ShareUpdateExclusiveLock, 0);
 		heapRel = table_open(indexRel->rd_index->indrelid,
-							 ShareUpdateExclusiveLock);
+							 ShareUpdateExclusiveLock, 0);
 
 		/*
 		 * Switch to the table owner's userid, so that any index functions are
@@ -3805,7 +3809,7 @@ ReindexRelationConcurrently(const ReindexStmt *stmt, Oid relationOid, const Rein
 		 * Now open the relation of the new index, a session-level lock is
 		 * also needed on it.
 		 */
-		newIndexRel = index_open(newIndexId, ShareUpdateExclusiveLock);
+		newIndexRel = index_open(newIndexId, ShareUpdateExclusiveLock, 0);
 
 		/*
 		 * Save the list of OIDs and locks in private context
@@ -3867,7 +3871,7 @@ ReindexRelationConcurrently(const ReindexStmt *stmt, Oid relationOid, const Rein
 	 */
 	foreach(lc, heapRelationIds)
 	{
-		Relation	heapRelation = table_open(lfirst_oid(lc), ShareUpdateExclusiveLock);
+		Relation	heapRelation = table_open(lfirst_oid(lc), ShareUpdateExclusiveLock, 0);
 		LockRelId  *lockrelid;
 		LOCKTAG    *heaplocktag;
 
@@ -4403,7 +4407,7 @@ update_relispartition(Oid relationId, bool newval)
 	Relation	classRel;
 	ItemPointerData otid;
 
-	classRel = table_open(RelationRelationId, RowExclusiveLock);
+	classRel = table_open(RelationRelationId, RowExclusiveLock, 0);
 	tup = SearchSysCacheLockedCopy1(RELOID, ObjectIdGetDatum(relationId));
 	if (!HeapTupleIsValid(tup))
 		elog(ERROR, "cache lookup failed for relation %u", relationId);

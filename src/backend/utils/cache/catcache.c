@@ -1092,7 +1092,7 @@ CatalogCacheInitializeCache(CatCache *cache)
 
 	CatalogCacheInitializeCache_DEBUG1;
 
-	relation = table_open(cache->cc_reloid, AccessShareLock);
+	relation = table_open(cache->cc_reloid, AccessShareLock, 0); /*probably 0 for catalog caches espcially in initialization*/
 
 	/*
 	 * switch to the cache context so our allocations do not vanish at the end
@@ -1210,7 +1210,7 @@ InitCatCachePhase2(CatCache *cache, bool touch_index)
 		 * catalog and index they'll be doing it in that order.
 		 */
 		LockRelationOid(cache->cc_reloid, AccessShareLock);
-		idesc = index_open(cache->cc_indexoid, AccessShareLock);
+		idesc = index_open(cache->cc_indexoid, AccessShareLock, 0);
 
 		/*
 		 * While we've got the index open, let's check that it's unique (and
@@ -1401,6 +1401,8 @@ SearchCatCacheInternal(CatCache *cache,
 	hashValue = CatalogCacheComputeHashValue(cache, nkeys, v1, v2, v3, v4);
 	hashIndex = HASH_INDEX(hashValue, cache->cc_nbuckets);
 
+	//elog(LOG, "search catcache internal");
+
 	/*
 	 * scan the hash bucket until we find a match or exhaust our tuples
 	 *
@@ -1460,7 +1462,8 @@ SearchCatCacheInternal(CatCache *cache,
 			return NULL;
 		}
 	}
-
+	
+	//elog(LOG, "moving to catcachemiss");
 	return SearchCatCacheMiss(cache, nkeys, hashValue, hashIndex, v1, v2, v3, v4);
 }
 
@@ -1516,7 +1519,7 @@ SearchCatCacheMiss(CatCache *cache,
 	 * not want to return already-stale catcache entries, so we loop around
 	 * and do the table scan again if that happens.
 	 */
-	relation = table_open(cache->cc_reloid, AccessShareLock);
+	relation = table_open(cache->cc_reloid, AccessShareLock, 0);
 
 	do
 	{
@@ -1854,7 +1857,7 @@ SearchCatCacheList(CatCache *cache,
 		SysScanDesc scandesc;
 		bool		first_iter = true;
 
-		relation = table_open(cache->cc_reloid, AccessShareLock);
+		relation = table_open(cache->cc_reloid, AccessShareLock, 0);
 
 		/*
 		 * Scan the table for matching entries.  If an invalidation arrives

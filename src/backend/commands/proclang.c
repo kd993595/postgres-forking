@@ -99,7 +99,7 @@ CreateProceduralLanguage(CreatePLangStmt *stmt)
 		valOid = InvalidOid;
 
 	/* ok to create it */
-	rel = table_open(LanguageRelationId, RowExclusiveLock);
+	rel = table_open(LanguageRelationId, RowExclusiveLock, 0);
 	tupDesc = RelationGetDescr(rel);
 
 	/* Prepare data to be inserted */

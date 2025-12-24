@@ -510,7 +510,7 @@ ExecInitPartitionInfo(ModifyTableState *mtstate, EState *estate,
 
 	oldcxt = MemoryContextSwitchTo(proute->memcxt);
 
-	partrel = table_open(partOid, RowExclusiveLock);
+	partrel = table_open(partOid, RowExclusiveLock, 0);/*partition stuff needs to be fixed later*/
 
 	leaf_part_rri = makeNode(ResultRelInfo);
 	InitResultRelInfo(leaf_part_rri,
@@ -1123,7 +1123,7 @@ ExecInitPartitionDispatchInfo(EState *estate,
 	 * the query's rtable.
 	 */
 	if (partoid != RelationGetRelid(proute->partition_root))
-		rel = table_open(partoid, RowExclusiveLock);
+		rel = table_open(partoid, RowExclusiveLock, 0);
 	else
 		rel = proute->partition_root;
 	partdesc = PartitionDirectoryLookup(estate->es_partition_directory, rel);

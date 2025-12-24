@@ -151,7 +151,7 @@ toast_save_datum(Relation rel, Datum value,
 	 * uniqueness of the OID we assign to the toasted item, even though it has
 	 * additional columns besides OID.
 	 */
-	toastrel = table_open(rel->rd_rel->reltoastrelid, RowExclusiveLock);
+	toastrel = table_open(rel->rd_rel->reltoastrelid, RowExclusiveLock, rel->rd_dbforkId);
 	toasttupDesc = toastrel->rd_att;
 
 	/* Open all the toast indexes and look for the valid one */
@@ -404,7 +404,7 @@ toast_delete_datum(Relation rel, Datum value, bool is_speculative)
 	/*
 	 * Open the toast relation and its indexes
 	 */
-	toastrel = table_open(toast_pointer.va_toastrelid, RowExclusiveLock);
+	toastrel = table_open(toast_pointer.va_toastrelid, RowExclusiveLock, rel->rd_dbforkId);
 
 	/* Fetch valid relation used for process */
 	validIndex = toast_open_indexes(toastrel,
@@ -511,7 +511,7 @@ toastid_valueid_exists(Oid toastrelid, Oid valueid)
 	bool		result;
 	Relation	toastrel;
 
-	toastrel = table_open(toastrelid, AccessShareLock);
+	toastrel = table_open(toastrelid, AccessShareLock, 0); /*TODO: probably have to change this to have function be aware of context*/
 
 	result = toastrel_valueid_exists(toastrel, valueid);
 
@@ -536,7 +536,7 @@ toast_get_valid_index(Oid toastoid, LOCKMODE lock)
 	Relation	toastrel;
 
 	/* Open the toast relation */
-	toastrel = table_open(toastoid, lock);
+	toastrel = table_open(toastoid, lock, 0); /*seems like we just need the metadata*/
 
 	/* Look for the valid index of the toast relation */
 	validIndex = toast_open_indexes(toastrel,
@@ -581,7 +581,7 @@ toast_open_indexes(Relation toastrel,
 	/* Open all the index relations */
 	*toastidxs = (Relation *) palloc(*num_indexes * sizeof(Relation));
 	foreach(lc, indexlist)
-		(*toastidxs)[i++] = index_open(lfirst_oid(lc), lock);
+		(*toastidxs)[i++] = index_open(lfirst_oid(lc), lock, 0);
 
 	/* Fetch the first valid index in list */
 	for (i = 0; i < *num_indexes; i++)

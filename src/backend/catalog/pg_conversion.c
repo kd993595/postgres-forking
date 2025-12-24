@@ -80,7 +80,7 @@ ConversionCreate(const char *conname, Oid connamespace,
 	}
 
 	/* open pg_conversion */
-	rel = table_open(ConversionRelationId, RowExclusiveLock);
+	rel = table_open(ConversionRelationId, RowExclusiveLock, 0);
 	tupDesc = rel->rd_att;
 
 	/* initialize nulls and values */

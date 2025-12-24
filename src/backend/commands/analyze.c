@@ -1406,7 +1406,7 @@ acquire_inherited_sample_rows(Relation onerel, int elevel,
 		BlockNumber relpages = 0;
 
 		/* We already got the needed lock */
-		childrel = table_open(childOID, NoLock);
+		childrel = table_open(childOID, NoLock, 0);
 
 		/* Ignore if temp table of another backend */
 		if (RELATION_IS_OTHER_TEMP(childrel))
@@ -1615,7 +1615,7 @@ update_attstats(Oid relid, bool inh, int natts, VacAttrStats **vacattrstats)
 	if (natts <= 0)
 		return;					/* nothing to do */
 
-	sd = table_open(StatisticRelationId, RowExclusiveLock);
+	sd = table_open(StatisticRelationId, RowExclusiveLock, 0);
 
 	for (attno = 0; attno < natts; attno++)
 	{

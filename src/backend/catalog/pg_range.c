@@ -46,7 +46,7 @@ RangeCreate(Oid rangeTypeOid, Oid rangeSubType, Oid rangeCollation,
 	ObjectAddress referencing;
 	ObjectAddresses *addrs;
 
-	pg_range = table_open(RangeRelationId, RowExclusiveLock);
+	pg_range = table_open(RangeRelationId, RowExclusiveLock, 0);
 
 	memset(nulls, 0, sizeof(nulls));
 
@@ -117,7 +117,7 @@ RangeDelete(Oid rangeTypeOid)
 	SysScanDesc scan;
 	HeapTuple	tup;
 
-	pg_range = table_open(RangeRelationId, RowExclusiveLock);
+	pg_range = table_open(RangeRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_range_rngtypid,

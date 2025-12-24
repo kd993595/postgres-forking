@@ -481,7 +481,7 @@ CreateStatistics(CreateStatsStmt *stmt)
 	else
 		exprsDatum = (Datum) 0;
 
-	statrel = table_open(StatisticExtRelationId, RowExclusiveLock);
+	statrel = table_open(StatisticExtRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Everything seems fine, so let's build the pg_statistic_ext tuple.
@@ -668,7 +668,7 @@ AlterStatistics(AlterStatsStmt *stmt)
 	}
 
 	/* Search pg_statistic_ext */
-	rel = table_open(StatisticExtRelationId, RowExclusiveLock);
+	rel = table_open(StatisticExtRelationId, RowExclusiveLock, 0);
 
 	oldtup = SearchSysCache1(STATEXTOID, ObjectIdGetDatum(stxoid));
 	if (!HeapTupleIsValid(oldtup))
@@ -724,7 +724,7 @@ RemoveStatisticsDataById(Oid statsOid, bool inh)
 	Relation	relation;
 	HeapTuple	tup;
 
-	relation = table_open(StatisticExtDataRelationId, RowExclusiveLock);
+	relation = table_open(StatisticExtDataRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCache2(STATEXTDATASTXOID, ObjectIdGetDatum(statsOid),
 						  BoolGetDatum(inh));
@@ -756,7 +756,7 @@ RemoveStatisticsById(Oid statsOid)
 	 * Delete the pg_statistic_ext tuple.  Also send out a cache inval on the
 	 * associated table, so that dependent plans will be rebuilt.
 	 */
-	relation = table_open(StatisticExtRelationId, RowExclusiveLock);
+	relation = table_open(StatisticExtRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCache1(STATEXTOID, ObjectIdGetDatum(statsOid));
 
@@ -772,7 +772,7 @@ RemoveStatisticsById(Oid statsOid)
 	 * both. We lock the user table first, to prevent other processes (e.g.
 	 * DROP STATISTICS) from removing the row concurrently.
 	 */
-	rel = table_open(relid, ShareUpdateExclusiveLock);
+	rel = table_open(relid, ShareUpdateExclusiveLock, 0);
 
 	RemoveStatisticsDataById(statsOid, true);
 	RemoveStatisticsDataById(statsOid, false);

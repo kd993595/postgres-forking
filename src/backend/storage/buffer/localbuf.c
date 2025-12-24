@@ -73,7 +73,7 @@ PrefetchLocalBuffer(SMgrRelation smgr, ForkNumber forkNum,
 	BufferTag	newTag;			/* identity of requested block */
 	LocalBufferLookupEnt *hresult;
 
-	InitBufferTag(&newTag, &smgr->smgr_rlocator.locator, forkNum, blockNum, 0);
+	InitBufferTag(&newTag, &smgr->smgr_rlocator.locator, forkNum, blockNum, smgr->smgr_rlocator.dbforkId);
 
 	/* Initialize local buffers if first request in this session */
 	if (LocalBufHash == NULL)
@@ -123,7 +123,7 @@ LocalBufferAlloc(SMgrRelation smgr, ForkNumber forkNum, BlockNumber blockNum,
 	int			bufid;
 	bool		found;
 
-	InitBufferTag(&newTag, &smgr->smgr_rlocator.locator, forkNum, blockNum, 0);
+	InitBufferTag(&newTag, &smgr->smgr_rlocator.locator, forkNum, blockNum, smgr->smgr_rlocator.dbforkId);
 
 	/* Initialize local buffers if first request in this session */
 	if (LocalBufHash == NULL)
@@ -376,7 +376,7 @@ ExtendBufferedRelLocal(BufferManagerRelation bmr,
 		/* in case we need to pin an existing buffer below */
 		ResourceOwnerEnlarge(CurrentResourceOwner);
 
-		InitBufferTag(&tag, &bmr.smgr->smgr_rlocator.locator, fork, first_block + i, 0);
+		InitBufferTag(&tag, &bmr.smgr->smgr_rlocator.locator, fork, first_block + i, bmr.smgr->smgr_rlocator.dbforkId);
 
 		hresult = (LocalBufferLookupEnt *)
 			hash_search(LocalBufHash, (void *) &tag, HASH_ENTER, &found);

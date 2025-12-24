@@ -640,8 +640,8 @@ pg_nextoid(PG_FUNCTION_ARGS)
 				 errmsg("must be superuser to call %s()",
 						"pg_nextoid")));
 
-	rel = table_open(reloid, RowExclusiveLock);
-	idx = index_open(idxoid, RowExclusiveLock);
+	rel = table_open(reloid, RowExclusiveLock, 0); /*since only in superuser during non normal fine to put 0*/
+	idx = index_open(idxoid, RowExclusiveLock, 0);
 
 	if (!IsSystemRelation(rel))
 		ereport(ERROR,

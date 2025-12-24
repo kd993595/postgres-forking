@@ -199,7 +199,7 @@ DefineTSParser(List *names, List *parameters)
 				(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 				 errmsg("must be superuser to create text search parsers")));
 
-	prsRel = table_open(TSParserRelationId, RowExclusiveLock);
+	prsRel = table_open(TSParserRelationId, RowExclusiveLock, 0);
 
 	/* Convert list of names to a name and namespace */
 	namespaceoid = QualifiedNameGetCreationNamespace(names, &prsname);
@@ -448,7 +448,7 @@ DefineTSDictionary(List *names, List *parameters)
 	verify_dictoptions(templId, dictoptions);
 
 
-	dictRel = table_open(TSDictionaryRelationId, RowExclusiveLock);
+	dictRel = table_open(TSDictionaryRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Looks good, insert
@@ -507,7 +507,7 @@ AlterTSDictionary(AlterTSDictionaryStmt *stmt)
 
 	dictId = get_ts_dict_oid(stmt->dictname, false);
 
-	rel = table_open(TSDictionaryRelationId, RowExclusiveLock);
+	rel = table_open(TSDictionaryRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCache1(TSDICTOID, ObjectIdGetDatum(dictId));
 
@@ -709,7 +709,7 @@ DefineTSTemplate(List *names, List *parameters)
 	/* Convert list of names to a name and namespace */
 	namespaceoid = QualifiedNameGetCreationNamespace(names, &tmplname);
 
-	tmplRel = table_open(TSTemplateRelationId, RowExclusiveLock);
+	tmplRel = table_open(TSTemplateRelationId, RowExclusiveLock, 0);
 
 	for (i = 0; i < Natts_pg_ts_template; i++)
 	{
@@ -981,7 +981,7 @@ DefineTSConfiguration(List *names, List *parameters, ObjectAddress *copied)
 				(errcode(ERRCODE_INVALID_OBJECT_DEFINITION),
 				 errmsg("text search parser is required")));
 
-	cfgRel = table_open(TSConfigRelationId, RowExclusiveLock);
+	cfgRel = table_open(TSConfigRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Looks good, build tuple and insert
@@ -1017,7 +1017,7 @@ DefineTSConfiguration(List *names, List *parameters, ObjectAddress *copied)
 					slot_init_count,
 					slot_stored_count;
 
-		mapRel = table_open(TSConfigMapRelationId, RowExclusiveLock);
+		mapRel = table_open(TSConfigMapRelationId, RowExclusiveLock, 0);
 		mapDesc = RelationGetDescr(mapRel);
 
 		indstate = CatalogOpenIndexes(mapRel);
@@ -1114,7 +1114,7 @@ RemoveTSConfigurationById(Oid cfgId)
 	SysScanDesc scan;
 
 	/* Remove the pg_ts_config entry */
-	relCfg = table_open(TSConfigRelationId, RowExclusiveLock);
+	relCfg = table_open(TSConfigRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCache1(TSCONFIGOID, ObjectIdGetDatum(cfgId));
 
@@ -1129,7 +1129,7 @@ RemoveTSConfigurationById(Oid cfgId)
 	table_close(relCfg, RowExclusiveLock);
 
 	/* Remove any pg_ts_config_map entries */
-	relMap = table_open(TSConfigMapRelationId, RowExclusiveLock);
+	relMap = table_open(TSConfigMapRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&skey,
 				Anum_pg_ts_config_map_mapcfg,
@@ -1175,7 +1175,7 @@ AlterTSConfiguration(AlterTSConfigurationStmt *stmt)
 		aclcheck_error(ACLCHECK_NOT_OWNER, OBJECT_TSCONFIGURATION,
 					   NameListToString(stmt->cfgname));
 
-	relMap = table_open(TSConfigMapRelationId, RowExclusiveLock);
+	relMap = table_open(TSConfigMapRelationId, RowExclusiveLock, 0);
 
 	/* Add or drop mappings */
 	if (stmt->dicts)

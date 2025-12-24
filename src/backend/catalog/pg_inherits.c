@@ -108,7 +108,7 @@ find_inheritance_children_extended(Oid parentrelId, bool omit_detached,
 	oidarr = (Oid *) palloc(maxoids * sizeof(Oid));
 	numoids = 0;
 
-	relation = table_open(InheritsRelationId, AccessShareLock);
+	relation = table_open(InheritsRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_inherits_inhparent,
@@ -381,7 +381,7 @@ has_superclass(Oid relationId)
 	ScanKeyData skey;
 	bool		result;
 
-	catalog = table_open(InheritsRelationId, AccessShareLock);
+	catalog = table_open(InheritsRelationId, AccessShareLock, 0);
 	ScanKeyInit(&skey, Anum_pg_inherits_inhrelid, BTEqualStrategyNumber,
 				F_OIDEQ, ObjectIdGetDatum(relationId));
 	scan = systable_beginscan(catalog, InheritsRelidSeqnoIndexId, true,
@@ -431,7 +431,7 @@ typeInheritsFrom(Oid subclassTypeId, Oid superclassTypeId)
 	queue = list_make1_oid(subclassRelid);
 	visited = NIL;
 
-	inhrel = table_open(InheritsRelationId, AccessShareLock);
+	inhrel = table_open(InheritsRelationId, AccessShareLock, 0);
 
 	/*
 	 * Use queue to do a breadth-first traversal of the inheritance graph from
@@ -512,7 +512,7 @@ StoreSingleInheritance(Oid relationId, Oid parentOid, int32 seqNumber)
 	HeapTuple	tuple;
 	Relation	inhRelation;
 
-	inhRelation = table_open(InheritsRelationId, RowExclusiveLock);
+	inhRelation = table_open(InheritsRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Make the pg_inherits entry
@@ -561,7 +561,7 @@ DeleteInheritsTuple(Oid inhrelid, Oid inhparent, bool expect_detach_pending,
 	/*
 	 * Find pg_inherits entries by inhrelid.
 	 */
-	catalogRelation = table_open(InheritsRelationId, RowExclusiveLock);
+	catalogRelation = table_open(InheritsRelationId, RowExclusiveLock, 0);
 	ScanKeyInit(&key,
 				Anum_pg_inherits_inhrelid,
 				BTEqualStrategyNumber, F_OIDEQ,
@@ -629,7 +629,7 @@ PartitionHasPendingDetach(Oid partoid)
 	/*
 	 * Find the pg_inherits entry by inhrelid.  (There should only be one.)
 	 */
-	catalogRelation = table_open(InheritsRelationId, RowExclusiveLock);
+	catalogRelation = table_open(InheritsRelationId, RowExclusiveLock, 0);
 	ScanKeyInit(&key,
 				Anum_pg_inherits_inhrelid,
 				BTEqualStrategyNumber, F_OIDEQ,

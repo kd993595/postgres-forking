@@ -121,7 +121,7 @@ DoCopy(ParseState *pstate, const CopyStmt *stmt,
 		Assert(!stmt->query);
 
 		/* Open and lock the relation, using the appropriate lock type. */
-		rel = table_openrv(stmt->relation, lockmode);
+		rel = table_openrv(stmt->relation, lockmode, 0);
 
 		relid = RelationGetRelid(rel);
 

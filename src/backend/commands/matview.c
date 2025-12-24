@@ -88,7 +88,7 @@ SetMatViewPopulatedState(Relation relation, bool newstate)
 	 * (and this one too!) are sent SI message to make them rebuild relcache
 	 * entries.
 	 */
-	pgrel = table_open(RelationRelationId, RowExclusiveLock);
+	pgrel = table_open(RelationRelationId, RowExclusiveLock, 0);
 	tuple = SearchSysCacheCopy1(RELOID,
 								ObjectIdGetDatum(RelationGetRelid(relation)));
 	if (!HeapTupleIsValid(tuple))
@@ -178,7 +178,7 @@ RefreshMatViewByOid(Oid matviewOid, bool skipData, bool concurrent,
 	int			save_nestlevel;
 	ObjectAddress address;
 
-	matviewRel = table_open(matviewOid, NoLock);
+	matviewRel = table_open(matviewOid, NoLock, 0); /*matview stuff should stay in main database land and figure out how to convert to safe forks later*/
 	relowner = matviewRel->rd_rel->relowner;
 
 	/*
@@ -254,7 +254,7 @@ RefreshMatViewByOid(Oid matviewOid, bool skipData, bool concurrent,
 			Oid			indexoid = lfirst_oid(indexoidscan);
 			Relation	indexRel;
 
-			indexRel = index_open(indexoid, AccessShareLock);
+			indexRel = index_open(indexoid, AccessShareLock, 0);
 			hasUniqueIndex = is_usable_unique_index(indexRel);
 			index_close(indexRel, AccessShareLock);
 			if (hasUniqueIndex)
@@ -468,7 +468,7 @@ transientrel_startup(DestReceiver *self, int operation, TupleDesc typeinfo)
 	DR_transientrel *myState = (DR_transientrel *) self;
 	Relation	transientrel;
 
-	transientrel = table_open(myState->transientoid, NoLock);
+	transientrel = table_open(myState->transientoid, NoLock, 0);
 
 	/*
 	 * Fill private fields of myState for use by later routines
@@ -611,10 +611,10 @@ refresh_by_match_merge(Oid matviewOid, Oid tempOid, Oid relowner,
 	Oid		   *opUsedForQual;
 
 	initStringInfo(&querybuf);
-	matviewRel = table_open(matviewOid, NoLock);
+	matviewRel = table_open(matviewOid, NoLock, 0);
 	matviewname = quote_qualified_identifier(get_namespace_name(RelationGetNamespace(matviewRel)),
 											 RelationGetRelationName(matviewRel));
-	tempRel = table_open(tempOid, NoLock);
+	tempRel = table_open(tempOid, NoLock, 0);
 	tempname = quote_qualified_identifier(get_namespace_name(RelationGetNamespace(tempRel)),
 										  RelationGetRelationName(tempRel));
 	diffname = make_temptable_name_n(tempname, 2);
@@ -719,7 +719,7 @@ refresh_by_match_merge(Oid matviewOid, Oid tempOid, Oid relowner,
 		Oid			indexoid = lfirst_oid(indexoidscan);
 		Relation	indexRel;
 
-		indexRel = index_open(indexoid, RowExclusiveLock);
+		indexRel = index_open(indexoid, RowExclusiveLock, 0);
 		if (is_usable_unique_index(indexRel))
 		{
 			Form_pg_index indexStruct = indexRel->rd_index;

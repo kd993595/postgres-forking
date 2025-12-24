@@ -84,9 +84,9 @@ open_lo_relation(void)
 
 	/* Use RowExclusiveLock since we might either read or write */
 	if (lo_heap_r == NULL)
-		lo_heap_r = table_open(LargeObjectRelationId, RowExclusiveLock);
+		lo_heap_r = table_open(LargeObjectRelationId, RowExclusiveLock, 0);
 	if (lo_index_r == NULL)
-		lo_index_r = index_open(LargeObjectLOidPNIndexId, RowExclusiveLock);
+		lo_index_r = index_open(LargeObjectLOidPNIndexId, RowExclusiveLock, 0);
 
 	CurrentResourceOwner = currentOwner;
 }
@@ -142,7 +142,7 @@ myLargeObjectExists(Oid loid, Snapshot snapshot)
 				ObjectIdGetDatum(loid));
 
 	pg_lo_meta = table_open(LargeObjectMetadataRelationId,
-							AccessShareLock);
+							AccessShareLock, 0);
 
 	sd = systable_beginscan(pg_lo_meta,
 							LargeObjectMetadataOidIndexId, true,

@@ -59,7 +59,7 @@ SetRelationRuleStatus(Oid relationId, bool relHasRules)
 	/*
 	 * Find the tuple to update in pg_class, using syscache for the lookup.
 	 */
-	relationRelation = table_open(RelationRelationId, RowExclusiveLock);
+	relationRelation = table_open(RelationRelationId, RowExclusiveLock, 0);
 	tuple = SearchSysCacheCopy1(RELOID, ObjectIdGetDatum(relationId));
 	if (!HeapTupleIsValid(tuple))
 		elog(ERROR, "cache lookup failed for relation %u", relationId);

@@ -659,7 +659,7 @@ RemoveTypeById(Oid typeOid)
 	Relation	relation;
 	HeapTuple	tup;
 
-	relation = table_open(TypeRelationId, RowExclusiveLock);
+	relation = table_open(TypeRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCache1(TYPEOID, ObjectIdGetDatum(typeOid));
 	if (!HeapTupleIsValid(tup))
@@ -2424,7 +2424,7 @@ AssignTypeArrayOid(void)
 	}
 	else
 	{
-		Relation	pg_type = table_open(TypeRelationId, AccessShareLock);
+		Relation	pg_type = table_open(TypeRelationId, AccessShareLock, 0);
 
 		type_array_oid = GetNewOidWithIndex(pg_type, TypeOidIndexId,
 											Anum_pg_type_oid);
@@ -2457,7 +2457,7 @@ AssignTypeMultirangeOid(void)
 	}
 	else
 	{
-		Relation	pg_type = table_open(TypeRelationId, AccessShareLock);
+		Relation	pg_type = table_open(TypeRelationId, AccessShareLock, 0);
 
 		type_multirange_oid = GetNewOidWithIndex(pg_type, TypeOidIndexId,
 												 Anum_pg_type_oid);
@@ -2490,7 +2490,7 @@ AssignTypeMultirangeArrayOid(void)
 	}
 	else
 	{
-		Relation	pg_type = table_open(TypeRelationId, AccessShareLock);
+		Relation	pg_type = table_open(TypeRelationId, AccessShareLock, 0);
 
 		type_multirange_array_oid = GetNewOidWithIndex(pg_type, TypeOidIndexId,
 													   Anum_pg_type_oid);
@@ -2594,7 +2594,7 @@ AlterDomainDefault(List *names, Node *defaultRaw)
 	domainoid = typenameTypeId(NULL, typename);
 
 	/* Look up the domain in the type table */
-	rel = table_open(TypeRelationId, RowExclusiveLock);
+	rel = table_open(TypeRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy1(TYPEOID, ObjectIdGetDatum(domainoid));
 	if (!HeapTupleIsValid(tup))
@@ -2716,7 +2716,7 @@ AlterDomainNotNull(List *names, bool notNull)
 	domainoid = typenameTypeId(NULL, typename);
 
 	/* Look up the domain in the type table */
-	typrel = table_open(TypeRelationId, RowExclusiveLock);
+	typrel = table_open(TypeRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy1(TYPEOID, ObjectIdGetDatum(domainoid));
 	if (!HeapTupleIsValid(tup))
@@ -2807,7 +2807,7 @@ AlterDomainDropConstraint(List *names, const char *constrName,
 	domainoid = typenameTypeId(NULL, typename);
 
 	/* Look up the domain in the type table */
-	rel = table_open(TypeRelationId, RowExclusiveLock);
+	rel = table_open(TypeRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy1(TYPEOID, ObjectIdGetDatum(domainoid));
 	if (!HeapTupleIsValid(tup))
@@ -2817,7 +2817,7 @@ AlterDomainDropConstraint(List *names, const char *constrName,
 	checkDomainOwner(tup);
 
 	/* Grab an appropriate lock on the pg_constraint relation */
-	conrel = table_open(ConstraintRelationId, RowExclusiveLock);
+	conrel = table_open(ConstraintRelationId, RowExclusiveLock, 0);
 
 	/* Find and remove the target constraint */
 	ScanKeyInit(&skey[0],
@@ -2911,7 +2911,7 @@ AlterDomainAddConstraint(List *names, Node *newConstraint,
 	domainoid = typenameTypeId(NULL, typename);
 
 	/* Look up the domain in the type table */
-	typrel = table_open(TypeRelationId, RowExclusiveLock);
+	typrel = table_open(TypeRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy1(TYPEOID, ObjectIdGetDatum(domainoid));
 	if (!HeapTupleIsValid(tup))
@@ -3056,7 +3056,7 @@ AlterDomainValidateConstraint(List *names, const char *constrName)
 	domainoid = typenameTypeId(NULL, typename);
 
 	/* Look up the domain in the type table */
-	typrel = table_open(TypeRelationId, AccessShareLock);
+	typrel = table_open(TypeRelationId, AccessShareLock, 0);
 
 	tup = SearchSysCache1(TYPEOID, ObjectIdGetDatum(domainoid));
 	if (!HeapTupleIsValid(tup))
@@ -3068,7 +3068,7 @@ AlterDomainValidateConstraint(List *names, const char *constrName)
 	/*
 	 * Find and check the target constraint
 	 */
-	conrel = table_open(ConstraintRelationId, RowExclusiveLock);
+	conrel = table_open(ConstraintRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&skey[0],
 				Anum_pg_constraint_conrelid,
@@ -3336,7 +3336,7 @@ get_rels_with_domain(Oid domainOid, LOCKMODE lockmode)
 	 * We scan pg_depend to find those things that depend on the domain. (We
 	 * assume we can ignore refobjsubid for a domain.)
 	 */
-	depRel = table_open(DependRelationId, AccessShareLock);
+	depRel = table_open(DependRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_depend_refclassid,
@@ -3754,7 +3754,7 @@ RenameType(RenameStmt *stmt)
 	typeOid = typenameTypeId(NULL, typename);
 
 	/* Look up the type in the type table */
-	rel = table_open(TypeRelationId, RowExclusiveLock);
+	rel = table_open(TypeRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy1(TYPEOID, ObjectIdGetDatum(typeOid));
 	if (!HeapTupleIsValid(tup))
@@ -3830,7 +3830,7 @@ AlterTypeOwner(List *names, Oid newOwnerId, ObjectType objecttype)
 	AclResult	aclresult;
 	ObjectAddress address;
 
-	rel = table_open(TypeRelationId, RowExclusiveLock);
+	rel = table_open(TypeRelationId, RowExclusiveLock, 0);
 
 	/* Make a TypeName so we can use standard type lookup machinery */
 	typename = makeTypeNameFromNameList(names);
@@ -3950,7 +3950,7 @@ AlterTypeOwner_oid(Oid typeOid, Oid newOwnerId, bool hasDependEntry)
 	HeapTuple	tup;
 	Form_pg_type typTup;
 
-	rel = table_open(TypeRelationId, RowExclusiveLock);
+	rel = table_open(TypeRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCache1(TYPEOID, ObjectIdGetDatum(typeOid));
 	if (!HeapTupleIsValid(tup))
@@ -3996,7 +3996,7 @@ AlterTypeOwnerInternal(Oid typeOid, Oid newOwnerId)
 	Datum		aclDatum;
 	bool		isNull;
 
-	rel = table_open(TypeRelationId, RowExclusiveLock);
+	rel = table_open(TypeRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy1(TYPEOID, ObjectIdGetDatum(typeOid));
 	if (!HeapTupleIsValid(tup))
@@ -4177,7 +4177,7 @@ AlterTypeNamespaceInternal(Oid typeOid, Oid nspOid,
 	if (object_address_present(&thisobj, objsMoved))
 		return InvalidOid;
 
-	rel = table_open(TypeRelationId, RowExclusiveLock);
+	rel = table_open(TypeRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy1(TYPEOID, ObjectIdGetDatum(typeOid));
 	if (!HeapTupleIsValid(tup))
@@ -4246,7 +4246,7 @@ AlterTypeNamespaceInternal(Oid typeOid, Oid nspOid,
 	{
 		Relation	classRel;
 
-		classRel = table_open(RelationRelationId, RowExclusiveLock);
+		classRel = table_open(RelationRelationId, RowExclusiveLock, 0);
 
 		AlterRelationNamespaceInternal(classRel, typform->typrelid,
 									   oldNspOid, nspOid,
@@ -4321,7 +4321,7 @@ AlterType(AlterTypeStmt *stmt)
 	AlterTypeRecurseParams atparams;
 	ListCell   *pl;
 
-	catalog = table_open(TypeRelationId, RowExclusiveLock);
+	catalog = table_open(TypeRelationId, RowExclusiveLock, 0);
 
 	/* Make a TypeName so we can use standard type lookup machinery */
 	typename = makeTypeNameFromNameList(stmt->typeName);

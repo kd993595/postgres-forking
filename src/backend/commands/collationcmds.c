@@ -437,7 +437,7 @@ AlterCollation(AlterCollationStmt *stmt)
 	char	   *newversion;
 	ObjectAddress address;
 
-	rel = table_open(CollationRelationId, RowExclusiveLock);
+	rel = table_open(CollationRelationId, RowExclusiveLock, 0);
 	collOid = get_collation_oid(stmt->collname, false);
 
 	if (collOid == DEFAULT_COLLATION_OID)

@@ -351,7 +351,7 @@ ProcedureCreate(const char *procedureName,
 		nulls[Anum_pg_proc_proconfig - 1] = true;
 	/* proacl will be determined later */
 
-	rel = table_open(ProcedureRelationId, RowExclusiveLock);
+	rel = table_open(ProcedureRelationId, RowExclusiveLock, 0);
 	tupDesc = RelationGetDescr(rel);
 
 	/* Check for pre-existing definition */

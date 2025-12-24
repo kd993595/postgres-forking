@@ -187,7 +187,7 @@ RelidByRelfilenumber(Oid reltablespace, RelFileNumber relfilenumber)
 		 */
 
 		/* check for plain relations by looking in pg_class */
-		relation = table_open(RelationRelationId, AccessShareLock);
+		relation = table_open(RelationRelationId, AccessShareLock, 0);
 
 		/* copy scankey to local copy, it will be modified during the scan */
 		memcpy(skey, relfilenumber_skey, sizeof(skey));

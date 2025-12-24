@@ -302,7 +302,7 @@ ExecutorRun(QueryDesc *queryDesc,
 			bool execute_once)
 {
 	if (ExecutorRun_hook)
-		(*ExecutorRun_hook) (queryDesc, direction, count, execute_once);/*check this hook to disable plugins in the future from modifying my executor*/
+		(*ExecutorRun_hook) (queryDesc, direction, count, execute_once);
 	else
 		standard_ExecutorRun(queryDesc, direction, count, execute_once);
 }
@@ -1335,7 +1335,7 @@ ExecGetTriggerResultRel(EState *estate, Oid relid,
 	 * event got queued, so we need take no new lock here.  Also, we need not
 	 * recheck the relkind, so no need for CheckValidResultRel.
 	 */
-	rel = table_open(relid, NoLock);
+	rel = table_open(relid, NoLock, 0); /*check this later*/
 
 	/*
 	 * Make the new entry in the right context.
@@ -1404,7 +1404,7 @@ ExecGetAncestorResultRels(EState *estate, ResultRelInfo *resultRelInfo)
 			 * All ancestors up to the root target relation must have been
 			 * locked by the planner or AcquireExecutorLocks().
 			 */
-			ancRel = table_open(ancOid, NoLock);
+			ancRel = table_open(ancOid, NoLock, 0); /*should be operating in fork land*/
 			rInfo = makeNode(ResultRelInfo);
 
 			/* dummy rangetable index */
@@ -1608,6 +1608,7 @@ ExecutePlan(QueryDesc *queryDesc,
 	TupleTableSlot *slot;
 	uint64		current_tuple_count;
 
+	elog(LOG, "ExecutePlan being called here");
 	/*
 	 * initialize local variables
 	 */

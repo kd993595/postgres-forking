@@ -125,7 +125,7 @@ BuildRelationExtStatistics(Relation onerel, bool inh, double totalrows,
 		return;
 
 	/* the list of stats has to be allocated outside the memory context */
-	pg_stext = table_open(StatisticExtRelationId, RowExclusiveLock);
+	pg_stext = table_open(StatisticExtRelationId, RowExclusiveLock, 0);
 	statslist = fetch_statentries_for_relation(pg_stext, RelationGetRelid(onerel));
 
 	/* memory context for building each statistics object */
@@ -281,7 +281,7 @@ ComputeExtStatisticsRows(Relation onerel,
 								ALLOCSET_DEFAULT_SIZES);
 	oldcxt = MemoryContextSwitchTo(cxt);
 
-	pg_stext = table_open(StatisticExtRelationId, RowExclusiveLock);
+	pg_stext = table_open(StatisticExtRelationId, RowExclusiveLock, 0);
 	lstats = fetch_statentries_for_relation(pg_stext, RelationGetRelid(onerel));
 
 	foreach(lc, lstats)
@@ -768,7 +768,7 @@ statext_store(Oid statOid, bool inh,
 	Datum		values[Natts_pg_statistic_ext_data];
 	bool		nulls[Natts_pg_statistic_ext_data];
 
-	pg_stextdata = table_open(StatisticExtDataRelationId, RowExclusiveLock);
+	pg_stextdata = table_open(StatisticExtDataRelationId, RowExclusiveLock, 0);
 
 	memset(nulls, true, sizeof(nulls));
 	memset(values, 0, sizeof(values));
@@ -2300,7 +2300,7 @@ serialize_expr_stats(AnlExprData *exprdata, int nexprs)
 
 	ArrayBuildState *astate = NULL;
 
-	sd = table_open(StatisticRelationId, RowExclusiveLock);
+	sd = table_open(StatisticRelationId, RowExclusiveLock, 0);
 
 	/* lookup OID of composite type for pg_statistic */
 	typOid = get_rel_type_id(StatisticRelationId);

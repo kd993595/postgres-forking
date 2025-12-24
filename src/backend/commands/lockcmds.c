@@ -250,7 +250,7 @@ LockViewRecurse(Oid reloid, LOCKMODE lockmode, bool nowait,
 	Query	   *viewquery;
 
 	/* caller has already locked the view */
-	view = table_open(reloid, NoLock);
+	view = table_open(reloid, NoLock, 0);
 	viewquery = get_view_query(view);
 
 	/*

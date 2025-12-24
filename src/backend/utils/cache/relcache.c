@@ -369,7 +369,7 @@ ScanPgRelation(Oid targetRelId, bool indexOK, bool force_non_historic)
 	 * without a pg_internal.init file).  The caller can also force a heap
 	 * scan by setting indexOK == false.
 	 */
-	pg_class_desc = table_open(RelationRelationId, AccessShareLock);
+	pg_class_desc = table_open(RelationRelationId, AccessShareLock, 0);
 
 	/*
 	 * The caller might need a tuple that's newer than the one the historic
@@ -560,7 +560,7 @@ RelationBuildTupleDesc(Relation relation)
 	 * built the critical relcache entries (this includes initdb and startup
 	 * without a pg_internal.init file).
 	 */
-	pg_attribute_desc = table_open(AttributeRelationId, AccessShareLock);
+	pg_attribute_desc = table_open(AttributeRelationId, AccessShareLock, 0);
 	pg_attribute_scan = systable_beginscan(pg_attribute_desc,
 										   AttributeRelidNumIndexId,
 										   criticalRelcachesBuilt,
@@ -781,7 +781,7 @@ RelationBuildRuleLock(Relation relation)
 	 * emergency-recovery operations (ie, IgnoreSystemIndexes). This in turn
 	 * ensures that rules will be fired in name order.
 	 */
-	rewrite_desc = table_open(RewriteRelationId, AccessShareLock);
+	rewrite_desc = table_open(RewriteRelationId, AccessShareLock, 0);
 	rewrite_tupdesc = RelationGetDescr(rewrite_desc);
 	rewrite_scan = systable_beginscan(rewrite_desc,
 									  RewriteRelRulenameIndexId,
@@ -1736,7 +1736,7 @@ LookupOpclassInfo(Oid operatorClassOid,
 				Anum_pg_opclass_oid,
 				BTEqualStrategyNumber, F_OIDEQ,
 				ObjectIdGetDatum(operatorClassOid));
-	rel = table_open(OperatorClassRelationId, AccessShareLock);
+	rel = table_open(OperatorClassRelationId, AccessShareLock, 0);
 	scan = systable_beginscan(rel, OpclassOidIndexId, indexOK,
 							  NULL, 1, skey);
 
@@ -1771,7 +1771,7 @@ LookupOpclassInfo(Oid operatorClassOid,
 					Anum_pg_amproc_amprocrighttype,
 					BTEqualStrategyNumber, F_OIDEQ,
 					ObjectIdGetDatum(opcentry->opcintype));
-		rel = table_open(AccessMethodProcedureRelationId, AccessShareLock);
+		rel = table_open(AccessMethodProcedureRelationId, AccessShareLock, 0);
 		scan = systable_beginscan(rel, AccessMethodProcedureIndexId, indexOK,
 								  NULL, 3, skey);
 
@@ -2067,6 +2067,7 @@ Relation
 RelationIdGetRelation(Oid relationId, int32 dbforkId)
 {
 	Relation	rd;
+	bool is_system;
 
 	/* Make sure we're in an xact, even if this ends up being a cache hit */
 	Assert(IsTransactionState());
@@ -2110,10 +2111,15 @@ RelationIdGetRelation(Oid relationId, int32 dbforkId)
 			Assert(rd->rd_isvalid ||
 				   (rd->rd_isnailed && !criticalRelcachesBuilt));
 		}
-
+		
+		is_system = IsSystemRelation(rd) || IsCatalogNamespace(RelationGetRelid(rd));
+		if(is_system){
+			dbforkId = 0;
+		}
 		/*change relation smgr if incorrect fork*/
 		if(rd->rd_dbforkId != dbforkId){
 			RelationCloseSmgr(rd);
+			rd->rd_dbforkId = dbforkId;
 			RelationGetSmgr(rd);
 		}
 		return rd;
@@ -2124,8 +2130,13 @@ RelationIdGetRelation(Oid relationId, int32 dbforkId)
 	 * it.
 	 */
 	rd = RelationBuildDesc(relationId, dbforkId, true);
-	if (RelationIsValid(rd))
+	if (RelationIsValid(rd)){
 		RelationIncrementReferenceCount(rd);
+		is_system = IsSystemRelation(rd) || IsCatalogNamespace(RelationGetRelid(rd));
+		if(is_system){
+			rd->rd_dbforkId = 0;	
+		}
+	}
 	return rd;
 }
 
@@ -3206,7 +3217,7 @@ AssertPendingSyncs_RelationCache(void)
 			LOCKTAG_RELATION)
 			continue;
 		relid = ObjectIdGetDatum(locallock->tag.lock.locktag_field2);
-		r = RelationIdGetRelation(relid, MyDBForkId); /* use the current dbforkid for the transaction to determine this check later if right?*/
+		r = RelationIdGetRelation(relid, 0); /* doesn't really matter since its for assertion but just checking for main is fine*/
 		if (!RelationIsValid(r))
 			continue;
 		if (nrels >= maxrels)
@@ -3821,7 +3832,7 @@ RelationSetNewRelfilenumber(Relation relation, char persistence)
 	/*
 	 * Get a writable copy of the pg_class tuple for the given relation.
 	 */
-	pg_class = table_open(RelationRelationId, RowExclusiveLock);
+	pg_class = table_open(RelationRelationId, RowExclusiveLock, 0);
 
 	tuple = SearchSysCacheLockedCopy1(RELOID,
 									  ObjectIdGetDatum(RelationGetRelid(relation)));
@@ -4517,7 +4528,7 @@ AttrDefaultFetch(Relation relation, int ndef)
 				BTEqualStrategyNumber, F_OIDEQ,
 				ObjectIdGetDatum(RelationGetRelid(relation)));
 
-	adrel = table_open(AttrDefaultRelationId, AccessShareLock);
+	adrel = table_open(AttrDefaultRelationId, AccessShareLock, 0);
 	adscan = systable_beginscan(adrel, AttrDefaultIndexId, true,
 								NULL, 1, &skey);
 
@@ -4613,7 +4624,7 @@ CheckConstraintFetch(Relation relation)
 				BTEqualStrategyNumber, F_OIDEQ,
 				ObjectIdGetDatum(RelationGetRelid(relation)));
 
-	conrel = table_open(ConstraintRelationId, AccessShareLock);
+	conrel = table_open(ConstraintRelationId, AccessShareLock, 0);
 	conscan = systable_beginscan(conrel, ConstraintRelidTypidNameIndexId, true,
 								 NULL, 1, skey);
 
@@ -4737,7 +4748,7 @@ RelationGetFKeyList(Relation relation)
 				BTEqualStrategyNumber, F_OIDEQ,
 				ObjectIdGetDatum(RelationGetRelid(relation)));
 
-	conrel = table_open(ConstraintRelationId, AccessShareLock);
+	conrel = table_open(ConstraintRelationId, AccessShareLock, 0);
 	conscan = systable_beginscan(conrel, ConstraintRelidTypidNameIndexId, true,
 								 NULL, 1, &skey);
 
@@ -4845,7 +4856,7 @@ RelationGetIndexList(Relation relation)
 				BTEqualStrategyNumber, F_OIDEQ,
 				ObjectIdGetDatum(RelationGetRelid(relation)));
 
-	indrel = table_open(IndexRelationId, AccessShareLock);
+	indrel = table_open(IndexRelationId, AccessShareLock, 0);
 	indscan = systable_beginscan(indrel, IndexIndrelidIndexId, true,
 								 NULL, 1, &skey);
 
@@ -4965,7 +4976,7 @@ RelationGetStatExtList(Relation relation)
 				BTEqualStrategyNumber, F_OIDEQ,
 				ObjectIdGetDatum(RelationGetRelid(relation)));
 
-	indrel = table_open(StatisticExtRelationId, AccessShareLock);
+	indrel = table_open(StatisticExtRelationId, AccessShareLock, 0);
 	indscan = systable_beginscan(indrel, StatisticExtRelidIndexId, true,
 								 NULL, 1, &skey);
 
@@ -5343,7 +5354,7 @@ restart:
 		bool		isIDKey;	/* replica identity index */
 		Bitmapset **attrs;
 
-		indexDesc = index_open(indexOid, AccessShareLock);
+		indexDesc = index_open(indexOid, AccessShareLock, 0);
 
 		/*
 		 * Extract index expressions and index predicate.  Note: Don't use
@@ -5650,7 +5661,7 @@ RelationGetExclusionInfo(Relation indexRelation,
 				BTEqualStrategyNumber, F_OIDEQ,
 				ObjectIdGetDatum(indexRelation->rd_index->indrelid));
 
-	conrel = table_open(ConstraintRelationId, AccessShareLock);
+	conrel = table_open(ConstraintRelationId, AccessShareLock, 0);
 	conscan = systable_beginscan(conrel, ConstraintRelidTypidNameIndexId, true,
 								 NULL, 1, skey);
 	found = false;

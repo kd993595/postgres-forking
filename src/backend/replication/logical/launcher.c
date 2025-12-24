@@ -134,7 +134,7 @@ get_subscription_list(void)
 	StartTransactionCommand();
 	(void) GetTransactionSnapshot();
 
-	rel = table_open(SubscriptionRelationId, AccessShareLock);
+	rel = table_open(SubscriptionRelationId, AccessShareLock, 0);
 	scan = table_beginscan_catalog(rel, 0, NULL);
 
 	while (HeapTupleIsValid(tup = heap_getnext(scan, ForwardScanDirection)))

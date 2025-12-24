@@ -368,7 +368,7 @@ CreateRole(ParseState *pstate, CreateRoleStmt *stmt)
 	 * Check the pg_authid relation to be certain the role doesn't already
 	 * exist.
 	 */
-	pg_authid_rel = table_open(AuthIdRelationId, RowExclusiveLock);
+	pg_authid_rel = table_open(AuthIdRelationId, RowExclusiveLock, 0);
 	pg_authid_dsc = RelationGetDescr(pg_authid_rel);
 
 	if (OidIsValid(get_role_oid(stmt->role, true)))
@@ -744,7 +744,7 @@ AlterRole(ParseState *pstate, AlterRoleStmt *stmt)
 	/*
 	 * Scan the pg_authid relation to be certain the user exists.
 	 */
-	pg_authid_rel = table_open(AuthIdRelationId, RowExclusiveLock);
+	pg_authid_rel = table_open(AuthIdRelationId, RowExclusiveLock, 0);
 	pg_authid_dsc = RelationGetDescr(pg_authid_rel);
 
 	tuple = get_rolespec_tuple(stmt->role);
@@ -1105,8 +1105,8 @@ DropRole(DropRoleStmt *stmt)
 	 * Scan the pg_authid relation to find the Oid of the role(s) to be
 	 * deleted and perform preliminary permissions and sanity checks.
 	 */
-	pg_authid_rel = table_open(AuthIdRelationId, RowExclusiveLock);
-	pg_auth_members_rel = table_open(AuthMemRelationId, RowExclusiveLock);
+	pg_authid_rel = table_open(AuthIdRelationId, RowExclusiveLock, 0);
+	pg_auth_members_rel = table_open(AuthMemRelationId, RowExclusiveLock, 0);
 
 	foreach(item, stmt->roles)
 	{
@@ -1347,7 +1347,7 @@ RenameRole(const char *oldname, const char *newname)
 	ObjectAddress address;
 	Form_pg_authid authform;
 
-	rel = table_open(AuthIdRelationId, RowExclusiveLock);
+	rel = table_open(AuthIdRelationId, RowExclusiveLock, 0);
 	dsc = RelationGetDescr(rel);
 
 	oldtuple = SearchSysCache1(AUTHNAME, CStringGetDatum(oldname));
@@ -1534,7 +1534,7 @@ GrantRole(ParseState *pstate, GrantRoleStmt *stmt)
 	grantee_ids = roleSpecsToIds(stmt->grantee_roles);
 
 	/* AccessShareLock is enough since we aren't modifying pg_authid */
-	pg_authid_rel = table_open(AuthIdRelationId, AccessShareLock);
+	pg_authid_rel = table_open(AuthIdRelationId, AccessShareLock, 0);
 
 	/*
 	 * Step through all of the granted roles and add, update, or remove
@@ -1692,7 +1692,7 @@ AddRoleMems(Oid currentUserId, const char *rolename, Oid roleid,
 	/* Validate grantor (and resolve implicit grantor if not specified). */
 	grantorId = check_role_grantor(currentUserId, roleid, grantorId, true);
 
-	pg_authmem_rel = table_open(AuthMemRelationId, RowExclusiveLock);
+	pg_authmem_rel = table_open(AuthMemRelationId, RowExclusiveLock, 0);
 	pg_authmem_dsc = RelationGetDescr(pg_authmem_rel);
 
 	/*
@@ -1992,7 +1992,7 @@ DelRoleMems(Oid currentUserId, const char *rolename, Oid roleid,
 	/* Validate grantor (and resolve implicit grantor if not specified). */
 	grantorId = check_role_grantor(currentUserId, roleid, grantorId, false);
 
-	pg_authmem_rel = table_open(AuthMemRelationId, RowExclusiveLock);
+	pg_authmem_rel = table_open(AuthMemRelationId, RowExclusiveLock, 0);
 	pg_authmem_dsc = RelationGetDescr(pg_authmem_rel);
 
 	/*

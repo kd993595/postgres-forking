@@ -223,7 +223,7 @@ DefineSequence(ParseState *pstate, CreateSeqStmt *seq)
 	sequence_close(rel, NoLock);
 
 	/* fill in pg_sequence */
-	rel = table_open(SequenceRelationId, RowExclusiveLock);
+	rel = table_open(SequenceRelationId, RowExclusiveLock, 0);
 	tupDesc = RelationGetDescr(rel);
 
 	memset(pgs_nulls, 0, sizeof(pgs_nulls));
@@ -466,7 +466,7 @@ AlterSequence(ParseState *pstate, AlterSeqStmt *stmt)
 
 	init_sequence(relid, &elm, &seqrel);
 
-	rel = table_open(SequenceRelationId, RowExclusiveLock);
+	rel = table_open(SequenceRelationId, RowExclusiveLock, 0);
 	seqtuple = SearchSysCacheCopy1(SEQRELID,
 								   ObjectIdGetDatum(relid));
 	if (!HeapTupleIsValid(seqtuple))
@@ -572,7 +572,7 @@ DeleteSequenceTuple(Oid relid)
 	Relation	rel;
 	HeapTuple	tuple;
 
-	rel = table_open(SequenceRelationId, RowExclusiveLock);
+	rel = table_open(SequenceRelationId, RowExclusiveLock, 0);
 
 	tuple = SearchSysCache1(SEQRELID, ObjectIdGetDatum(relid));
 	if (!HeapTupleIsValid(tuple))

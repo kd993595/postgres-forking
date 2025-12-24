@@ -255,7 +255,7 @@ RenameSchema(const char *oldname, const char *newname)
 	ObjectAddress address;
 	Form_pg_namespace nspform;
 
-	rel = table_open(NamespaceRelationId, RowExclusiveLock);
+	rel = table_open(NamespaceRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy1(NAMESPACENAME, CStringGetDatum(oldname));
 	if (!HeapTupleIsValid(tup))
@@ -309,7 +309,7 @@ AlterSchemaOwner_oid(Oid schemaoid, Oid newOwnerId)
 	HeapTuple	tup;
 	Relation	rel;
 
-	rel = table_open(NamespaceRelationId, RowExclusiveLock);
+	rel = table_open(NamespaceRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCache1(NAMESPACEOID, ObjectIdGetDatum(schemaoid));
 	if (!HeapTupleIsValid(tup))
@@ -335,7 +335,7 @@ AlterSchemaOwner(const char *name, Oid newOwnerId)
 	ObjectAddress address;
 	Form_pg_namespace nspform;
 
-	rel = table_open(NamespaceRelationId, RowExclusiveLock);
+	rel = table_open(NamespaceRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCache1(NAMESPACENAME, CStringGetDatum(name));
 	if (!HeapTupleIsValid(tup))

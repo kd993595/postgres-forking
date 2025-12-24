@@ -216,7 +216,7 @@ OperatorShellMake(const char *operatorName,
 	/*
 	 * open pg_operator
 	 */
-	pg_operator_desc = table_open(OperatorRelationId, RowExclusiveLock);
+	pg_operator_desc = table_open(OperatorRelationId, RowExclusiveLock, 0);
 	tupDesc = pg_operator_desc->rd_att;
 
 	/*
@@ -474,7 +474,7 @@ OperatorCreate(const char *operatorName,
 	values[Anum_pg_operator_oprrest - 1] = ObjectIdGetDatum(restrictionId);
 	values[Anum_pg_operator_oprjoin - 1] = ObjectIdGetDatum(joinId);
 
-	pg_operator_desc = table_open(OperatorRelationId, RowExclusiveLock);
+	pg_operator_desc = table_open(OperatorRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * If we are replacing an operator shell, update; else insert
@@ -696,7 +696,7 @@ OperatorUpd(Oid baseId, Oid commId, Oid negId, bool isDelete)
 		CommandCounterIncrement();
 
 	/* Open the relation. */
-	pg_operator_desc = table_open(OperatorRelationId, RowExclusiveLock);
+	pg_operator_desc = table_open(OperatorRelationId, RowExclusiveLock, 0);
 
 	/* Get a writable copy of the commutator's tuple. */
 	if (OidIsValid(commId))

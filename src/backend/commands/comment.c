@@ -185,7 +185,7 @@ CreateComments(Oid oid, Oid classoid, int32 subid, const char *comment)
 				BTEqualStrategyNumber, F_INT4EQ,
 				Int32GetDatum(subid));
 
-	description = table_open(DescriptionRelationId, RowExclusiveLock);
+	description = table_open(DescriptionRelationId, RowExclusiveLock, 0);
 
 	sd = systable_beginscan(description, DescriptionObjIndexId, true,
 							NULL, 3, skey);
@@ -275,7 +275,7 @@ CreateSharedComments(Oid oid, Oid classoid, const char *comment)
 				BTEqualStrategyNumber, F_OIDEQ,
 				ObjectIdGetDatum(classoid));
 
-	shdescription = table_open(SharedDescriptionRelationId, RowExclusiveLock);
+	shdescription = table_open(SharedDescriptionRelationId, RowExclusiveLock, 0);
 
 	sd = systable_beginscan(shdescription, SharedDescriptionObjIndexId, true,
 							NULL, 2, skey);
@@ -353,7 +353,7 @@ DeleteComments(Oid oid, Oid classoid, int32 subid)
 	else
 		nkeys = 2;
 
-	description = table_open(DescriptionRelationId, RowExclusiveLock);
+	description = table_open(DescriptionRelationId, RowExclusiveLock, 0);
 
 	sd = systable_beginscan(description, DescriptionObjIndexId, true,
 							NULL, nkeys, skey);
@@ -389,7 +389,7 @@ DeleteSharedComments(Oid oid, Oid classoid)
 				BTEqualStrategyNumber, F_OIDEQ,
 				ObjectIdGetDatum(classoid));
 
-	shdescription = table_open(SharedDescriptionRelationId, RowExclusiveLock);
+	shdescription = table_open(SharedDescriptionRelationId, RowExclusiveLock, 0);
 
 	sd = systable_beginscan(shdescription, SharedDescriptionObjIndexId, true,
 							NULL, 2, skey);
@@ -431,7 +431,7 @@ GetComment(Oid oid, Oid classoid, int32 subid)
 				BTEqualStrategyNumber, F_INT4EQ,
 				Int32GetDatum(subid));
 
-	description = table_open(DescriptionRelationId, AccessShareLock);
+	description = table_open(DescriptionRelationId, AccessShareLock, 0);
 	tupdesc = RelationGetDescr(description);
 
 	sd = systable_beginscan(description, DescriptionObjIndexId, true,

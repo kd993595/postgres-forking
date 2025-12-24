@@ -657,7 +657,7 @@ CreateSubscription(ParseState *pstate, CreateSubscriptionStmt *stmt,
 		elog(WARNING, "subscriptions created by regression test cases should have names starting with \"regress_\"");
 #endif
 
-	rel = table_open(SubscriptionRelationId, RowExclusiveLock);
+	rel = table_open(SubscriptionRelationId, RowExclusiveLock, 0);
 
 	/* Check if name is used */
 	subid = GetSysCacheOid2(SUBSCRIPTIONNAME, Anum_pg_subscription_oid,
@@ -996,7 +996,7 @@ AlterSubscription_refresh(Subscription *sub, bool copy_data,
 				 * change till we are done with this refresh operation.
 				 */
 				if (!rel)
-					rel = table_open(SubscriptionRelRelationId, AccessExclusiveLock);
+					rel = table_open(SubscriptionRelRelationId, AccessExclusiveLock, 0);
 
 				/* Last known rel state. */
 				state = GetSubscriptionRelState(sub->oid, relid, &statelsn);
@@ -1097,7 +1097,7 @@ AlterSubscription(ParseState *pstate, AlterSubscriptionStmt *stmt,
 	bits32		supported_opts;
 	SubOpts		opts = {0};
 
-	rel = table_open(SubscriptionRelationId, RowExclusiveLock);
+	rel = table_open(SubscriptionRelationId, RowExclusiveLock, 0);
 
 	/* Fetch the existing tuple. */
 	tup = SearchSysCacheCopy2(SUBSCRIPTIONNAME, MyDatabaseId,
@@ -1575,7 +1575,7 @@ DropSubscription(DropSubscriptionStmt *stmt, bool isTopLevel)
 	 * Lock pg_subscription with AccessExclusiveLock to ensure that the
 	 * launcher doesn't restart new worker during dropping the subscription
 	 */
-	rel = table_open(SubscriptionRelationId, AccessExclusiveLock);
+	rel = table_open(SubscriptionRelationId, AccessExclusiveLock, 0);
 
 	tup = SearchSysCache2(SUBSCRIPTIONNAME, MyDatabaseId,
 						  CStringGetDatum(stmt->subname));
@@ -1962,7 +1962,7 @@ AlterSubscriptionOwner(const char *name, Oid newOwnerId)
 	ObjectAddress address;
 	Form_pg_subscription form;
 
-	rel = table_open(SubscriptionRelationId, RowExclusiveLock);
+	rel = table_open(SubscriptionRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy2(SUBSCRIPTIONNAME, MyDatabaseId,
 							  CStringGetDatum(name));
@@ -1995,7 +1995,7 @@ AlterSubscriptionOwner_oid(Oid subid, Oid newOwnerId)
 	HeapTuple	tup;
 	Relation	rel;
 
-	rel = table_open(SubscriptionRelationId, RowExclusiveLock);
+	rel = table_open(SubscriptionRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy1(SUBSCRIPTIONOID, ObjectIdGetDatum(subid));
 

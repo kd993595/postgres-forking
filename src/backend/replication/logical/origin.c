@@ -280,7 +280,7 @@ replorigin_create(const char *roname)
 	 */
 	InitDirtySnapshot(SnapshotDirty);
 
-	rel = table_open(ReplicationOriginRelationId, ExclusiveLock);
+	rel = table_open(ReplicationOriginRelationId, ExclusiveLock, 0);
 
 	for (roident = InvalidOid + 1; roident < PG_UINT16_MAX; roident++)
 	{
@@ -416,7 +416,7 @@ replorigin_drop_by_name(const char *name, bool missing_ok, bool nowait)
 
 	Assert(IsTransactionState());
 
-	rel = table_open(ReplicationOriginRelationId, RowExclusiveLock);
+	rel = table_open(ReplicationOriginRelationId, RowExclusiveLock, 0);
 
 	roident = replorigin_by_name(name, missing_ok);
 

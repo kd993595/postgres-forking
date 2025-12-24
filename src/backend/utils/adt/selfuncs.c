@@ -6205,8 +6205,8 @@ get_actual_variable_range(PlannerInfo *root, VariableStatData *vardata,
 			 * Open the table and index so we can read from them.  We should
 			 * already have some type of lock on each.
 			 */
-			heapRel = table_open(rte->relid, NoLock);
-			indexRel = index_open(index->indexoid, NoLock);
+			heapRel = table_open(rte->relid, NoLock, 0); /*NOTE: this should probably be changed to forkid for min/max withing fork files*/
+			indexRel = index_open(index->indexoid, NoLock, 0);
 
 			/* build some stuff needed for indexscan execution */
 			slot = table_slot_create(heapRel, NULL);
@@ -7644,7 +7644,7 @@ gincostestimate(PlannerInfo *root, IndexPath *path, double loop_count,
 	if (!index->hypothetical)
 	{
 		/* Lock should have already been obtained in plancat.c */
-		indexRel = index_open(index->indexoid, NoLock);
+		indexRel = index_open(index->indexoid, NoLock, 0);
 		ginGetStats(indexRel, &ginStats);
 		index_close(indexRel, NoLock);
 	}
@@ -8035,7 +8035,7 @@ brincostestimate(PlannerInfo *root, IndexPath *path, double loop_count,
 		/*
 		 * A lock should have already been obtained on the index in plancat.c.
 		 */
-		indexRel = index_open(index->indexoid, NoLock);
+		indexRel = index_open(index->indexoid, NoLock, 0);
 		brinGetStats(indexRel, &statsData);
 		index_close(indexRel, NoLock);
 

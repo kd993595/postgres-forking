@@ -782,7 +782,7 @@ ExecGetRangeTableRelation(EState *estate, Index rti)
 			 * seems sufficient to check this only when rellockmode is higher
 			 * than the minimum.
 			 */
-			rel = table_open(rte->relid, NoLock);
+			rel = table_open(rte->relid, NoLock, MyDBForkId); /*NOTE: at this point we need to know which forkid to use*/
 			Assert(rte->rellockmode == AccessShareLock ||
 				   CheckRelationLockedByMe(rel, rte->rellockmode, false));
 		}
@@ -793,7 +793,7 @@ ExecGetRangeTableRelation(EState *estate, Index rti)
 			 * lock on the relation.  This ensures sane behavior in case the
 			 * parent process exits before we do.
 			 */
-			rel = table_open(rte->relid, rte->rellockmode);
+			rel = table_open(rte->relid, rte->rellockmode, MyDBForkId);
 		}
 
 		estate->es_relations[rti - 1] = rel;

@@ -1026,7 +1026,7 @@ load_domaintype_info(TypeCacheEntry *typentry)
 	 * constraints for not just this domain, but any ancestor domains, so the
 	 * outer loop crawls up the domain stack.
 	 */
-	conRel = table_open(ConstraintRelationId, AccessShareLock);
+	conRel = table_open(ConstraintRelationId, AccessShareLock, 0);
 
 	for (;;)
 	{
@@ -2587,7 +2587,7 @@ load_enum_cache_data(TypeCacheEntry *tcache)
 				BTEqualStrategyNumber, F_OIDEQ,
 				ObjectIdGetDatum(tcache->type_id));
 
-	enum_rel = table_open(EnumRelationId, AccessShareLock);
+	enum_rel = table_open(EnumRelationId, AccessShareLock, 0);
 	enum_scan = systable_beginscan(enum_rel,
 								   EnumTypIdLabelIndexId,
 								   true, NULL,

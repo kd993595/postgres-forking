@@ -271,7 +271,7 @@ RI_FKey_check(TriggerData *trigdata)
 	 * SELECT FOR KEY SHARE will get on it.
 	 */
 	fk_rel = trigdata->tg_relation;
-	pk_rel = table_open(riinfo->pk_relid, RowShareLock);
+	pk_rel = table_open(riinfo->pk_relid, RowShareLock, 0);
 
 	switch (ri_NullCheck(RelationGetDescr(fk_rel), newslot, riinfo, false))
 	{
@@ -639,7 +639,7 @@ ri_restrict(TriggerData *trigdata, bool is_no_action)
 	 * fk_rel is opened in RowShareLock mode since that's what our eventual
 	 * SELECT FOR KEY SHARE will get on it.
 	 */
-	fk_rel = table_open(riinfo->fk_relid, RowShareLock);
+	fk_rel = table_open(riinfo->fk_relid, RowShareLock, 0);
 	pk_rel = trigdata->tg_relation;
 	oldslot = trigdata->tg_trigslot;
 
@@ -762,7 +762,7 @@ RI_FKey_cascade_del(PG_FUNCTION_ARGS)
 	 * fk_rel is opened in RowExclusiveLock mode since that's what our
 	 * eventual DELETE will get on it.
 	 */
-	fk_rel = table_open(riinfo->fk_relid, RowExclusiveLock);
+	fk_rel = table_open(riinfo->fk_relid, RowExclusiveLock, 0);
 	pk_rel = trigdata->tg_relation;
 	oldslot = trigdata->tg_trigslot;
 
@@ -870,7 +870,7 @@ RI_FKey_cascade_upd(PG_FUNCTION_ARGS)
 	 * fk_rel is opened in RowExclusiveLock mode since that's what our
 	 * eventual UPDATE will get on it.
 	 */
-	fk_rel = table_open(riinfo->fk_relid, RowExclusiveLock);
+	fk_rel = table_open(riinfo->fk_relid, RowExclusiveLock, 0);
 	pk_rel = trigdata->tg_relation;
 	newslot = trigdata->tg_newslot;
 	oldslot = trigdata->tg_trigslot;
@@ -1047,7 +1047,7 @@ ri_set(TriggerData *trigdata, bool is_set_null, int tgkind)
 	 * fk_rel is opened in RowExclusiveLock mode since that's what our
 	 * eventual UPDATE will get on it.
 	 */
-	fk_rel = table_open(riinfo->fk_relid, RowExclusiveLock);
+	fk_rel = table_open(riinfo->fk_relid, RowExclusiveLock, 0);
 	pk_rel = trigdata->tg_relation;
 	oldslot = trigdata->tg_trigslot;
 

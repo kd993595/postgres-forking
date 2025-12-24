@@ -1019,7 +1019,7 @@ get_all_vacuum_rels(MemoryContext vac_context, int options)
 	TableScanDesc scan;
 	HeapTuple	tuple;
 
-	pgclass = table_open(RelationRelationId, AccessShareLock);
+	pgclass = table_open(RelationRelationId, AccessShareLock, 0);
 
 	scan = table_beginscan_catalog(pgclass, 0, NULL);
 
@@ -1420,7 +1420,7 @@ vac_update_relstats(Relation relation,
 	TransactionId oldfrozenxid;
 	MultiXactId oldminmulti;
 
-	rd = table_open(RelationRelationId, RowExclusiveLock);
+	rd = table_open(RelationRelationId, RowExclusiveLock, 0);
 
 	/* Fetch a copy of the tuple to scribble on */
 	ScanKeyInit(&key[0],
@@ -1629,7 +1629,7 @@ vac_update_datfrozenxid(void)
 	 *
 	 * See vac_truncate_clog() for the race condition to prevent.
 	 */
-	relation = table_open(RelationRelationId, AccessShareLock);
+	relation = table_open(RelationRelationId, AccessShareLock, 0);
 
 	scan = systable_beginscan(relation, InvalidOid, false,
 							  NULL, 0, NULL);
@@ -1711,7 +1711,7 @@ vac_update_datfrozenxid(void)
 	Assert(MultiXactIdIsValid(newMinMulti));
 
 	/* Now fetch the pg_database tuple we need to update. */
-	relation = table_open(DatabaseRelationId, RowExclusiveLock);
+	relation = table_open(DatabaseRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Fetch a copy of the tuple to scribble on.  We could check the syscache
@@ -1834,7 +1834,7 @@ vac_truncate_clog(TransactionId frozenXID,
 	 * worst possible outcome is that pg_xact is not truncated as aggressively
 	 * as it could be.
 	 */
-	relation = table_open(DatabaseRelationId, AccessShareLock);
+	relation = table_open(DatabaseRelationId, AccessShareLock, 0);
 
 	scan = table_beginscan_catalog(relation, 0, NULL);
 
@@ -2314,7 +2314,7 @@ vac_open_indexes(Relation relation, LOCKMODE lockmode,
 		Oid			indexoid = lfirst_oid(indexoidscan);
 		Relation	indrel;
 
-		indrel = index_open(indexoid, lockmode);
+		indrel = index_open(indexoid, lockmode, 0);
 		if (indrel->rd_index->indisready)
 			(*Irel)[i++] = indrel;
 		else

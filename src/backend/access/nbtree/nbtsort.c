@@ -1788,8 +1788,8 @@ _bt_parallel_build_main(dsm_segment *seg, shm_toc *toc)
 	}
 
 	/* Open relations within worker */
-	heapRel = table_open(btshared->heaprelid, heapLockmode);
-	indexRel = index_open(btshared->indexrelid, indexLockmode);
+	heapRel = table_open(btshared->heaprelid, heapLockmode, 0); /*should only be called in main database for creating index parallel*/
+	indexRel = index_open(btshared->indexrelid, indexLockmode, 0);
 
 	/* Initialize worker's own spool */
 	btspool = (BTSpool *) palloc0(sizeof(BTSpool));

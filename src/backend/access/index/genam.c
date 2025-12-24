@@ -394,8 +394,9 @@ systable_beginscan(Relation heapRelation,
 
 	if (indexOK &&
 		!IgnoreSystemIndexes &&
-		!ReindexIsProcessingIndex(indexId))
-		irel = index_open(indexId, AccessShareLock);
+		!ReindexIsProcessingIndex(indexId)){
+		irel = index_open(indexId, AccessShareLock, 0);
+	}
 	else
 		irel = NULL;
 

@@ -85,7 +85,7 @@ InsertRule(const char *rulname,
 	/*
 	 * Ready to store new pg_rewrite tuple
 	 */
-	pg_rewrite_desc = table_open(RewriteRelationId, RowExclusiveLock);
+	pg_rewrite_desc = table_open(RewriteRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Check to see if we are replacing an existing tuple
@@ -245,7 +245,7 @@ DefineQueryRewrite(const char *rulename,
 	 *
 	 * Note that this lock level should match the one used in DefineRule.
 	 */
-	event_relation = table_open(event_relid, AccessExclusiveLock);
+	event_relation = table_open(event_relid, AccessExclusiveLock, 0); /*rules must be made in main database*/
 
 	/*
 	 * Verify relation is of a type that rules can sensibly be applied to.
@@ -701,7 +701,7 @@ EnableDisableRule(Relation rel, const char *rulename,
 	/*
 	 * Find the rule tuple to change.
 	 */
-	pg_rewrite_desc = table_open(RewriteRelationId, RowExclusiveLock);
+	pg_rewrite_desc = table_open(RewriteRelationId, RowExclusiveLock, 0);
 	ruletup = SearchSysCacheCopy2(RULERELNAME,
 								  ObjectIdGetDatum(owningRel),
 								  PointerGetDatum(rulename));
@@ -819,7 +819,7 @@ RenameRewriteRule(RangeVar *relation, const char *oldName,
 	targetrel = relation_open(relid, NoLock, 0); /*for these operations really only care abt main fork*/
 
 	/* Prepare to modify pg_rewrite */
-	pg_rewrite_desc = table_open(RewriteRelationId, RowExclusiveLock);
+	pg_rewrite_desc = table_open(RewriteRelationId, RowExclusiveLock, 0);
 
 	/* Fetch the rule's entry (it had better exist) */
 	ruletup = SearchSysCacheCopy2(RULERELNAME,

@@ -284,7 +284,7 @@ insert_event_trigger_tuple(const char *trigname, const char *eventname, Oid evtO
 				referenced;
 
 	/* Open pg_event_trigger. */
-	tgrel = table_open(EventTriggerRelationId, RowExclusiveLock);
+	tgrel = table_open(EventTriggerRelationId, RowExclusiveLock, 0);
 
 	/* Build the new pg_trigger tuple. */
 	trigoid = GetNewOidWithIndex(tgrel, EventTriggerOidIndexId,
@@ -387,7 +387,7 @@ SetDatabaseHasLoginEventTriggers(void)
 {
 	/* Set dathasloginevt flag in pg_database */
 	Form_pg_database db;
-	Relation	pg_db = table_open(DatabaseRelationId, RowExclusiveLock);
+	Relation	pg_db = table_open(DatabaseRelationId, RowExclusiveLock, 0);
 	ItemPointerData otid;
 	HeapTuple	tuple;
 
@@ -428,7 +428,7 @@ AlterEventTrigger(AlterEventTrigStmt *stmt)
 	Form_pg_event_trigger evtForm;
 	char		tgenabled = stmt->tgenabled;
 
-	tgrel = table_open(EventTriggerRelationId, RowExclusiveLock);
+	tgrel = table_open(EventTriggerRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy1(EVENTTRIGGERNAME,
 							  CStringGetDatum(stmt->trigname));
@@ -480,7 +480,7 @@ AlterEventTriggerOwner(const char *name, Oid newOwnerId)
 	Relation	rel;
 	ObjectAddress address;
 
-	rel = table_open(EventTriggerRelationId, RowExclusiveLock);
+	rel = table_open(EventTriggerRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy1(EVENTTRIGGERNAME, CStringGetDatum(name));
 
@@ -512,7 +512,7 @@ AlterEventTriggerOwner_oid(Oid trigOid, Oid newOwnerId)
 	HeapTuple	tup;
 	Relation	rel;
 
-	rel = table_open(EventTriggerRelationId, RowExclusiveLock);
+	rel = table_open(EventTriggerRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy1(EVENTTRIGGEROID, ObjectIdGetDatum(trigOid));
 
@@ -947,7 +947,7 @@ EventTriggerOnLogin(void)
 
 		if (runlist == NIL)
 		{
-			Relation	pg_db = table_open(DatabaseRelationId, RowExclusiveLock);
+			Relation	pg_db = table_open(DatabaseRelationId, RowExclusiveLock, 0);
 			HeapTuple	tuple;
 			void	   *state;
 			Form_pg_database db;
@@ -1309,7 +1309,7 @@ EventTriggerSQLDropAddObject(const ObjectAddress *object, bool original, bool no
 		Relation	catalog;
 		HeapTuple	tuple;
 
-		catalog = table_open(obj->address.classId, AccessShareLock);
+		catalog = table_open(obj->address.classId, AccessShareLock, 0);
 		tuple = get_catalog_object_by_oid(catalog,
 										  get_object_attnum_oid(object->classId),
 										  obj->address.objectId);
@@ -2018,7 +2018,7 @@ pg_event_trigger_ddl_commands(PG_FUNCTION_ARGS)
 							Oid			schema_oid;
 							bool		isnull;
 
-							catalog = table_open(addr.classId, AccessShareLock);
+							catalog = table_open(addr.classId, AccessShareLock, 0);
 							objtup = get_catalog_object_by_oid(catalog,
 															   get_object_attnum_oid(addr.classId),
 															   addr.objectId);

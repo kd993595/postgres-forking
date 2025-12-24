@@ -116,7 +116,7 @@ EnumValuesCreate(Oid enumTypeOid, List *vals)
 	 * probably not worth trying harder.
 	 */
 
-	pg_enum = table_open(EnumRelationId, RowExclusiveLock);
+	pg_enum = table_open(EnumRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Allocate OIDs for the enum's members.
@@ -228,7 +228,7 @@ EnumValuesDelete(Oid enumTypeOid)
 	SysScanDesc scan;
 	HeapTuple	tup;
 
-	pg_enum = table_open(EnumRelationId, RowExclusiveLock);
+	pg_enum = table_open(EnumRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_enum_enumtypid,
@@ -351,7 +351,7 @@ AddEnumLabel(Oid enumTypeOid,
 							newVal)));
 	}
 
-	pg_enum = table_open(EnumRelationId, RowExclusiveLock);
+	pg_enum = table_open(EnumRelationId, RowExclusiveLock, 0);
 
 	/* If we have to renumber the existing members, we restart from here */
 restart:
@@ -634,7 +634,7 @@ RenameEnumLabel(Oid enumTypeOid,
 	 */
 	LockDatabaseObject(TypeRelationId, enumTypeOid, 0, ExclusiveLock);
 
-	pg_enum = table_open(EnumRelationId, RowExclusiveLock);
+	pg_enum = table_open(EnumRelationId, RowExclusiveLock, 0);
 
 	/* Get the list of existing members of the enum */
 	list = SearchSysCacheList1(ENUMTYPOIDNAME,

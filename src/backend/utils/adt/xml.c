@@ -3050,7 +3050,7 @@ table_to_xmlschema(PG_FUNCTION_ARGS)
 	const char *result;
 	Relation	rel;
 
-	rel = table_open(relid, AccessShareLock);
+	rel = table_open(relid, AccessShareLock, 0); /*metadata needed only*/
 	result = map_sql_table_to_xmlschema(rel->rd_att, relid, nulls,
 										tableforest, targetns);
 	table_close(rel, NoLock);
@@ -3128,7 +3128,7 @@ table_to_xml_and_xmlschema(PG_FUNCTION_ARGS)
 	Relation	rel;
 	const char *xmlschema;
 
-	rel = table_open(relid, AccessShareLock);
+	rel = table_open(relid, AccessShareLock, 0);
 	xmlschema = map_sql_table_to_xmlschema(rel->rd_att, relid, nulls,
 										   tableforest, targetns);
 	table_close(rel, NoLock);
@@ -3289,7 +3289,7 @@ schema_to_xmlschema_internal(const char *schemaname, bool nulls,
 	{
 		Relation	rel;
 
-		rel = table_open(lfirst_oid(cell), AccessShareLock);
+		rel = table_open(lfirst_oid(cell), AccessShareLock, 0);
 		tupdesc_list = lappend(tupdesc_list, CreateTupleDescCopy(rel->rd_att));
 		table_close(rel, NoLock);
 	}
@@ -3429,7 +3429,7 @@ database_to_xmlschema_internal(bool nulls, bool tableforest,
 	{
 		Relation	rel;
 
-		rel = table_open(lfirst_oid(cell), AccessShareLock);
+		rel = table_open(lfirst_oid(cell), AccessShareLock, 0);
 		tupdesc_list = lappend(tupdesc_list, CreateTupleDescCopy(rel->rd_att));
 		table_close(rel, NoLock);
 	}

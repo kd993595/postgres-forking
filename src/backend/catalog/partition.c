@@ -56,7 +56,7 @@ get_partition_parent(Oid relid, bool even_if_detached)
 	Oid			result;
 	bool		detach_pending;
 
-	catalogRelation = table_open(InheritsRelationId, AccessShareLock);
+	catalogRelation = table_open(InheritsRelationId, AccessShareLock, 0);
 
 	result = get_partition_parent_worker(catalogRelation, relid,
 										 &detach_pending);
@@ -136,7 +136,7 @@ get_partition_ancestors(Oid relid)
 	List	   *result = NIL;
 	Relation	inhRel;
 
-	inhRel = table_open(InheritsRelationId, AccessShareLock);
+	inhRel = table_open(InheritsRelationId, AccessShareLock, 0);
 
 	get_partition_ancestors_worker(inhRel, relid, &result);
 
@@ -343,7 +343,7 @@ update_default_partition_oid(Oid parentId, Oid defaultPartId)
 	Relation	pg_partitioned_table;
 	Form_pg_partitioned_table part_table_form;
 
-	pg_partitioned_table = table_open(PartitionedRelationId, RowExclusiveLock);
+	pg_partitioned_table = table_open(PartitionedRelationId, RowExclusiveLock, 0);
 
 	tuple = SearchSysCacheCopy1(PARTRELID, ObjectIdGetDatum(parentId));
 

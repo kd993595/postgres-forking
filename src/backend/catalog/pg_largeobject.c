@@ -43,7 +43,7 @@ LargeObjectCreate(Oid loid)
 	bool		nulls[Natts_pg_largeobject_metadata];
 
 	pg_lo_meta = table_open(LargeObjectMetadataRelationId,
-							RowExclusiveLock);
+							RowExclusiveLock, 0);
 
 	/*
 	 * Insert metadata of the largeobject
@@ -89,10 +89,10 @@ LargeObjectDrop(Oid loid)
 	HeapTuple	tuple;
 
 	pg_lo_meta = table_open(LargeObjectMetadataRelationId,
-							RowExclusiveLock);
+							RowExclusiveLock, 0);
 
 	pg_largeobject = table_open(LargeObjectRelationId,
-								RowExclusiveLock);
+								RowExclusiveLock, 0);
 
 	/*
 	 * Delete an entry from pg_largeobject_metadata
@@ -166,7 +166,7 @@ LargeObjectExists(Oid loid)
 				ObjectIdGetDatum(loid));
 
 	pg_lo_meta = table_open(LargeObjectMetadataRelationId,
-							AccessShareLock);
+							AccessShareLock, 0);
 
 	sd = systable_beginscan(pg_lo_meta,
 							LargeObjectMetadataOidIndexId, true,

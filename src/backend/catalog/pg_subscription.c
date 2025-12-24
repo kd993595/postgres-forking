@@ -128,7 +128,7 @@ CountDBSubscriptions(Oid dbid)
 	SysScanDesc scan;
 	HeapTuple	tup;
 
-	rel = table_open(SubscriptionRelationId, RowExclusiveLock);
+	rel = table_open(SubscriptionRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&scankey,
 				Anum_pg_subscription_subdbid,
@@ -175,7 +175,7 @@ DisableSubscription(Oid subid)
 	HeapTuple	tup;
 
 	/* Look up the subscription in the catalog */
-	rel = table_open(SubscriptionRelationId, RowExclusiveLock);
+	rel = table_open(SubscriptionRelationId, RowExclusiveLock, 0);
 	tup = SearchSysCacheCopy1(SUBSCRIPTIONOID, ObjectIdGetDatum(subid));
 
 	if (!HeapTupleIsValid(tup))
@@ -243,7 +243,7 @@ AddSubscriptionRelState(Oid subid, Oid relid, char state,
 
 	LockSharedObject(SubscriptionRelationId, subid, 0, AccessShareLock);
 
-	rel = table_open(SubscriptionRelRelationId, RowExclusiveLock);
+	rel = table_open(SubscriptionRelRelationId, RowExclusiveLock, 0);
 
 	/* Try finding existing mapping. */
 	tup = SearchSysCacheCopy2(SUBSCRIPTIONRELMAP,
@@ -298,7 +298,7 @@ UpdateSubscriptionRelState(Oid subid, Oid relid, char state,
 
 	LockSharedObject(SubscriptionRelationId, subid, 0, AccessShareLock);
 
-	rel = table_open(SubscriptionRelRelationId, RowExclusiveLock);
+	rel = table_open(SubscriptionRelRelationId, RowExclusiveLock, 0);
 
 	/* Try finding existing mapping. */
 	tup = SearchSysCacheCopy2(SUBSCRIPTIONRELMAP,
@@ -350,7 +350,7 @@ GetSubscriptionRelState(Oid subid, Oid relid, XLogRecPtr *sublsn)
 	 * This is to avoid the race condition with AlterSubscription which tries
 	 * to remove this relstate.
 	 */
-	rel = table_open(SubscriptionRelRelationId, AccessShareLock);
+	rel = table_open(SubscriptionRelRelationId, AccessShareLock, 0);
 
 	/* Try finding the mapping. */
 	tup = SearchSysCache2(SUBSCRIPTIONRELMAP,
@@ -396,7 +396,7 @@ RemoveSubscriptionRel(Oid subid, Oid relid)
 	HeapTuple	tup;
 	int			nkeys = 0;
 
-	rel = table_open(SubscriptionRelRelationId, RowExclusiveLock);
+	rel = table_open(SubscriptionRelRelationId, RowExclusiveLock, 0);
 
 	if (OidIsValid(subid))
 	{
@@ -470,7 +470,7 @@ HasSubscriptionRelations(Oid subid)
 	SysScanDesc scan;
 	bool		has_subrels;
 
-	rel = table_open(SubscriptionRelRelationId, AccessShareLock);
+	rel = table_open(SubscriptionRelRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey[0],
 				Anum_pg_subscription_rel_srsubid,
@@ -507,7 +507,7 @@ GetSubscriptionRelations(Oid subid, bool not_ready)
 	ScanKeyData skey[2];
 	SysScanDesc scan;
 
-	rel = table_open(SubscriptionRelRelationId, AccessShareLock);
+	rel = table_open(SubscriptionRelRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey[nkeys++],
 				Anum_pg_subscription_rel_srsubid,

@@ -214,6 +214,9 @@ SearchSysCache(int cacheId,
 	Assert(cacheId >= 0 && cacheId < SysCacheSize &&
 		   PointerIsValid(SysCache[cacheId]));
 
+	if(cacheId == 4){
+		elog(LOG, "namespace syscache is being looked up");
+	}
 	return SearchCatCache(SysCache[cacheId], key1, key2, key3, key4);
 }
 

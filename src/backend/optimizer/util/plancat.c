@@ -126,7 +126,7 @@ get_relation_info(PlannerInfo *root, Oid relationObjectId, bool inhparent,
 	 * the rewriter or when expand_inherited_rtentry() added it to the query's
 	 * rangetable.
 	 */
-	relation = table_open(relationObjectId, NoLock);
+	relation = table_open(relationObjectId, NoLock, 0);
 
 	/*
 	 * Relations without a table AM can be used in a query only if they are of
@@ -250,7 +250,7 @@ get_relation_info(PlannerInfo *root, Oid relationObjectId, bool inhparent,
 			/*
 			 * Extract info from the relation descriptor for the index.
 			 */
-			indexRelation = index_open(indexoid, lmode);
+			indexRelation = index_open(indexoid, lmode, 0);
 			index = indexRelation->rd_index;
 
 			/*
@@ -739,7 +739,7 @@ infer_arbiter_indexes(PlannerInfo *root)
 	varno = root->parse->resultRelation;
 	rte = rt_fetch(varno, root->parse->rtable);
 
-	relation = table_open(rte->relid, NoLock);
+	relation = table_open(rte->relid, NoLock, 0);
 
 	/*
 	 * Build normalized/BMS representation of plain indexed attributes, as
@@ -810,7 +810,7 @@ infer_arbiter_indexes(PlannerInfo *root)
 		 * enforcement needs to occur there anyway when an inference clause is
 		 * omitted.
 		 */
-		idxRel = index_open(indexoid, rte->rellockmode);
+		idxRel = index_open(indexoid, rte->rellockmode, 0);
 		idxForm = idxRel->rd_index;
 
 		if (!idxForm->indisvalid)
@@ -1229,8 +1229,8 @@ get_relation_data_width(Oid relid, int32 *attr_widths)
 	int32		result;
 	Relation	relation;
 
-	/* As above, assume relation is already locked */
-	relation = table_open(relid, NoLock);
+	/* As above, assume relation is already locked, only care about type metadata */
+	relation = table_open(relid, NoLock, 0);
 
 	result = get_rel_data_width(relation, attr_widths);
 
@@ -1276,9 +1276,9 @@ get_relation_constraints(PlannerInfo *root,
 	TupleConstr *constr;
 
 	/*
-	 * We assume the relation has already been safely locked.
+	 * We assume the relation has already been safely locked. Only care about metadata
 	 */
-	relation = table_open(relationObjectId, NoLock);
+	relation = table_open(relationObjectId, NoLock, 0);
 
 	constr = relation->rd_att->constr;
 	if (constr != NULL)
@@ -1778,7 +1778,7 @@ build_physical_tlist(PlannerInfo *root, RelOptInfo *rel)
 	{
 		case RTE_RELATION:
 			/* Assume we already have adequate lock */
-			relation = table_open(rte->relid, NoLock);
+			relation = table_open(rte->relid, NoLock, 0);
 
 			numattrs = RelationGetNumberOfAttributes(relation);
 			for (attrno = 1; attrno <= numattrs; attrno++)
@@ -2245,7 +2245,7 @@ has_row_triggers(PlannerInfo *root, Index rti, CmdType event)
 	bool		result = false;
 
 	/* Assume we already have adequate lock */
-	relation = table_open(rte->relid, NoLock);
+	relation = table_open(rte->relid, NoLock, 0);
 
 	trigDesc = relation->trigdesc;
 	switch (event)
@@ -2295,7 +2295,7 @@ has_stored_generated_columns(PlannerInfo *root, Index rti)
 	bool		result = false;
 
 	/* Assume we already have adequate lock */
-	relation = table_open(rte->relid, NoLock);
+	relation = table_open(rte->relid, NoLock, 0);
 
 	tupdesc = RelationGetDescr(relation);
 	result = tupdesc->constr && tupdesc->constr->has_generated_stored;
@@ -2324,7 +2324,7 @@ get_dependent_generated_columns(PlannerInfo *root, Index rti,
 	TupleConstr *constr;
 
 	/* Assume we already have adequate lock */
-	relation = table_open(rte->relid, NoLock);
+	relation = table_open(rte->relid, NoLock, 0);
 
 	tupdesc = RelationGetDescr(relation);
 	constr = tupdesc->constr;

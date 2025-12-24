@@ -150,7 +150,7 @@ get_extension_oid(const char *extname, bool missing_ok)
 	HeapTuple	tuple;
 	ScanKeyData entry[1];
 
-	rel = table_open(ExtensionRelationId, AccessShareLock);
+	rel = table_open(ExtensionRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&entry[0],
 				Anum_pg_extension_extname,
@@ -195,7 +195,7 @@ get_extension_name(Oid ext_oid)
 	HeapTuple	tuple;
 	ScanKeyData entry[1];
 
-	rel = table_open(ExtensionRelationId, AccessShareLock);
+	rel = table_open(ExtensionRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&entry[0],
 				Anum_pg_extension_oid,
@@ -234,7 +234,7 @@ get_extension_schema(Oid ext_oid)
 	HeapTuple	tuple;
 	ScanKeyData entry[1];
 
-	rel = table_open(ExtensionRelationId, AccessShareLock);
+	rel = table_open(ExtensionRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&entry[0],
 				Anum_pg_extension_oid,
@@ -1881,7 +1881,7 @@ InsertExtensionTuple(const char *extName, Oid extOwner,
 	/*
 	 * Build and insert the pg_extension tuple
 	 */
-	rel = table_open(ExtensionRelationId, RowExclusiveLock);
+	rel = table_open(ExtensionRelationId, RowExclusiveLock, 0);
 
 	memset(values, 0, sizeof(values));
 	memset(nulls, 0, sizeof(nulls));
@@ -1975,7 +1975,7 @@ RemoveExtensionById(Oid extId)
 				 errmsg("cannot drop extension \"%s\" because it is being modified",
 						get_extension_name(extId))));
 
-	rel = table_open(ExtensionRelationId, RowExclusiveLock);
+	rel = table_open(ExtensionRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&entry[0],
 				Anum_pg_extension_oid,
@@ -2476,7 +2476,7 @@ pg_extension_config_dump(PG_FUNCTION_ARGS)
 	 */
 
 	/* Find the pg_extension tuple */
-	extRel = table_open(ExtensionRelationId, RowExclusiveLock);
+	extRel = table_open(ExtensionRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_extension_oid,
@@ -2620,7 +2620,7 @@ extension_config_remove(Oid extensionoid, Oid tableoid)
 	ArrayType  *a;
 
 	/* Find the pg_extension tuple */
-	extRel = table_open(ExtensionRelationId, RowExclusiveLock);
+	extRel = table_open(ExtensionRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_extension_oid,
@@ -2815,7 +2815,7 @@ AlterExtensionNamespace(const char *extensionName, const char *newschema, Oid *o
 						extensionName, newschema)));
 
 	/* Locate the pg_extension tuple */
-	extRel = table_open(ExtensionRelationId, RowExclusiveLock);
+	extRel = table_open(ExtensionRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_extension_oid,
@@ -2863,7 +2863,7 @@ AlterExtensionNamespace(const char *extensionName, const char *newschema, Oid *o
 	 * Scan pg_depend to find objects that depend directly on the extension,
 	 * and alter each one's schema.
 	 */
-	depRel = table_open(DependRelationId, AccessShareLock);
+	depRel = table_open(DependRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_depend_refclassid,
@@ -3013,7 +3013,7 @@ ExecAlterExtensionStmt(ParseState *pstate, AlterExtensionStmt *stmt)
 	/*
 	 * Look up the extension --- it must already exist in pg_extension
 	 */
-	extRel = table_open(ExtensionRelationId, AccessShareLock);
+	extRel = table_open(ExtensionRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_extension_extname,
@@ -3167,7 +3167,7 @@ ApplyExtensionUpdates(Oid extensionOid,
 		control = read_extension_aux_control_file(pcontrol, versionName);
 
 		/* Find the pg_extension tuple */
-		extRel = table_open(ExtensionRelationId, RowExclusiveLock);
+		extRel = table_open(ExtensionRelationId, RowExclusiveLock, 0);
 
 		ScanKeyInit(&key[0],
 					Anum_pg_extension_oid,

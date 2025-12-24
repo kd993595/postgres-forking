@@ -477,8 +477,8 @@ lookup_ts_config_cache(Oid cfgId)
 					BTEqualStrategyNumber, F_OIDEQ,
 					ObjectIdGetDatum(cfgId));
 
-		maprel = table_open(TSConfigMapRelationId, AccessShareLock);
-		mapidx = index_open(TSConfigMapIndexId, AccessShareLock);
+		maprel = table_open(TSConfigMapRelationId, AccessShareLock, 0);
+		mapidx = index_open(TSConfigMapIndexId, AccessShareLock, 0);
 		mapscan = systable_beginscan_ordered(maprel, mapidx,
 											 NULL, 1, &mapskey);
 

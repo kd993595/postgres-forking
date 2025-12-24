@@ -584,7 +584,7 @@ ExecInitIndexOnlyScan(IndexOnlyScan *node, EState *estate, int eflags)
 
 	/* Open the index relation. */
 	lockmode = exec_rt_fetch(node->scan.scanrelid, estate)->rellockmode;
-	indexRelation = index_open(node->indexid, lockmode);
+	indexRelation = index_open(node->indexid, lockmode, 0);
 	indexstate->ioss_RelationDesc = indexRelation;
 
 	/*

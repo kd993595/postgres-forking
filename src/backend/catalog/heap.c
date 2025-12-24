@@ -831,7 +831,7 @@ AddNewAttributeTuples(Oid new_rel_oid,
 	/*
 	 * open pg_attribute and its indexes.
 	 */
-	rel = table_open(AttributeRelationId, RowExclusiveLock);
+	rel = table_open(AttributeRelationId, RowExclusiveLock, 0);
 
 	indstate = CatalogOpenIndexes(rel);
 
@@ -1136,7 +1136,7 @@ heap_create_with_catalog(const char *relname,
 	TransactionId relfrozenxid;
 	MultiXactId relminmxid;
 
-	pg_class_desc = table_open(RelationRelationId, RowExclusiveLock);
+	pg_class_desc = table_open(RelationRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * sanity checks
@@ -1530,7 +1530,7 @@ RelationRemoveInheritance(Oid relid)
 	ScanKeyData key;
 	HeapTuple	tuple;
 
-	catalogRelation = table_open(InheritsRelationId, RowExclusiveLock);
+	catalogRelation = table_open(InheritsRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&key,
 				Anum_pg_inherits_inhrelid,
@@ -1562,7 +1562,7 @@ DeleteRelationTuple(Oid relid)
 	HeapTuple	tup;
 
 	/* Grab an appropriate lock on the pg_class relation */
-	pg_class_desc = table_open(RelationRelationId, RowExclusiveLock);
+	pg_class_desc = table_open(RelationRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCache1(RELOID, ObjectIdGetDatum(relid));
 	if (!HeapTupleIsValid(tup))
@@ -1593,7 +1593,7 @@ DeleteAttributeTuples(Oid relid)
 	HeapTuple	atttup;
 
 	/* Grab an appropriate lock on the pg_attribute relation */
-	attrel = table_open(AttributeRelationId, RowExclusiveLock);
+	attrel = table_open(AttributeRelationId, RowExclusiveLock, 0);
 
 	/* Use the index to scan only attributes of the target relation */
 	ScanKeyInit(&key[0],
@@ -1630,7 +1630,7 @@ DeleteSystemAttributeTuples(Oid relid)
 	HeapTuple	atttup;
 
 	/* Grab an appropriate lock on the pg_attribute relation */
-	attrel = table_open(AttributeRelationId, RowExclusiveLock);
+	attrel = table_open(AttributeRelationId, RowExclusiveLock, 0);
 
 	/* Use the index to scan only system attributes of the target relation */
 	ScanKeyInit(&key[0],
@@ -1687,7 +1687,7 @@ RemoveAttributeById(Oid relid, AttrNumber attnum)
 	 */
 	rel = relation_open(relid, AccessExclusiveLock, 0);
 
-	attr_rel = table_open(AttributeRelationId, RowExclusiveLock);
+	attr_rel = table_open(AttributeRelationId, RowExclusiveLock, 0);
 
 	tuple = SearchSysCacheCopy2(ATTNUM,
 								ObjectIdGetDatum(relid),
@@ -1843,7 +1843,7 @@ heap_drop_with_catalog(Oid relid)
 		Relation	ftrel;
 		HeapTuple	fttuple;
 
-		ftrel = table_open(ForeignTableRelationId, RowExclusiveLock);
+		ftrel = table_open(ForeignTableRelationId, RowExclusiveLock, 0);
 
 		fttuple = SearchSysCache1(FOREIGNTABLEREL, ObjectIdGetDatum(relid));
 		if (!HeapTupleIsValid(fttuple))
@@ -1979,7 +1979,7 @@ RelationClearMissing(Relation rel)
 
 
 	/* Get a lock on pg_attribute */
-	attr_rel = table_open(AttributeRelationId, RowExclusiveLock);
+	attr_rel = table_open(AttributeRelationId, RowExclusiveLock, 0);
 
 	/* process each non-system attribute, including any dropped columns */
 	for (attnum = 1; attnum <= natts; attnum++)
@@ -2034,7 +2034,7 @@ StoreAttrMissingVal(Relation rel, AttrNumber attnum, Datum missingval)
 	Assert(rel->rd_rel->relkind == RELKIND_RELATION);
 
 	/* Fetch the pg_attribute row */
-	attrrel = table_open(AttributeRelationId, RowExclusiveLock);
+	attrrel = table_open(AttributeRelationId, RowExclusiveLock, 0);
 
 	atttup = SearchSysCache2(ATTNUM,
 							 ObjectIdGetDatum(RelationGetRelid(rel)),
@@ -2089,7 +2089,7 @@ SetAttrMissing(Oid relid, char *attname, char *value)
 				newtup;
 
 	/* lock the table the attribute belongs to */
-	tablerel = table_open(relid, AccessExclusiveLock);
+	tablerel = table_open(relid, AccessExclusiveLock, 0); /*binary upgrade should only be in main database alone*/
 
 	/* Don't do anything unless it's a plain table */
 	if (tablerel->rd_rel->relkind != RELKIND_RELATION)
@@ -2099,7 +2099,7 @@ SetAttrMissing(Oid relid, char *attname, char *value)
 	}
 
 	/* Lock the attribute row and get the data */
-	attrrel = table_open(AttributeRelationId, RowExclusiveLock);
+	attrrel = table_open(AttributeRelationId, RowExclusiveLock, 0);
 	atttup = SearchSysCacheAttName(relid, attname);
 	if (!HeapTupleIsValid(atttup))
 		elog(ERROR, "cache lookup failed for attribute %s of relation %u",
@@ -2576,7 +2576,7 @@ MergeWithExistingConstraint(Relation rel, const char *ccname, Node *expr,
 	HeapTuple	tup;
 
 	/* Search for a pg_constraint entry with same name and relation */
-	conDesc = table_open(ConstraintRelationId, RowExclusiveLock);
+	conDesc = table_open(ConstraintRelationId, RowExclusiveLock, 0);
 
 	found = false;
 
@@ -2725,7 +2725,7 @@ SetRelationNumChecks(Relation rel, int numchecks)
 	HeapTuple	reltup;
 	Form_pg_class relStruct;
 
-	relrel = table_open(RelationRelationId, RowExclusiveLock);
+	relrel = table_open(RelationRelationId, RowExclusiveLock, 0);
 	reltup = SearchSysCacheCopy1(RELOID,
 								 ObjectIdGetDatum(RelationGetRelid(rel)));
 	if (!HeapTupleIsValid(reltup))
@@ -2936,7 +2936,7 @@ CopyStatistics(Oid fromrelid, Oid torelid)
 	Relation	statrel;
 	CatalogIndexState indstate = NULL;
 
-	statrel = table_open(StatisticRelationId, RowExclusiveLock);
+	statrel = table_open(StatisticRelationId, RowExclusiveLock, 0);
 
 	/* Now search for stat records */
 	ScanKeyInit(&key[0],
@@ -2989,7 +2989,7 @@ RemoveStatistics(Oid relid, AttrNumber attnum)
 	int			nkeys;
 	HeapTuple	tuple;
 
-	pgstatistic = table_open(StatisticRelationId, RowExclusiveLock);
+	pgstatistic = table_open(StatisticRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_statistic_starelid,
@@ -3040,7 +3040,7 @@ RelationTruncateIndexes(Relation heapRelation)
 		IndexInfo  *indexInfo;
 
 		/* Open the index relation; use exclusive lock, just to be sure */
-		currentIndex = index_open(indexId, AccessExclusiveLock);
+		currentIndex = index_open(indexId, AccessExclusiveLock, heapRelation->rd_dbforkId);
 
 		/*
 		 * Fetch info needed for index_build.  Since we know there are no
@@ -3087,7 +3087,7 @@ heap_truncate(List *relids)
 		Oid			rid = lfirst_oid(cell);
 		Relation	rel;
 
-		rel = table_open(rid, AccessExclusiveLock);
+		rel = table_open(rid, AccessExclusiveLock, 0); /*this truncation should only happen in a main database*/
 		relations = lappend(relations, rel);
 	}
 
@@ -3138,7 +3138,7 @@ heap_truncate_one_rel(Relation rel)
 	toastrelid = rel->rd_rel->reltoastrelid;
 	if (OidIsValid(toastrelid))
 	{
-		Relation	toastrel = table_open(toastrelid, AccessExclusiveLock);
+		Relation	toastrel = table_open(toastrelid, AccessExclusiveLock, 0); /*truncation should only happen in main database*/
 
 		table_relation_nontransactional_truncate(toastrel);
 		RelationTruncateIndexes(toastrel);
@@ -3274,7 +3274,7 @@ heap_truncate_find_FKs(List *relationIds)
 	 * Must scan pg_constraint.  Right now, it is a seqscan because there is
 	 * no available index on confrelid.
 	 */
-	fkeyRel = table_open(ConstraintRelationId, AccessShareLock);
+	fkeyRel = table_open(ConstraintRelationId, AccessShareLock, 0);
 
 restart:
 	restart = false;
@@ -3423,7 +3423,7 @@ StorePartitionKey(Relation rel,
 	else
 		partexprDatum = (Datum) 0;
 
-	pg_partitioned_table = table_open(PartitionedRelationId, RowExclusiveLock);
+	pg_partitioned_table = table_open(PartitionedRelationId, RowExclusiveLock, 0);
 
 	/* Only this can ever be NULL */
 	if (!partexprDatum)
@@ -3513,7 +3513,7 @@ RemovePartitionKeyByRelId(Oid relid)
 	Relation	rel;
 	HeapTuple	tuple;
 
-	rel = table_open(PartitionedRelationId, RowExclusiveLock);
+	rel = table_open(PartitionedRelationId, RowExclusiveLock, 0);
 
 	tuple = SearchSysCache1(PARTRELID, ObjectIdGetDatum(relid));
 	if (!HeapTupleIsValid(tuple))
@@ -3550,7 +3550,7 @@ StorePartitionBound(Relation rel, Relation parent, PartitionBoundSpec *bound)
 	Oid			defaultPartOid;
 
 	/* Update pg_class tuple */
-	classRel = table_open(RelationRelationId, RowExclusiveLock);
+	classRel = table_open(RelationRelationId, RowExclusiveLock, 0);
 	tuple = SearchSysCacheCopy1(RELOID,
 								ObjectIdGetDatum(RelationGetRelid(rel)));
 	if (!HeapTupleIsValid(tuple))

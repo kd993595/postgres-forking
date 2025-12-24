@@ -1031,7 +1031,7 @@ Datum
 gin_clean_pending_list(PG_FUNCTION_ARGS)
 {
 	Oid			indexoid = PG_GETARG_OID(0);
-	Relation	indexRel = index_open(indexoid, RowExclusiveLock);
+	Relation	indexRel = index_open(indexoid, RowExclusiveLock, 0);
 	IndexBulkDeleteResult stats;
 
 	if (RecoveryInProgress())

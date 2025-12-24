@@ -1018,7 +1018,7 @@ parallel_vacuum_main(dsm_segment *seg, shm_toc *toc)
 	 * okay because the lock mode does not conflict among the parallel
 	 * workers.
 	 */
-	rel = table_open(shared->relid, ShareUpdateExclusiveLock);
+	rel = table_open(shared->relid, ShareUpdateExclusiveLock, 0); /*vacuum stuff probably should not be called on forks*/
 
 	/*
 	 * Open all indexes. indrels are sorted in order by OID, which should be

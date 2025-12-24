@@ -147,7 +147,7 @@ cluster(ParseState *pstate, ClusterStmt *stmt, bool isTopLevel)
 											0,
 											RangeVarCallbackMaintainsTable,
 											NULL);
-		rel = table_open(tableOid, NoLock);
+		rel = table_open(tableOid, NoLock, 0); /*get rel forkid from the stmt->relation somehow*/
 
 		/*
 		 * Reject clustering a remote temp table ... their local buffer
@@ -506,7 +506,7 @@ check_index_is_clusterable(Relation OldHeap, Oid indexOid, LOCKMODE lockmode)
 {
 	Relation	OldIndex;
 
-	OldIndex = index_open(indexOid, lockmode);
+	OldIndex = index_open(indexOid, lockmode, 0);
 
 	/*
 	 * Check that index is in fact an index on the given relation
@@ -587,7 +587,7 @@ mark_index_clustered(Relation rel, Oid indexOid, bool is_internal)
 	/*
 	 * Check each index of the relation and set/clear the bit as needed.
 	 */
-	pg_index = table_open(IndexRelationId, RowExclusiveLock);
+	pg_index = table_open(IndexRelationId, RowExclusiveLock, 0);
 
 	foreach(index, RelationGetIndexList(rel))
 	{
@@ -703,7 +703,7 @@ make_new_heap(Oid OIDOldHeap, Oid NewTableSpace, Oid NewAccessMethod,
 	bool		isNull;
 	Oid			namespaceid;
 
-	OldHeap = table_open(OIDOldHeap, lockmode);
+	OldHeap = table_open(OIDOldHeap, lockmode, 0); /*should probably add in context into function call for appropriate table*/
 	OldHeapDesc = RelationGetDescr(OldHeap);
 
 	/*
@@ -844,10 +844,10 @@ copy_table_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 	/*
 	 * Open the relations we need.
 	 */
-	NewHeap = table_open(OIDNewHeap, AccessExclusiveLock);
-	OldHeap = table_open(OIDOldHeap, AccessExclusiveLock);
+	NewHeap = table_open(OIDNewHeap, AccessExclusiveLock, 0); /*again context should be put in function call*/
+	OldHeap = table_open(OIDOldHeap, AccessExclusiveLock, 0);
 	if (OidIsValid(OIDOldIndex))
-		OldIndex = index_open(OIDOldIndex, AccessExclusiveLock);
+		OldIndex = index_open(OIDOldIndex, AccessExclusiveLock, 0);
 	else
 		OldIndex = NULL;
 
@@ -1012,7 +1012,7 @@ copy_table_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 	table_close(NewHeap, NoLock);
 
 	/* Update pg_class to reflect the correct values of pages and tuples. */
-	relRelation = table_open(RelationRelationId, RowExclusiveLock);
+	relRelation = table_open(RelationRelationId, RowExclusiveLock, 0);
 
 	reltup = SearchSysCacheCopy1(RELOID, ObjectIdGetDatum(OIDNewHeap));
 	if (!HeapTupleIsValid(reltup))
@@ -1088,7 +1088,7 @@ swap_relation_files(Oid r1, Oid r2, bool target_is_pg_class,
 				 errmsg("cannot call this swap_relation_files from non main fork since mainly in altering schema stuff")));
 	}
 	/* We need writable copies of both pg_class tuples. */
-	relRelation = table_open(RelationRelationId, RowExclusiveLock);
+	relRelation = table_open(RelationRelationId, RowExclusiveLock, 0);
 
 	reltup1 = SearchSysCacheCopy1(RELOID, ObjectIdGetDatum(r1));
 	if (!HeapTupleIsValid(reltup1))
@@ -1539,7 +1539,7 @@ finish_heap_swap(Oid OIDOldHeap, Oid OIDNewHeap,
 		HeapTuple	reltup;
 		Form_pg_class relform;
 
-		relRelation = table_open(RelationRelationId, RowExclusiveLock);
+		relRelation = table_open(RelationRelationId, RowExclusiveLock, 0);
 
 		reltup = SearchSysCacheCopy1(RELOID, ObjectIdGetDatum(OIDOldHeap));
 		if (!HeapTupleIsValid(reltup))
@@ -1590,7 +1590,7 @@ finish_heap_swap(Oid OIDOldHeap, Oid OIDNewHeap,
 	{
 		Relation	newrel;
 
-		newrel = table_open(OIDOldHeap, NoLock);
+		newrel = table_open(OIDOldHeap, NoLock, 0); /*context should come form the person making the new heap files for the cluster cmd*/
 		if (OidIsValid(newrel->rd_rel->reltoastrelid))
 		{
 			Oid			toastidx;
@@ -1629,7 +1629,7 @@ finish_heap_swap(Oid OIDOldHeap, Oid OIDNewHeap,
 	{
 		Relation	newrel;
 
-		newrel = table_open(OIDOldHeap, NoLock);
+		newrel = table_open(OIDOldHeap, NoLock, 0);
 		RelationClearMissing(newrel);
 		relation_close(newrel, NoLock);
 	}
@@ -1657,7 +1657,7 @@ get_tables_to_cluster(MemoryContext cluster_context)
 	 * Get all indexes that have indisclustered set and that the current user
 	 * has the appropriate privileges for.
 	 */
-	indRelation = table_open(IndexRelationId, AccessShareLock);
+	indRelation = table_open(IndexRelationId, AccessShareLock, 0);
 	ScanKeyInit(&entry,
 				Anum_pg_index_indisclustered,
 				BTEqualStrategyNumber, F_BOOLEQ,

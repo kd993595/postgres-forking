@@ -244,7 +244,7 @@ GetSharedSecurityLabel(const ObjectAddress *object, const char *provider)
 				BTEqualStrategyNumber, F_TEXTEQ,
 				CStringGetTextDatum(provider));
 
-	pg_shseclabel = table_open(SharedSecLabelRelationId, AccessShareLock);
+	pg_shseclabel = table_open(SharedSecLabelRelationId, AccessShareLock, 0);
 
 	scan = systable_beginscan(pg_shseclabel, SharedSecLabelObjectIndexId,
 							  criticalSharedRelcachesBuilt, NULL, 3, keys);
@@ -301,7 +301,7 @@ GetSecurityLabel(const ObjectAddress *object, const char *provider)
 				BTEqualStrategyNumber, F_TEXTEQ,
 				CStringGetTextDatum(provider));
 
-	pg_seclabel = table_open(SecLabelRelationId, AccessShareLock);
+	pg_seclabel = table_open(SecLabelRelationId, AccessShareLock, 0);
 
 	scan = systable_beginscan(pg_seclabel, SecLabelObjectIndexId, true,
 							  NULL, 4, keys);
@@ -361,7 +361,7 @@ SetSharedSecurityLabel(const ObjectAddress *object,
 				BTEqualStrategyNumber, F_TEXTEQ,
 				CStringGetTextDatum(provider));
 
-	pg_shseclabel = table_open(SharedSecLabelRelationId, RowExclusiveLock);
+	pg_shseclabel = table_open(SharedSecLabelRelationId, RowExclusiveLock, 0);
 
 	scan = systable_beginscan(pg_shseclabel, SharedSecLabelObjectIndexId, true,
 							  NULL, 3, keys);
@@ -448,7 +448,7 @@ SetSecurityLabel(const ObjectAddress *object,
 				BTEqualStrategyNumber, F_TEXTEQ,
 				CStringGetTextDatum(provider));
 
-	pg_seclabel = table_open(SecLabelRelationId, RowExclusiveLock);
+	pg_seclabel = table_open(SecLabelRelationId, RowExclusiveLock, 0);
 
 	scan = systable_beginscan(pg_seclabel, SecLabelObjectIndexId, true,
 							  NULL, 4, keys);
@@ -504,7 +504,7 @@ DeleteSharedSecurityLabel(Oid objectId, Oid classId)
 				BTEqualStrategyNumber, F_OIDEQ,
 				ObjectIdGetDatum(classId));
 
-	pg_shseclabel = table_open(SharedSecLabelRelationId, RowExclusiveLock);
+	pg_shseclabel = table_open(SharedSecLabelRelationId, RowExclusiveLock, 0);
 
 	scan = systable_beginscan(pg_shseclabel, SharedSecLabelObjectIndexId, true,
 							  NULL, 2, skey);
@@ -555,7 +555,7 @@ DeleteSecurityLabel(const ObjectAddress *object)
 	else
 		nkeys = 2;
 
-	pg_seclabel = table_open(SecLabelRelationId, RowExclusiveLock);
+	pg_seclabel = table_open(SecLabelRelationId, RowExclusiveLock, 0);
 
 	scan = systable_beginscan(pg_seclabel, SecLabelObjectIndexId, true,
 							  NULL, nkeys, skey);

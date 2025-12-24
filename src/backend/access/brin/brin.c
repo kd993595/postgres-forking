@@ -589,7 +589,7 @@ bringetbitmap(IndexScanDesc scan, TIDBitmap *tbm)
 	 * iterate on the revmap.
 	 */
 	heapOid = IndexGetRelation(RelationGetRelid(idxRel), false);
-	heapRel = table_open(heapOid, AccessShareLock);
+	heapRel = table_open(heapOid, AccessShareLock, 0);
 	nblocks = RelationGetNumberOfBlocks(heapRel);
 	table_close(heapRel, AccessShareLock);
 
@@ -1319,7 +1319,7 @@ brinvacuumcleanup(IndexVacuumInfo *info, IndexBulkDeleteResult *stats)
 	/* rest of stats is initialized by zeroing */
 
 	heapRel = table_open(IndexGetRelation(RelationGetRelid(info->index), false),
-						 AccessShareLock);
+						 AccessShareLock, 0);
 
 	brin_vacuum_scan(info->index, info->strategy);
 
@@ -1403,7 +1403,7 @@ brin_summarize_range(PG_FUNCTION_ARGS)
 	heapoid = IndexGetRelation(indexoid, true);
 	if (OidIsValid(heapoid))
 	{
-		heapRel = table_open(heapoid, ShareUpdateExclusiveLock);
+		heapRel = table_open(heapoid, ShareUpdateExclusiveLock, 0);
 
 		/*
 		 * Autovacuum calls us.  For its benefit, switch to the table owner's
@@ -1428,7 +1428,7 @@ brin_summarize_range(PG_FUNCTION_ARGS)
 		save_nestlevel = -1;
 	}
 
-	indexRel = index_open(indexoid, ShareUpdateExclusiveLock);
+	indexRel = index_open(indexoid, ShareUpdateExclusiveLock, 0);
 
 	/* Must be a BRIN index */
 	if (indexRel->rd_rel->relkind != RELKIND_INDEX ||
@@ -1513,11 +1513,11 @@ brin_desummarize_range(PG_FUNCTION_ARGS)
 	 */
 	heapoid = IndexGetRelation(indexoid, true);
 	if (OidIsValid(heapoid))
-		heapRel = table_open(heapoid, ShareUpdateExclusiveLock);
+		heapRel = table_open(heapoid, ShareUpdateExclusiveLock, 0);
 	else
 		heapRel = NULL;
 
-	indexRel = index_open(indexoid, ShareUpdateExclusiveLock);
+	indexRel = index_open(indexoid, ShareUpdateExclusiveLock, 0);
 
 	/* Must be a BRIN index */
 	if (indexRel->rd_rel->relkind != RELKIND_INDEX ||
@@ -2894,8 +2894,8 @@ _brin_parallel_build_main(dsm_segment *seg, shm_toc *toc)
 	}
 
 	/* Open relations within worker */
-	heapRel = table_open(brinshared->heaprelid, heapLockmode);
-	indexRel = index_open(brinshared->indexrelid, indexLockmode);
+	heapRel = table_open(brinshared->heaprelid, heapLockmode, 0);
+	indexRel = index_open(brinshared->indexrelid, indexLockmode, 0);
 
 	buildstate = initialize_brin_buildstate(indexRel, NULL,
 											brinshared->pagesPerRange,

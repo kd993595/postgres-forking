@@ -207,9 +207,9 @@ CreateTriggerFiringOn(CreateTrigStmt *stmt, const char *queryString,
 	bool		existing_isClone = false;
 
 	if (OidIsValid(relOid))
-		rel = table_open(relOid, ShareRowExclusiveLock);
+		rel = table_open(relOid, ShareRowExclusiveLock, 0); /*create trigger on relation in main database*/
 	else
-		rel = table_openrv(stmt->relation, ShareRowExclusiveLock);
+		rel = table_openrv(stmt->relation, ShareRowExclusiveLock, 0);
 
 	/*
 	 * Triggers must be on tables or views, and there are additional
@@ -710,7 +710,7 @@ CreateTriggerFiringOn(CreateTrigStmt *stmt, const char *queryString,
 	 * NOTE that this is cool only because we have ShareRowExclusiveLock on
 	 * the relation, so the trigger set won't be changing underneath us.
 	 */
-	tgrel = table_open(TriggerRelationId, RowExclusiveLock);
+	tgrel = table_open(TriggerRelationId, RowExclusiveLock, 0);
 	if (!isInternal)
 	{
 		ScanKeyData skeys[2];
@@ -1007,7 +1007,7 @@ CreateTriggerFiringOn(CreateTrigStmt *stmt, const char *queryString,
 	 * Update relation's pg_class entry; if necessary; and if not, send an SI
 	 * message to make other backends (and this one) rebuild relcache entries.
 	 */
-	pgrel = table_open(RelationRelationId, RowExclusiveLock);
+	pgrel = table_open(RelationRelationId, RowExclusiveLock, 0);
 	tuple = SearchSysCacheCopy1(RELOID,
 								ObjectIdGetDatum(RelationGetRelid(rel)));
 	if (!HeapTupleIsValid(tuple))
@@ -1162,7 +1162,7 @@ CreateTriggerFiringOn(CreateTrigStmt *stmt, const char *queryString,
 			Relation	childTbl;
 			Node	   *qual;
 
-			childTbl = table_open(partdesc->oids[i], ShareRowExclusiveLock);
+			childTbl = table_open(partdesc->oids[i], ShareRowExclusiveLock, 0); /*create trigger in main database*/
 
 			/*
 			 * Initialize our fabricated parse node by copying the original
@@ -1292,7 +1292,7 @@ RemoveTriggerById(Oid trigOid)
 	Oid			relid;
 	Relation	rel;
 
-	tgrel = table_open(TriggerRelationId, RowExclusiveLock);
+	tgrel = table_open(TriggerRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Find the trigger to delete.
@@ -1314,7 +1314,7 @@ RemoveTriggerById(Oid trigOid)
 	 */
 	relid = ((Form_pg_trigger) GETSTRUCT(tup))->tgrelid;
 
-	rel = table_open(relid, AccessExclusiveLock);
+	rel = table_open(relid, AccessExclusiveLock, 0); /*trigger deletion should be in main database*/
 
 	if (rel->rd_rel->relkind != RELKIND_RELATION &&
 		rel->rd_rel->relkind != RELKIND_VIEW &&
@@ -1373,7 +1373,7 @@ get_trigger_oid(Oid relid, const char *trigname, bool missing_ok)
 	/*
 	 * Find the trigger, verify permissions, set up object address
 	 */
-	tgrel = table_open(TriggerRelationId, AccessShareLock);
+	tgrel = table_open(TriggerRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey[0],
 				Anum_pg_trigger_tgrelid,
@@ -1494,7 +1494,7 @@ renametrig(RenameStmt *stmt)
 	if (targetrel->rd_rel->relkind == RELKIND_PARTITIONED_TABLE)
 		(void) find_all_inheritors(relid, AccessExclusiveLock, NULL);
 
-	tgrel = table_open(TriggerRelationId, RowExclusiveLock);
+	tgrel = table_open(TriggerRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Search for the trigger to modify.
@@ -1675,7 +1675,7 @@ renametrig_partition(Relation tgrel, Oid partitionId, Oid parentTriggerOid,
 		if (tgform->tgparentid != parentTriggerOid)
 			continue;			/* not our trigger */
 
-		partitionRel = table_open(partitionId, NoLock);
+		partitionRel = table_open(partitionId, NoLock, 0); /*part of partition fix for forking*/
 
 		/* Rename the trigger on this partition */
 		renametrig_internal(tgrel, partitionRel, tuple, newname, expected_name);
@@ -1740,7 +1740,7 @@ EnableDisableTrigger(Relation rel, const char *tgname, Oid tgparent,
 				 errmsg("trying to call ENableDisableTrigger from non main fork")));
 	}
 	/* Scan the relevant entries in pg_triggers */
-	tgrel = table_open(TriggerRelationId, RowExclusiveLock);
+	tgrel = table_open(TriggerRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&keys[0],
 				Anum_pg_trigger_tgrelid,
@@ -1894,7 +1894,7 @@ RelationBuildTriggers(Relation relation)
 				BTEqualStrategyNumber, F_OIDEQ,
 				ObjectIdGetDatum(RelationGetRelid(relation)));
 
-	tgrel = table_open(TriggerRelationId, AccessShareLock);
+	tgrel = table_open(TriggerRelationId, AccessShareLock, 0);
 	tgscan = systable_beginscan(tgrel, TriggerRelidNameIndexId, true,
 								NULL, 1, &skey);
 
@@ -5722,7 +5722,7 @@ AfterTriggerSetState(ConstraintsSetStmt *stmt)
 		 * A constraint in a partitioned table may have corresponding
 		 * constraints in the partitions.  Grab those too.
 		 */
-		conrel = table_open(ConstraintRelationId, AccessShareLock);
+		conrel = table_open(ConstraintRelationId, AccessShareLock, 0);
 
 		foreach(lc, stmt->constraints)
 		{
@@ -5850,7 +5850,7 @@ AfterTriggerSetState(ConstraintsSetStmt *stmt)
 		 * Now, locate the trigger(s) implementing each of these constraints,
 		 * and make a list of their OIDs.
 		 */
-		tgrel = table_open(TriggerRelationId, AccessShareLock);
+		tgrel = table_open(TriggerRelationId, AccessShareLock, 0);
 
 		foreach(lc, conoidlist)
 		{

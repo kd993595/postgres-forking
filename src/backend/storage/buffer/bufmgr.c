@@ -559,7 +559,7 @@ PrefetchSharedBuffer(SMgrRelation smgr_reln,
 
 	/* create a tag so we can lookup the buffer */
 	InitBufferTag(&newTag, &smgr_reln->smgr_rlocator.locator,
-				  forkNum, blockNum, MyDBForkId);
+				  forkNum, blockNum, smgr_reln->smgr_rlocator.dbforkId);
 
 	/* determine its hash code and partition lock ID */
 	newHash = BufTableHashCode(&newTag);
@@ -678,7 +678,7 @@ ReadRecentBuffer(RelFileLocator rlocator, ForkNumber forkNum, BlockNumber blockN
 
 	ResourceOwnerEnlarge(CurrentResourceOwner);
 	ReservePrivateRefCountEntry();
-	InitBufferTag(&tag, &rlocator, forkNum, blockNum, MyDBForkId);
+	InitBufferTag(&tag, &rlocator, forkNum, blockNum, 0); /*TODO: fix  this since used in wal not necessary rn*/
 
 	if (BufferIsLocal(recent_buffer))
 	{
@@ -1609,7 +1609,7 @@ BufferAlloc(SMgrRelation smgr, char relpersistence, ForkNumber forkNum,
 	ReservePrivateRefCountEntry();
 
 	/* create a tag so we can lookup the buffer */
-	InitBufferTag(&newTag, &smgr->smgr_rlocator.locator, forkNum, blockNum, MyDBForkId);
+	InitBufferTag(&newTag, &smgr->smgr_rlocator.locator, forkNum, blockNum, smgr->smgr_rlocator.dbforkId);
 
 	/* determine its hash code and partition lock ID */
 	newHash = BufTableHashCode(&newTag);
@@ -2297,7 +2297,7 @@ ExtendBufferedRelShared(BufferManagerRelation bmr,
 		ResourceOwnerEnlarge(CurrentResourceOwner);
 		ReservePrivateRefCountEntry();
 
-		InitBufferTag(&tag, &bmr.smgr->smgr_rlocator.locator, fork, first_block + i, MyDBForkId);
+		InitBufferTag(&tag, &bmr.smgr->smgr_rlocator.locator, fork, first_block + i, bmr.smgr->smgr_rlocator.dbforkId);
 		hash = BufTableHashCode(&tag);
 		partition_lock = BufMappingPartitionLock(hash);
 
@@ -2606,7 +2606,7 @@ ReleaseAndReadBuffer(Buffer buffer,
 			if (bufHdr->tag.blockNum == blockNum &&
 				BufTagMatchesRelFileLocator(&bufHdr->tag, &relation->rd_locator) &&
 				BufTagGetForkNum(&bufHdr->tag) == forkNum &&
-				BufTagGetDBForkId(&bufHdr->tag) == MyDBForkId)
+				BufTagGetDBForkId(&bufHdr->tag) == relation->rd_dbforkId)
 				return buffer;
 			UnpinBuffer(bufHdr);
 		}
@@ -4332,7 +4332,7 @@ FindAndDropRelationBuffers(RelFileLocator rlocator, ForkNumber forkNum,
 		uint32		buf_state;
 
 		/* create a tag so we can lookup the buffer */
-		InitBufferTag(&bufTag, &rlocator, forkNum, curBlock, MyDBForkId);
+		InitBufferTag(&bufTag, &rlocator, forkNum, curBlock, dbforkId);
 
 		/* determine its hash code and partition lock ID */
 		bufHash = BufTableHashCode(&bufTag);

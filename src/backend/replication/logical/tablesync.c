@@ -1413,7 +1413,7 @@ LogicalRepSyncTableStart(XLogRecPtr *origin_startpos)
 	 * the main apply process from working and it has to open the relation in
 	 * RowExclusiveLock when remapping remote relation id to local one.
 	 */
-	rel = table_open(MyLogicalRepWorker->relid, RowExclusiveLock);
+	rel = table_open(MyLogicalRepWorker->relid, RowExclusiveLock, 0); /*probably want to change this to dbforkid in fix*/
 
 	/*
 	 * Start a transaction in the remote node in REPEATABLE READ mode.  This
@@ -1765,7 +1765,7 @@ UpdateTwoPhaseState(Oid suboid, char new_state)
 		   new_state == LOGICALREP_TWOPHASE_STATE_PENDING ||
 		   new_state == LOGICALREP_TWOPHASE_STATE_ENABLED);
 
-	rel = table_open(SubscriptionRelationId, RowExclusiveLock);
+	rel = table_open(SubscriptionRelationId, RowExclusiveLock, 0);
 	tup = SearchSysCacheCopy1(SUBSCRIPTIONOID, ObjectIdGetDatum(suboid));
 	if (!HeapTupleIsValid(tup))
 		elog(ERROR,

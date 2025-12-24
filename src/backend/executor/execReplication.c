@@ -13,6 +13,7 @@
  */
 
 #include "postgres.h"
+#include "miscadmin.h"
 
 #include "access/genam.h"
 #include "access/relscan.h"
@@ -189,7 +190,7 @@ RelationFindReplTupleByIndex(Relation rel, Oid idxoid,
 	bool		isIdxSafeToSkipDuplicates;
 
 	/* Open the index. */
-	idxrel = index_open(idxoid, RowExclusiveLock);
+	idxrel = index_open(idxoid, RowExclusiveLock, 0);
 
 	isIdxSafeToSkipDuplicates = (GetRelationIdentityOrPK(rel) == idxoid);
 

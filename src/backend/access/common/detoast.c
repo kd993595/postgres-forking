@@ -12,6 +12,7 @@
  */
 
 #include "postgres.h"
+#include "miscadmin.h"
 
 #include "access/detoast.h"
 #include "access/table.h"
@@ -369,7 +370,7 @@ toast_fetch_datum(struct varlena *attr)
 	/*
 	 * Open the toast relation and its indexes
 	 */
-	toastrel = table_open(toast_pointer.va_toastrelid, AccessShareLock);
+	toastrel = table_open(toast_pointer.va_toastrelid, AccessShareLock, 0);
 
 	/* Fetch all chunks */
 	table_relation_fetch_toast_slice(toastrel, toast_pointer.va_valueid,
@@ -449,7 +450,7 @@ toast_fetch_datum_slice(struct varlena *attr, int32 sliceoffset,
 		return result;			/* Can save a lot of work at this point! */
 
 	/* Open the toast relation */
-	toastrel = table_open(toast_pointer.va_toastrelid, AccessShareLock);
+	toastrel = table_open(toast_pointer.va_toastrelid, AccessShareLock, 0);
 
 	/* Fetch all chunks */
 	table_relation_fetch_toast_slice(toastrel, toast_pointer.va_valueid,

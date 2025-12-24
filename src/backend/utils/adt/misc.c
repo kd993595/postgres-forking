@@ -1104,7 +1104,7 @@ pg_get_replica_identity_index(PG_FUNCTION_ARGS)
 	Oid			idxoid;
 	Relation	rel;
 
-	rel = table_open(reloid, AccessShareLock);
+	rel = table_open(reloid, AccessShareLock, 0);
 	idxoid = RelationGetReplicaIndex(rel);
 	table_close(rel, AccessShareLock);
 

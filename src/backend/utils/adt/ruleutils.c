@@ -895,7 +895,7 @@ pg_get_triggerdef_worker(Oid trigid, bool pretty)
 	/*
 	 * Fetch the pg_trigger tuple by the Oid of the trigger
 	 */
-	tgrel = table_open(TriggerRelationId, AccessShareLock);
+	tgrel = table_open(TriggerRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey[0],
 				Anum_pg_trigger_oid,
@@ -2179,7 +2179,7 @@ pg_get_constraintdef_worker(Oid constraintId, bool fullCommand,
 	SysScanDesc scandesc;
 	ScanKeyData scankey[1];
 	Snapshot	snapshot = RegisterSnapshot(GetTransactionSnapshot());
-	Relation	relation = table_open(ConstraintRelationId, AccessShareLock);
+	Relation	relation = table_open(ConstraintRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&scankey[0],
 				Anum_pg_constraint_oid,
@@ -2813,7 +2813,7 @@ pg_get_serial_sequence(PG_FUNCTION_ARGS)
 						column, tablerv->relname)));
 
 	/* Search the dependency table for the dependent sequence */
-	depRel = table_open(DependRelationId, AccessShareLock);
+	depRel = table_open(DependRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_depend_refclassid,
@@ -5207,7 +5207,7 @@ make_ruledef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc,
 	if (actions == NIL)
 		elog(ERROR, "invalid empty ev_action list");
 
-	ev_relation = table_open(ev_class, AccessShareLock);
+	ev_relation = table_open(ev_class, AccessShareLock, 0);
 
 	/*
 	 * Build the rules definition text
@@ -5406,7 +5406,7 @@ make_viewdef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc,
 		return;
 	}
 
-	ev_relation = table_open(ev_class, AccessShareLock);
+	ev_relation = table_open(ev_class, AccessShareLock, 0);
 
 	get_query_def(query, buf, NIL, RelationGetDescr(ev_relation), true,
 				  prettyFlags, wrapColumn, 0);

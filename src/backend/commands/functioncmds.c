@@ -1299,7 +1299,7 @@ RemoveFunctionById(Oid funcOid)
 	/*
 	 * Delete the pg_proc tuple.
 	 */
-	relation = table_open(ProcedureRelationId, RowExclusiveLock);
+	relation = table_open(ProcedureRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCache1(PROCOID, ObjectIdGetDatum(funcOid));
 	if (!HeapTupleIsValid(tup)) /* should not happen */
@@ -1320,7 +1320,7 @@ RemoveFunctionById(Oid funcOid)
 	 */
 	if (prokind == PROKIND_AGGREGATE)
 	{
-		relation = table_open(AggregateRelationId, RowExclusiveLock);
+		relation = table_open(AggregateRelationId, RowExclusiveLock, 0);
 
 		tup = SearchSysCache1(AGGFNOID, ObjectIdGetDatum(funcOid));
 		if (!HeapTupleIsValid(tup)) /* should not happen */
@@ -1359,7 +1359,7 @@ AlterFunction(ParseState *pstate, AlterFunctionStmt *stmt)
 	DefElem    *parallel_item = NULL;
 	ObjectAddress address;
 
-	rel = table_open(ProcedureRelationId, RowExclusiveLock);
+	rel = table_open(ProcedureRelationId, RowExclusiveLock, 0);
 
 	funcOid = LookupFuncWithArgs(stmt->objtype, stmt->func, false);
 
@@ -1928,7 +1928,7 @@ CreateTransform(CreateTransformStmt *stmt)
 	values[Anum_pg_transform_trffromsql - 1] = ObjectIdGetDatum(fromsqlfuncid);
 	values[Anum_pg_transform_trftosql - 1] = ObjectIdGetDatum(tosqlfuncid);
 
-	relation = table_open(TransformRelationId, RowExclusiveLock);
+	relation = table_open(TransformRelationId, RowExclusiveLock, 0);
 
 	tuple = SearchSysCache2(TRFTYPELANG,
 							ObjectIdGetDatum(typeid),

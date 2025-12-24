@@ -1814,7 +1814,7 @@ get_database_list(void)
 	StartTransactionCommand();
 	(void) GetTransactionSnapshot();
 
-	rel = table_open(DatabaseRelationId, AccessShareLock);
+	rel = table_open(DatabaseRelationId, AccessShareLock, 0);
 	scan = table_beginscan_catalog(rel, 0, NULL);
 
 	while (HeapTupleIsValid(tup = heap_getnext(scan, ForwardScanDirection)))
@@ -1943,7 +1943,7 @@ do_autovacuum(void)
 	/* StartTransactionCommand changed elsewhere */
 	MemoryContextSwitchTo(AutovacMemCxt);
 
-	classRel = table_open(RelationRelationId, AccessShareLock);
+	classRel = table_open(RelationRelationId, AccessShareLock, 0);
 
 	/* create a copy so we can use it after closing pg_class */
 	pg_class_desc = CreateTupleDescCopy(RelationGetDescr(classRel));

@@ -193,7 +193,7 @@ AcquireRewriteLocks(Query *parsetree,
 				else
 					lockmode = rte->rellockmode;
 
-				rel = table_open(rte->relid, lockmode);
+				rel = table_open(rte->relid, lockmode, 0); /*only for metadata it seems*/
 
 				/*
 				 * While we have the relation open, update the RTE's relkind,
@@ -2091,7 +2091,7 @@ fireRIRrules(Query *parsetree, List *activeRIRs)
 		 * We can use NoLock here since either the parser or
 		 * AcquireRewriteLocks should have locked the rel already.
 		 */
-		rel = table_open(rte->relid, NoLock);
+		rel = table_open(rte->relid, NoLock, 0); /*only opening for metadata*/
 
 		/*
 		 * Collect the RIR rules that we must apply
@@ -2201,7 +2201,7 @@ fireRIRrules(Query *parsetree, List *activeRIRs)
 			 rte->relkind != RELKIND_PARTITIONED_TABLE))
 			continue;
 
-		rel = table_open(rte->relid, NoLock);
+		rel = table_open(rte->relid, NoLock, 0); /*only open for metadata*/
 
 		/*
 		 * Fetch any new security quals that must be applied to this RTE.
@@ -3419,7 +3419,7 @@ rewriteTargetView(Query *parsetree, Relation view)
 	 * already have the right lock!)  Since it will become the query target
 	 * relation, RowExclusiveLock is always the right thing.
 	 */
-	base_rel = table_open(base_rte->relid, RowExclusiveLock);
+	base_rel = table_open(base_rte->relid, RowExclusiveLock, 0); /*i think this is right since we close at end*/
 
 	/*
 	 * While we have the relation open, update the RTE's relkind, just in case
@@ -3976,7 +3976,7 @@ RewriteQuery(Query *parsetree, List *rewrite_events, int orig_rt_length)
 		 * We can use NoLock here since either the parser or
 		 * AcquireRewriteLocks should have locked the rel already.
 		 */
-		rt_entry_relation = table_open(rt_entry->relid, NoLock);
+		rt_entry_relation = table_open(rt_entry->relid, NoLock, 0); /*only for metadata*/
 
 		/*
 		 * Rewrite the targetlist as needed for the command type.

@@ -280,7 +280,7 @@ performDeletion(const ObjectAddress *object,
 	 * We save some cycles by opening pg_depend just once and passing the
 	 * Relation pointer down to all the recursive deletion steps.
 	 */
-	depRel = table_open(DependRelationId, RowExclusiveLock);
+	depRel = table_open(DependRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Acquire deletion lock on the target object.  (Ideally the caller has
@@ -344,7 +344,7 @@ performMultipleDeletions(const ObjectAddresses *objects,
 	 * We save some cycles by opening pg_depend just once and passing the
 	 * Relation pointer down to all the recursive deletion steps.
 	 */
-	depRel = table_open(DependRelationId, RowExclusiveLock);
+	depRel = table_open(DependRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Construct a list of objects to delete (ie, the given objects plus
@@ -1194,7 +1194,7 @@ DropObjectById(const ObjectAddress *object)
 
 	cacheId = get_object_catcache_oid(object->classId);
 
-	rel = table_open(object->classId, RowExclusiveLock);
+	rel = table_open(object->classId, RowExclusiveLock, 0); /*dropping stuff should be in main database*/
 
 	/*
 	 * Use the system cache for the oid column, if one exists.
@@ -1277,7 +1277,7 @@ deleteOneObject(const ObjectAddress *object, Relation *depRel, int flags)
 	 * Reopen depRel if we closed it above
 	 */
 	if (flags & PERFORM_DELETION_CONCURRENTLY)
-		*depRel = table_open(DependRelationId, RowExclusiveLock);
+		*depRel = table_open(DependRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Now remove any pg_depend records that link from this object to others.
@@ -2790,7 +2790,7 @@ DeleteInitPrivs(const ObjectAddress *object)
 	SysScanDesc scan;
 	HeapTuple	oldtuple;
 
-	relation = table_open(InitPrivsRelationId, RowExclusiveLock);
+	relation = table_open(InitPrivsRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_init_privs_objoid,

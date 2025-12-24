@@ -135,7 +135,7 @@ ENRMetadataGetTupDesc(EphemeralNamedRelationMetadata enrmd)
 	{
 		Relation	relation;
 
-		relation = table_open(enrmd->reliddesc, NoLock);
+		relation = table_open(enrmd->reliddesc, NoLock, 0);
 		tupdesc = relation->rd_att;
 		table_close(relation, NoLock);
 	}

@@ -220,7 +220,7 @@ _hash_checkpage(Relation rel, Buffer buf, int flags)
 	if (PageIsNew(page))
 		ereport(ERROR,
 				(errcode(ERRCODE_INDEX_CORRUPTED),
-				 errmsg("index \"%s\" contains unexpected zero page at block %u",
+				 errmsg("hash index \"%s\" contains unexpected zero page at block %u",
 						RelationGetRelationName(rel),
 						BufferGetBlockNumber(buf)),
 				 errhint("Please REINDEX it.")));

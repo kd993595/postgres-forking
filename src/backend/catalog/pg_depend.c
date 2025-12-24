@@ -81,7 +81,7 @@ recordMultipleDependencies(const ObjectAddress *depender,
 	if (IsBootstrapProcessingMode())
 		return;
 
-	dependDesc = table_open(DependRelationId, RowExclusiveLock);
+	dependDesc = table_open(DependRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Allocate the slots to use, but delay costly initialization until we
@@ -308,7 +308,7 @@ deleteDependencyRecordsFor(Oid classId, Oid objectId,
 	SysScanDesc scan;
 	HeapTuple	tup;
 
-	depRel = table_open(DependRelationId, RowExclusiveLock);
+	depRel = table_open(DependRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_depend_classid,
@@ -358,7 +358,7 @@ deleteDependencyRecordsForClass(Oid classId, Oid objectId,
 	SysScanDesc scan;
 	HeapTuple	tup;
 
-	depRel = table_open(DependRelationId, RowExclusiveLock);
+	depRel = table_open(DependRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_depend_classid,
@@ -405,7 +405,7 @@ deleteDependencyRecordsForSpecific(Oid classId, Oid objectId, char deptype,
 	SysScanDesc scan;
 	HeapTuple	tup;
 
-	depRel = table_open(DependRelationId, RowExclusiveLock);
+	depRel = table_open(DependRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_depend_classid,
@@ -506,7 +506,7 @@ changeDependencyFor(Oid classId, Oid objectId,
 		return 1;
 	}
 
-	depRel = table_open(DependRelationId, RowExclusiveLock);
+	depRel = table_open(DependRelationId, RowExclusiveLock, 0);
 
 	/* There should be existing dependency record(s), so search. */
 	ScanKeyInit(&key[0],
@@ -572,7 +572,7 @@ changeDependenciesOf(Oid classId, Oid oldObjectId,
 	SysScanDesc scan;
 	HeapTuple	tup;
 
-	depRel = table_open(DependRelationId, RowExclusiveLock);
+	depRel = table_open(DependRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_depend_classid,
@@ -630,7 +630,7 @@ changeDependenciesOn(Oid refClassId, Oid oldRefObjectId,
 	ObjectAddress objAddr;
 	bool		newIsPinned;
 
-	depRel = table_open(DependRelationId, RowExclusiveLock);
+	depRel = table_open(DependRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * If oldRefObjectId is pinned, there won't be any dependency entries on
@@ -738,7 +738,7 @@ getExtensionOfObject(Oid classId, Oid objectId)
 	SysScanDesc scan;
 	HeapTuple	tup;
 
-	depRel = table_open(DependRelationId, AccessShareLock);
+	depRel = table_open(DependRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_depend_classid,
@@ -784,7 +784,7 @@ getAutoExtensionsOfObject(Oid classId, Oid objectId)
 	SysScanDesc scan;
 	HeapTuple	tup;
 
-	depRel = table_open(DependRelationId, AccessShareLock);
+	depRel = table_open(DependRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_depend_classid,
@@ -834,7 +834,7 @@ sequenceIsOwned(Oid seqId, char deptype, Oid *tableId, int32 *colId)
 	SysScanDesc scan;
 	HeapTuple	tup;
 
-	depRel = table_open(DependRelationId, AccessShareLock);
+	depRel = table_open(DependRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_depend_classid,
@@ -883,7 +883,7 @@ getOwnedSequences_internal(Oid relid, AttrNumber attnum, char deptype)
 	SysScanDesc scan;
 	HeapTuple	tup;
 
-	depRel = table_open(DependRelationId, AccessShareLock);
+	depRel = table_open(DependRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_depend_refclassid,
@@ -995,7 +995,7 @@ get_index_constraint(Oid indexId)
 	HeapTuple	tup;
 
 	/* Search the dependency table for the index */
-	depRel = table_open(DependRelationId, AccessShareLock);
+	depRel = table_open(DependRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_depend_classid,
@@ -1051,7 +1051,7 @@ get_index_ref_constraints(Oid indexId)
 	HeapTuple	tup;
 
 	/* Search the dependency table for the index */
-	depRel = table_open(DependRelationId, AccessShareLock);
+	depRel = table_open(DependRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_depend_refclassid,

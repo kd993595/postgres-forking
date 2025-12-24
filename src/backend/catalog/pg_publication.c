@@ -241,7 +241,7 @@ is_schema_publication(Oid pubid)
 	HeapTuple	tup;
 	bool		result = false;
 
-	pubschsrel = table_open(PublicationNamespaceRelationId, AccessShareLock);
+	pubschsrel = table_open(PublicationNamespaceRelationId, AccessShareLock, 0);
 	ScanKeyInit(&scankey,
 				Anum_pg_publication_namespace_pnpubid,
 				BTEqualStrategyNumber, F_OIDEQ,
@@ -372,7 +372,7 @@ publication_add_relation(Oid pubid, PublicationRelInfo *pri,
 				referenced;
 	List	   *relids = NIL;
 
-	rel = table_open(PublicationRelRelationId, RowExclusiveLock);
+	rel = table_open(PublicationRelRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Check for duplicates. Note that this does not really prevent
@@ -615,7 +615,7 @@ publication_add_schema(Oid pubid, Oid schemaid, bool if_not_exists)
 	ObjectAddress myself,
 				referenced;
 
-	rel = table_open(PublicationNamespaceRelationId, RowExclusiveLock);
+	rel = table_open(PublicationNamespaceRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Check for duplicates. Note that this does not really prevent
@@ -722,7 +722,7 @@ GetPublicationRelations(Oid pubid, PublicationPartOpt pub_partopt)
 	HeapTuple	tup;
 
 	/* Find all publications associated with the relation. */
-	pubrelsrel = table_open(PublicationRelRelationId, AccessShareLock);
+	pubrelsrel = table_open(PublicationRelRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&scankey,
 				Anum_pg_publication_rel_prpubid,
@@ -765,7 +765,7 @@ GetAllTablesPublications(void)
 	HeapTuple	tup;
 
 	/* Find all publications that are marked as for all tables. */
-	rel = table_open(PublicationRelationId, AccessShareLock);
+	rel = table_open(PublicationRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&scankey,
 				Anum_pg_publication_puballtables,
@@ -805,7 +805,7 @@ GetAllTablesPublicationRelations(bool pubviaroot)
 	HeapTuple	tuple;
 	List	   *result = NIL;
 
-	classRel = table_open(RelationRelationId, AccessShareLock);
+	classRel = table_open(RelationRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_class_relkind,
@@ -867,7 +867,7 @@ GetPublicationSchemas(Oid pubid)
 	HeapTuple	tup;
 
 	/* Find all schemas associated with the publication */
-	pubschsrel = table_open(PublicationNamespaceRelationId, AccessShareLock);
+	pubschsrel = table_open(PublicationNamespaceRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&scankey,
 				Anum_pg_publication_namespace_pnpubid,
@@ -932,7 +932,7 @@ GetSchemaPublicationRelations(Oid schemaid, PublicationPartOpt pub_partopt)
 
 	Assert(OidIsValid(schemaid));
 
-	classRel = table_open(RelationRelationId, AccessShareLock);
+	classRel = table_open(RelationRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_class_relnamespace,
@@ -1220,7 +1220,7 @@ pg_get_publication_tables(PG_FUNCTION_ARGS)
 		/* Show all columns when the column list is not specified. */
 		if (nulls[2])
 		{
-			Relation	rel = table_open(relid, AccessShareLock);
+			Relation	rel = table_open(relid, AccessShareLock, 0);
 			int			nattnums = 0;
 			int16	   *attnums;
 			TupleDesc	desc = RelationGetDescr(rel);

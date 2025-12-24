@@ -115,7 +115,7 @@ CollationCreate(const char *collname, Oid collnamespace,
 	}
 
 	/* open pg_collation; see below about the lock level */
-	rel = table_open(CollationRelationId, ShareRowExclusiveLock);
+	rel = table_open(CollationRelationId, ShareRowExclusiveLock, 0);
 
 	/*
 	 * Also forbid a specific-encoding collation shadowing an any-encoding

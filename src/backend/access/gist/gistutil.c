@@ -794,7 +794,7 @@ gistcheckpage(Relation rel, Buffer buf)
 	if (PageIsNew(page))
 		ereport(ERROR,
 				(errcode(ERRCODE_INDEX_CORRUPTED),
-				 errmsg("index \"%s\" contains unexpected zero page at block %u",
+				 errmsg("gist index \"%s\" contains unexpected zero page at block %u",
 						RelationGetRelationName(rel),
 						BufferGetBlockNumber(buf)),
 				 errhint("Please REINDEX it.")));

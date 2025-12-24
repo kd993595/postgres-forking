@@ -905,7 +905,7 @@ objectsInSchemaToOids(ObjectType objtype, List *nspnames)
 									BTEqualStrategyNumber, F_CHAREQ,
 									CharGetDatum(PROKIND_PROCEDURE));
 
-					rel = table_open(ProcedureRelationId, AccessShareLock);
+					rel = table_open(ProcedureRelationId, AccessShareLock, 0);
 					scan = table_beginscan_catalog(rel, keycount, key);
 
 					while ((tuple = heap_getnext(scan, ForwardScanDirection)) != NULL)
@@ -952,7 +952,7 @@ getRelationsInNamespace(Oid namespaceId, char relkind)
 				BTEqualStrategyNumber, F_CHAREQ,
 				CharGetDatum(relkind));
 
-	rel = table_open(RelationRelationId, AccessShareLock);
+	rel = table_open(RelationRelationId, AccessShareLock, 0);
 	scan = table_beginscan_catalog(rel, 2, key);
 
 	while ((tuple = heap_getnext(scan, ForwardScanDirection)) != NULL)
@@ -1216,7 +1216,7 @@ SetDefaultACL(InternalDefaultACL *iacls)
 	Oid		   *oldmembers;
 	Oid		   *newmembers;
 
-	rel = table_open(DefaultAclRelationId, RowExclusiveLock);
+	rel = table_open(DefaultAclRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * The default for a global entry is the hard-wired default ACL for the
@@ -1475,7 +1475,7 @@ RemoveRoleFromObjectACL(Oid roleid, Oid classid, Oid objid)
 		HeapTuple	tuple;
 
 		/* first fetch info needed by SetDefaultACL */
-		rel = table_open(DefaultAclRelationId, AccessShareLock);
+		rel = table_open(DefaultAclRelationId, AccessShareLock, 0);
 
 		ScanKeyInit(&skey[0],
 					Anum_pg_default_acl_oid,
@@ -1828,8 +1828,8 @@ ExecGrant_Relation(InternalGrant *istmt)
 	Relation	attRelation;
 	ListCell   *cell;
 
-	relation = table_open(RelationRelationId, RowExclusiveLock);
-	attRelation = table_open(AttributeRelationId, RowExclusiveLock);
+	relation = table_open(RelationRelationId, RowExclusiveLock, 0);
+	attRelation = table_open(AttributeRelationId, RowExclusiveLock, 0);
 
 	foreach(cell, istmt->objects)
 	{
@@ -2165,7 +2165,7 @@ ExecGrant_common(InternalGrant *istmt, Oid classid, AclMode default_privs,
 
 	cacheid = get_object_catcache_oid(classid);
 
-	relation = table_open(classid, RowExclusiveLock);
+	relation = table_open(classid, RowExclusiveLock, 0);
 
 	foreach(cell, istmt->objects)
 	{
@@ -2314,7 +2314,7 @@ ExecGrant_Largeobject(InternalGrant *istmt)
 		istmt->privileges = ACL_ALL_RIGHTS_LARGEOBJECT;
 
 	relation = table_open(LargeObjectMetadataRelationId,
-						  RowExclusiveLock);
+						  RowExclusiveLock, 0);
 
 	foreach(cell, istmt->objects)
 	{
@@ -2477,7 +2477,7 @@ ExecGrant_Parameter(InternalGrant *istmt)
 	if (istmt->all_privs && istmt->privileges == ACL_NO_RIGHTS)
 		istmt->privileges = ACL_ALL_RIGHTS_PARAMETER_ACL;
 
-	relation = table_open(ParameterAclRelationId, RowExclusiveLock);
+	relation = table_open(ParameterAclRelationId, RowExclusiveLock, 0);
 
 	foreach(cell, istmt->objects)
 	{
@@ -3611,7 +3611,7 @@ pg_largeobject_aclmask_snapshot(Oid lobj_oid, Oid roleid,
 	 * Get the largeobject's ACL from pg_largeobject_metadata
 	 */
 	pg_lo_meta = table_open(LargeObjectMetadataRelationId,
-							AccessShareLock);
+							AccessShareLock, 0);
 
 	ScanKeyInit(&entry[0],
 				Anum_pg_largeobject_metadata_oid,
@@ -4183,7 +4183,7 @@ object_ownercheck(Oid classid, Oid objectid, Oid roleid)
 		HeapTuple	tuple;
 		bool		isnull;
 
-		rel = table_open(classid, AccessShareLock);
+		rel = table_open(classid, AccessShareLock, 0);
 
 		ScanKeyInit(&entry[0],
 					get_object_attnum_oid(classid),
@@ -4511,7 +4511,7 @@ recordExtObjInitPriv(Oid objoid, Oid classoid)
 		 * be made extension members.  But it seems worth carrying in case
 		 * some future caller of this function has need for it.
 		 */
-		relation = table_open(LargeObjectMetadataRelationId, RowExclusiveLock);
+		relation = table_open(LargeObjectMetadataRelationId, RowExclusiveLock, 0);
 
 		/* There's no syscache for pg_largeobject_metadata */
 		ScanKeyInit(&entry[0],
@@ -4699,7 +4699,7 @@ recordExtensionInitPrivWorker(Oid objoid, Oid classoid, int objsubid,
 	nnewmembers = aclmembers(new_acl, &newmembers);
 
 	/* Search pg_init_privs for an existing entry. */
-	relation = table_open(InitPrivsRelationId, RowExclusiveLock);
+	relation = table_open(InitPrivsRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_init_privs_objoid,
@@ -4828,7 +4828,7 @@ ReplaceRoleInInitPriv(Oid oldroleid, Oid newroleid,
 	Oid		   *newmembers;
 
 	/* Search for existing pg_init_privs entry for the target object. */
-	rel = table_open(InitPrivsRelationId, RowExclusiveLock);
+	rel = table_open(InitPrivsRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_init_privs_objoid,
@@ -4939,7 +4939,7 @@ RemoveRoleFromInitPriv(Oid roleid, Oid classid, Oid objid, int32 objsubid)
 	Oid		   *newmembers;
 
 	/* Search for existing pg_init_privs entry for the target object. */
-	rel = table_open(InitPrivsRelationId, RowExclusiveLock);
+	rel = table_open(InitPrivsRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_init_privs_objoid,

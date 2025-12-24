@@ -216,6 +216,7 @@ mdcreate(SMgrRelation reln, ForkNumber forknum, bool isRedo)
 		path = relpath(reln->smgr_rlocator, forknum);
 	}else{
 		path = dbforkrelpath(reln->smgr_rlocator, forknum); 
+		ereport(INFO, errmsg("Making new file with forknum (%d)", forknum));
 	}
 	
 	fd = PathNameOpenFile(path, _mdfd_open_flags() | O_CREAT | O_EXCL);
@@ -232,7 +233,7 @@ mdcreate(SMgrRelation reln, ForkNumber forknum, bool isRedo)
 			errno = save_errno;
 			ereport(ERROR,
 					(errcode_for_file_access(),
-					 errmsg("regular could not create file \"%s\": %m", path)));
+					 errmsg("could not create file (%d) \"%s\": %m", forknum, path)));
 		}
 	}
 
@@ -682,6 +683,7 @@ mdopenfork(SMgrRelation reln, ForkNumber forknum, int behavior)
 	if(reln->smgr_rlocator.dbforkId == 0){
 		path = relpath(reln->smgr_rlocator, forknum);
 	}else{
+		elog(LOG, "taking dbfork relpath of (%d) with fork (%d)", reln->smgr_rlocator.locator.relNumber, reln->smgr_rlocator.dbforkId);
 		path = dbforkrelpath(reln->smgr_rlocator, forknum);
 	}
 
@@ -697,7 +699,7 @@ mdopenfork(SMgrRelation reln, ForkNumber forknum, int behavior)
 		}
 		ereport(ERROR,
 				(errcode_for_file_access(),
-				 errmsg("could not open file \"%s\": %m", path)));
+				 errmsg("could not open file (%d) \"%s\": %m", reln->smgr_rlocator.dbforkId,path)));
 	}
 
 	pfree(path);

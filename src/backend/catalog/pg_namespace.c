@@ -69,7 +69,7 @@ NamespaceCreate(const char *nspName, Oid ownerId, bool isTemp)
 	else
 		nspacl = NULL;
 
-	nspdesc = table_open(NamespaceRelationId, RowExclusiveLock);
+	nspdesc = table_open(NamespaceRelationId, RowExclusiveLock, 0);
 	tupDesc = nspdesc->rd_att;
 
 	/* initialize nulls and values */

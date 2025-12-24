@@ -118,7 +118,7 @@ expand_inherited_rtentry(PlannerInfo *root, RelOptInfo *rel,
 	 * those relations in the parse/rewrite/plan pipeline.  Child rels should
 	 * use the same lockmode as their parent.
 	 */
-	oldrelation = table_open(parentOID, NoLock);
+	oldrelation = table_open(parentOID, NoLock, 0);
 	lockmode = rte->rellockmode;
 
 	/*
@@ -196,7 +196,7 @@ expand_inherited_rtentry(PlannerInfo *root, RelOptInfo *rel,
 
 			/* Open rel if needed; we already have required locks */
 			if (childOID != parentOID)
-				newrelation = table_open(childOID, NoLock);
+				newrelation = table_open(childOID, NoLock, 0);
 			else
 				newrelation = oldrelation;
 
@@ -391,7 +391,7 @@ expand_partitioned_rtentry(PlannerInfo *root, RelOptInfo *relinfo,
 		 * detached and subsequently dropped, then opening it will fail.  In
 		 * this case, behave as though the partition had been pruned.
 		 */
-		childrel = try_table_open(childOID, lockmode);
+		childrel = try_table_open(childOID, lockmode, 0); /*TODO: fix forking id for partition tables */
 		if (childrel == NULL)
 		{
 			relinfo->live_parts = bms_del_member(relinfo->live_parts, i);

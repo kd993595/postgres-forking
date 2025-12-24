@@ -71,7 +71,7 @@ TypeShellMake(const char *typeName, Oid typeNamespace, Oid ownerId)
 	/*
 	 * open pg_type
 	 */
-	pg_type_desc = table_open(TypeRelationId, RowExclusiveLock);
+	pg_type_desc = table_open(TypeRelationId, RowExclusiveLock, 0);
 	tupDesc = pg_type_desc->rd_att;
 
 	/*
@@ -415,7 +415,7 @@ TypeCreate(Oid newTypeOid,
 	 * NOTE: updating will not work correctly in bootstrap mode; but we don't
 	 * expect to be overwriting any shell types in bootstrap mode.
 	 */
-	pg_type_desc = table_open(TypeRelationId, RowExclusiveLock);
+	pg_type_desc = table_open(TypeRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy2(TYPENAMENSP,
 							  CStringGetDatum(typeName),
@@ -770,7 +770,7 @@ RenameTypeInternal(Oid typeOid, const char *newTypeName, Oid typeNamespace)
 	Oid			arrayOid;
 	Oid			oldTypeOid;
 
-	pg_type_desc = table_open(TypeRelationId, RowExclusiveLock);
+	pg_type_desc = table_open(TypeRelationId, RowExclusiveLock, 0);
 
 	tuple = SearchSysCacheCopy1(TYPEOID, ObjectIdGetDatum(typeOid));
 	if (!HeapTupleIsValid(tuple))

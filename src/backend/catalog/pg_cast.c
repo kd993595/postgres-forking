@@ -59,7 +59,7 @@ CastCreate(Oid sourcetypeid, Oid targettypeid,
 				referenced;
 	ObjectAddresses *addrs;
 
-	relation = table_open(CastRelationId, RowExclusiveLock);
+	relation = table_open(CastRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Check for duplicate.  This is just to give a friendly error message,

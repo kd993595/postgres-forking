@@ -346,7 +346,7 @@ binary_upgrade_add_sub_rel_state(PG_FUNCTION_ARGS)
 	relstate = PG_GETARG_CHAR(2);
 	sublsn = PG_ARGISNULL(3) ? InvalidXLogRecPtr : PG_GETARG_LSN(3);
 
-	subrel = table_open(SubscriptionRelationId, RowExclusiveLock);
+	subrel = table_open(SubscriptionRelationId, RowExclusiveLock, 0);
 	subid = get_subscription_oid(subname, false);
 	rel = relation_open(relid, AccessShareLock, 0); /*todo: check that this is ok*/
 
@@ -390,7 +390,7 @@ binary_upgrade_replorigin_advance(PG_FUNCTION_ARGS)
 	subname = text_to_cstring(PG_GETARG_TEXT_PP(0));
 	remote_commit = PG_ARGISNULL(1) ? InvalidXLogRecPtr : PG_GETARG_LSN(1);
 
-	rel = table_open(SubscriptionRelationId, RowExclusiveLock);
+	rel = table_open(SubscriptionRelationId, RowExclusiveLock, 0);
 	subid = get_subscription_oid(subname, false);
 
 	ReplicationOriginNameForLogicalRep(subid, InvalidOid, originname, sizeof(originname));

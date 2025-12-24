@@ -3309,7 +3309,7 @@ check_default_partition_contents(Relation parent, Relation default_rel,
 		/* Lock already taken above. */
 		if (part_relid != RelationGetRelid(default_rel))
 		{
-			part_rel = table_open(part_relid, NoLock);
+			part_rel = table_open(part_relid, NoLock, 0); /*partition stuff so fix later*/
 
 			/*
 			 * Map the Vars in the constraint expression from default_rel's

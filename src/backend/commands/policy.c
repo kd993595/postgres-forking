@@ -221,7 +221,7 @@ RelationBuildRowSecurity(Relation relation)
 	 * visit the rel's policies in name order, at least when system indexes
 	 * aren't disabled.  This simplifies equalRSDesc().
 	 */
-	catalog = table_open(PolicyRelationId, AccessShareLock);
+	catalog = table_open(PolicyRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey,
 				Anum_pg_policy_polrelid,
@@ -338,7 +338,7 @@ RemovePolicyById(Oid policy_id)
 	Oid			relid;
 	Relation	rel;
 
-	pg_policy_rel = table_open(PolicyRelationId, RowExclusiveLock);
+	pg_policy_rel = table_open(PolicyRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Find the policy to delete.
@@ -365,7 +365,7 @@ RemovePolicyById(Oid policy_id)
 	 */
 	relid = ((Form_pg_policy) GETSTRUCT(tuple))->polrelid;
 
-	rel = table_open(relid, AccessExclusiveLock);
+	rel = table_open(relid, AccessExclusiveLock, 0);
 	if (rel->rd_rel->relkind != RELKIND_RELATION &&
 		rel->rd_rel->relkind != RELKIND_PARTITIONED_TABLE)
 		ereport(ERROR,
@@ -432,7 +432,7 @@ RemoveRoleFromObjectPolicy(Oid roleid, Oid classid, Oid policy_id)
 
 	Assert(classid == PolicyRelationId);
 
-	pg_policy_rel = table_open(PolicyRelationId, RowExclusiveLock);
+	pg_policy_rel = table_open(PolicyRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Find the policy to update.
@@ -664,7 +664,7 @@ CreatePolicy(CreatePolicyStmt *stmt)
 	assign_expr_collations(with_check_pstate, with_check_qual);
 
 	/* Open pg_policy catalog */
-	pg_policy_rel = table_open(PolicyRelationId, RowExclusiveLock);
+	pg_policy_rel = table_open(PolicyRelationId, RowExclusiveLock, 0);
 
 	/* Set key - policy's relation id. */
 	ScanKeyInit(&skey[0],
@@ -870,7 +870,7 @@ AlterPolicy(AlterPolicyStmt *stmt)
 	memset(isnull, 0, sizeof(isnull));
 
 	/* Find policy to update. */
-	pg_policy_rel = table_open(PolicyRelationId, RowExclusiveLock);
+	pg_policy_rel = table_open(PolicyRelationId, RowExclusiveLock, 0);
 
 	/* Set key - policy's relation id. */
 	ScanKeyInit(&skey[0],
@@ -1127,7 +1127,7 @@ rename_policy(RenameStmt *stmt)
 
 	target_table = relation_open(table_id, NoLock, 0);
 
-	pg_policy_rel = table_open(PolicyRelationId, RowExclusiveLock);
+	pg_policy_rel = table_open(PolicyRelationId, RowExclusiveLock, 0);
 
 	/* First pass -- check for conflict */
 
@@ -1224,7 +1224,7 @@ get_relation_policy_oid(Oid relid, const char *policy_name, bool missing_ok)
 	HeapTuple	policy_tuple;
 	Oid			policy_oid;
 
-	pg_policy_rel = table_open(PolicyRelationId, AccessShareLock);
+	pg_policy_rel = table_open(PolicyRelationId, AccessShareLock, 0);
 
 	/* Add key - policy's relation id. */
 	ScanKeyInit(&skey[0],
@@ -1276,7 +1276,7 @@ relation_has_policies(Relation rel)
 	HeapTuple	policy_tuple;
 	bool		ret = false;
 
-	catalog = table_open(PolicyRelationId, AccessShareLock);
+	catalog = table_open(PolicyRelationId, AccessShareLock, 0);
 	ScanKeyInit(&skey,
 				Anum_pg_policy_polrelid,
 				BTEqualStrategyNumber, F_OIDEQ,

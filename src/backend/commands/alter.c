@@ -430,7 +430,7 @@ ExecRenameStmt(RenameStmt *stmt)
 											 AccessExclusiveLock, false);
 				Assert(relation == NULL);
 
-				catalog = table_open(address.classId, RowExclusiveLock);
+				catalog = table_open(address.classId, RowExclusiveLock, 0); /*alter stuff all in main database*/
 				AlterObjectRename_internal(catalog,
 										   address.objectId,
 										   stmt->newname);
@@ -575,7 +575,7 @@ ExecAlterObjectSchemaStmt(AlterObjectSchemaStmt *stmt,
 											 false);
 				Assert(relation == NULL);
 				classId = address.classId;
-				catalog = table_open(classId, RowExclusiveLock);
+				catalog = table_open(classId, RowExclusiveLock, 0);
 				nspOid = LookupCreationNamespace(stmt->newschema);
 
 				oldNspOid = AlterObjectNamespace_internal(catalog, address.objectId,
@@ -655,7 +655,7 @@ AlterObjectNamespace_oid(Oid classId, Oid objid, Oid nspOid,
 			{
 				Relation	catalog;
 
-				catalog = table_open(classId, RowExclusiveLock);
+				catalog = table_open(classId, RowExclusiveLock, 0);
 
 				oldNspOid = AlterObjectNamespace_internal(catalog, objid,
 														  nspOid);
@@ -936,7 +936,7 @@ AlterObjectOwner_internal(Oid classId, Oid objectId, Oid new_ownerId)
 	Oid			old_ownerId;
 	Oid			namespaceId = InvalidOid;
 
-	rel = table_open(catalogId, RowExclusiveLock);
+	rel = table_open(catalogId, RowExclusiveLock, 0);
 
 	/* Search tuple and lock it. */
 	oldtup =

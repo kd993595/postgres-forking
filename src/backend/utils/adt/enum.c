@@ -408,8 +408,8 @@ enum_endpoint(Oid enumtypoid, ScanDirection direction)
 				BTEqualStrategyNumber, F_OIDEQ,
 				ObjectIdGetDatum(enumtypoid));
 
-	enum_rel = table_open(EnumRelationId, AccessShareLock);
-	enum_idx = index_open(EnumTypIdSortOrderIndexId, AccessShareLock);
+	enum_rel = table_open(EnumRelationId, AccessShareLock, 0);
+	enum_idx = index_open(EnumTypIdSortOrderIndexId, AccessShareLock, 0);
 	enum_scan = systable_beginscan_ordered(enum_rel, enum_idx, NULL,
 										   1, &skey);
 
@@ -567,8 +567,8 @@ enum_range_internal(Oid enumtypoid, Oid lower, Oid upper)
 				BTEqualStrategyNumber, F_OIDEQ,
 				ObjectIdGetDatum(enumtypoid));
 
-	enum_rel = table_open(EnumRelationId, AccessShareLock);
-	enum_idx = index_open(EnumTypIdSortOrderIndexId, AccessShareLock);
+	enum_rel = table_open(EnumRelationId, AccessShareLock, 0);
+	enum_idx = index_open(EnumTypIdSortOrderIndexId, AccessShareLock, 0);
 	enum_scan = systable_beginscan_ordered(enum_rel, enum_idx, NULL, 1, &skey);
 
 	max = 64;

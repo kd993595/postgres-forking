@@ -80,7 +80,7 @@ CheckAndCreateToastTable(Oid relOid, Datum reloptions, LOCKMODE lockmode,
 {
 	Relation	rel;
 
-	rel = table_open(relOid, lockmode);
+	rel = table_open(relOid, lockmode, 0); /*should only be creating in main database*/
 
 	/* create_toast_table does all the work */
 	(void) create_toast_table(rel, InvalidOid, InvalidOid, reloptions, lockmode,
@@ -99,7 +99,7 @@ BootstrapToastTable(char *relName, Oid toastOid, Oid toastIndexOid)
 {
 	Relation	rel;
 
-	rel = table_openrv(makeRangeVar(NULL, relName, -1), AccessExclusiveLock);
+	rel = table_openrv(makeRangeVar(NULL, relName, -1), AccessExclusiveLock, 0); /*bootstrap stuff should always be 0*/
 
 	if (rel->rd_rel->relkind != RELKIND_RELATION &&
 		rel->rd_rel->relkind != RELKIND_MATVIEW)
@@ -271,7 +271,7 @@ create_toast_table(Relation rel, Oid toastOid, Oid toastIndexOid,
 	CommandCounterIncrement();
 
 	/* ShareLock is not really needed here, but take it anyway */
-	toast_rel = table_open(toast_relid, ShareLock);
+	toast_rel = table_open(toast_relid, ShareLock, 0);
 
 	/*
 	 * Create unique index on chunk_id, chunk_seq.
@@ -332,7 +332,7 @@ create_toast_table(Relation rel, Oid toastOid, Oid toastIndexOid,
 	/*
 	 * Store the toast table's OID in the parent relation's pg_class row
 	 */
-	class_rel = table_open(RelationRelationId, RowExclusiveLock);
+	class_rel = table_open(RelationRelationId, RowExclusiveLock, 0);
 
 	if (!IsBootstrapProcessingMode())
 	{

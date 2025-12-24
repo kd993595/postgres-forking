@@ -281,7 +281,7 @@ AlterForeignDataWrapperOwner(const char *name, Oid newOwnerId)
 	Form_pg_foreign_data_wrapper form;
 
 
-	rel = table_open(ForeignDataWrapperRelationId, RowExclusiveLock);
+	rel = table_open(ForeignDataWrapperRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy1(FOREIGNDATAWRAPPERNAME, CStringGetDatum(name));
 
@@ -315,7 +315,7 @@ AlterForeignDataWrapperOwner_oid(Oid fwdId, Oid newOwnerId)
 	HeapTuple	tup;
 	Relation	rel;
 
-	rel = table_open(ForeignDataWrapperRelationId, RowExclusiveLock);
+	rel = table_open(ForeignDataWrapperRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy1(FOREIGNDATAWRAPPEROID, ObjectIdGetDatum(fwdId));
 
@@ -420,7 +420,7 @@ AlterForeignServerOwner(const char *name, Oid newOwnerId)
 	ObjectAddress address;
 	Form_pg_foreign_server form;
 
-	rel = table_open(ForeignServerRelationId, RowExclusiveLock);
+	rel = table_open(ForeignServerRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy1(FOREIGNSERVERNAME, CStringGetDatum(name));
 
@@ -452,7 +452,7 @@ AlterForeignServerOwner_oid(Oid srvId, Oid newOwnerId)
 	HeapTuple	tup;
 	Relation	rel;
 
-	rel = table_open(ForeignServerRelationId, RowExclusiveLock);
+	rel = table_open(ForeignServerRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCacheCopy1(FOREIGNSERVEROID, ObjectIdGetDatum(srvId));
 
@@ -571,7 +571,7 @@ CreateForeignDataWrapper(ParseState *pstate, CreateFdwStmt *stmt)
 	ObjectAddress myself;
 	ObjectAddress referenced;
 
-	rel = table_open(ForeignDataWrapperRelationId, RowExclusiveLock);
+	rel = table_open(ForeignDataWrapperRelationId, RowExclusiveLock, 0);
 
 	/* Must be superuser */
 	if (!superuser())
@@ -688,7 +688,7 @@ AlterForeignDataWrapper(ParseState *pstate, AlterFdwStmt *stmt)
 	Oid			fdwvalidator;
 	ObjectAddress myself;
 
-	rel = table_open(ForeignDataWrapperRelationId, RowExclusiveLock);
+	rel = table_open(ForeignDataWrapperRelationId, RowExclusiveLock, 0);
 
 	/* Must be superuser */
 	if (!superuser())
@@ -849,7 +849,7 @@ CreateForeignServer(CreateForeignServerStmt *stmt)
 	ObjectAddress referenced;
 	ForeignDataWrapper *fdw;
 
-	rel = table_open(ForeignServerRelationId, RowExclusiveLock);
+	rel = table_open(ForeignServerRelationId, RowExclusiveLock, 0);
 
 	/* For now the owner cannot be specified on create. Use effective user ID. */
 	ownerId = GetUserId();
@@ -982,7 +982,7 @@ AlterForeignServer(AlterForeignServerStmt *stmt)
 	Form_pg_foreign_server srvForm;
 	ObjectAddress address;
 
-	rel = table_open(ForeignServerRelationId, RowExclusiveLock);
+	rel = table_open(ForeignServerRelationId, RowExclusiveLock, 0);
 
 	tp = SearchSysCacheCopy1(FOREIGNSERVERNAME,
 							 CStringGetDatum(stmt->servername));
@@ -1112,7 +1112,7 @@ CreateUserMapping(CreateUserMappingStmt *stmt)
 	ForeignDataWrapper *fdw;
 	RoleSpec   *role = (RoleSpec *) stmt->user;
 
-	rel = table_open(UserMappingRelationId, RowExclusiveLock);
+	rel = table_open(UserMappingRelationId, RowExclusiveLock, 0);
 
 	if (role->roletype == ROLESPEC_PUBLIC)
 		useId = ACL_ID_PUBLIC;
@@ -1236,7 +1236,7 @@ AlterUserMapping(AlterUserMappingStmt *stmt)
 	ObjectAddress address;
 	RoleSpec   *role = (RoleSpec *) stmt->user;
 
-	rel = table_open(UserMappingRelationId, RowExclusiveLock);
+	rel = table_open(UserMappingRelationId, RowExclusiveLock, 0);
 
 	if (role->roletype == ROLESPEC_PUBLIC)
 		useId = ACL_ID_PUBLIC;
@@ -1421,7 +1421,7 @@ CreateForeignTable(CreateForeignTableStmt *stmt, Oid relid)
 	 */
 	CommandCounterIncrement();
 
-	ftrel = table_open(ForeignTableRelationId, RowExclusiveLock);
+	ftrel = table_open(ForeignTableRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * For now the owner cannot be specified on create. Use effective user ID.

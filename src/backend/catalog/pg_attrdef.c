@@ -60,7 +60,7 @@ StoreAttrDefault(Relation rel, AttrNumber attnum,
 	ObjectAddress colobject,
 				defobject;
 
-	adrel = table_open(AttrDefaultRelationId, RowExclusiveLock);
+	adrel = table_open(AttrDefaultRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Flatten expression to string form for storage.
@@ -95,7 +95,7 @@ StoreAttrDefault(Relation rel, AttrNumber attnum,
 	 * Update the pg_attribute entry for the column to show that a default
 	 * exists.
 	 */
-	attrrel = table_open(AttributeRelationId, RowExclusiveLock);
+	attrrel = table_open(AttributeRelationId, RowExclusiveLock, 0);
 	atttup = SearchSysCacheCopy2(ATTNUM,
 								 ObjectIdGetDatum(RelationGetRelid(rel)),
 								 Int16GetDatum(attnum));
@@ -226,7 +226,7 @@ RemoveAttrDefault(Oid relid, AttrNumber attnum,
 	HeapTuple	tuple;
 	bool		found = false;
 
-	attrdef_rel = table_open(AttrDefaultRelationId, RowExclusiveLock);
+	attrdef_rel = table_open(AttrDefaultRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&scankeys[0],
 				Anum_pg_attrdef_adrelid,
@@ -287,7 +287,7 @@ RemoveAttrDefaultById(Oid attrdefId)
 		elog(ERROR, "cannot call RemoveAttrDefaultById from non main fork");
 	}
 	/* Grab an appropriate lock on the pg_attrdef relation */
-	attrdef_rel = table_open(AttrDefaultRelationId, RowExclusiveLock);
+	attrdef_rel = table_open(AttrDefaultRelationId, RowExclusiveLock, 0);
 
 	/* Find the pg_attrdef tuple */
 	ScanKeyInit(&scankeys[0],
@@ -315,7 +315,7 @@ RemoveAttrDefaultById(Oid attrdefId)
 	table_close(attrdef_rel, RowExclusiveLock);
 
 	/* Fix the pg_attribute row */
-	attr_rel = table_open(AttributeRelationId, RowExclusiveLock);
+	attr_rel = table_open(AttributeRelationId, RowExclusiveLock, 0);
 
 	tuple = SearchSysCacheCopy2(ATTNUM,
 								ObjectIdGetDatum(myrelid),
@@ -354,7 +354,7 @@ GetAttrDefaultOid(Oid relid, AttrNumber attnum)
 	SysScanDesc scan;
 	HeapTuple	tup;
 
-	attrdef = table_open(AttrDefaultRelationId, AccessShareLock);
+	attrdef = table_open(AttrDefaultRelationId, AccessShareLock, 0);
 	ScanKeyInit(&keys[0],
 				Anum_pg_attrdef_adrelid,
 				BTEqualStrategyNumber,
@@ -396,7 +396,7 @@ GetAttrDefaultColumnAddress(Oid attrdefoid)
 	SysScanDesc scan;
 	HeapTuple	tup;
 
-	attrdef = table_open(AttrDefaultRelationId, AccessShareLock);
+	attrdef = table_open(AttrDefaultRelationId, AccessShareLock, 0);
 	ScanKeyInit(&skey[0],
 				Anum_pg_attrdef_oid,
 				BTEqualStrategyNumber, F_OIDEQ,

@@ -425,7 +425,7 @@ boot_openrel(char *relname)
 	elog(DEBUG4, "open relation %s, attrsize %d",
 		 relname, (int) ATTRIBUTE_FIXED_PART_SIZE);
 
-	boot_reldesc = table_openrv(makeRangeVar(NULL, relname, -1), NoLock);
+	boot_reldesc = table_openrv(makeRangeVar(NULL, relname, -1), NoLock, 0);
 	numattr = RelationGetNumberOfAttributes(boot_reldesc);
 	for (i = 0; i < numattr; i++)
 	{
@@ -701,7 +701,7 @@ populate_typ_list(void)
 
 	Assert(Typ == NIL);
 
-	rel = table_open(TypeRelationId, NoLock);
+	rel = table_open(TypeRelationId, NoLock, 0);
 	scan = table_beginscan_catalog(rel, 0, NULL);
 	old = MemoryContextSwitchTo(TopMemoryContext);
 	while ((tup = heap_getnext(scan, ForwardScanDirection)) != NULL)
@@ -956,8 +956,8 @@ build_indices(void)
 		Relation	ind;
 
 		/* need not bother with locks during bootstrap */
-		heap = table_open(ILHead->il_heap, NoLock);
-		ind = index_open(ILHead->il_ind, NoLock);
+		heap = table_open(ILHead->il_heap, NoLock, 0);
+		ind = index_open(ILHead->il_ind, NoLock, 0);
 
 		index_build(heap, ind, ILHead->il_info, false, false);
 

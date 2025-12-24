@@ -13,6 +13,7 @@
  *-------------------------------------------------------------------------
  */
 #include "postgres.h"
+#include "miscadmin.h"
 
 #include <ctype.h>
 
@@ -1421,7 +1422,7 @@ parserOpenTable(ParseState *pstate, const RangeVar *relation, int lockmode)
 	ParseCallbackState pcbstate;
 
 	setup_parser_errposition_callback(&pcbstate, pstate, relation->location);
-	rel = table_openrv_extended(relation, lockmode, true);
+	rel = table_openrv_extended(relation, lockmode, true, 0); /*table being opened in parser - assume dbforkid already set idk though check later*/
 	if (rel == NULL)
 	{
 		if (relation->schemaname)
@@ -3843,7 +3844,7 @@ isQueryUsingTempRelation_walker(Node *node, void *context)
 
 			if (rte->rtekind == RTE_RELATION)
 			{
-				Relation	rel = table_open(rte->relid, AccessShareLock);
+				Relation	rel = table_open(rte->relid, AccessShareLock, 0); /*metadata stuff*/
 				char		relpersistence = rel->rd_rel->relpersistence;
 
 				table_close(rel, AccessShareLock);

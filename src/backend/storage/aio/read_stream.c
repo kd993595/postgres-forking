@@ -537,6 +537,7 @@ read_stream_begin_relation(int flags,
 	else
 		stream->distance = 1;
 
+	elog(LOG, "in readstream the forkid is (%d)", RelationGetSmgr(rel)->smgr_rlocator.dbforkId);
 	/*
 	 * Since we always access the same relation, we can initialize parts of
 	 * the ReadBuffersOperation objects and leave them that way, to avoid

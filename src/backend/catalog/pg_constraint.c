@@ -95,7 +95,7 @@ CreateConstraintEntry(const char *constraintName,
 	ObjectAddresses *addrs_auto;
 	ObjectAddresses *addrs_normal;
 
-	conDesc = table_open(ConstraintRelationId, RowExclusiveLock);
+	conDesc = table_open(ConstraintRelationId, RowExclusiveLock, 0);
 
 	Assert(constraintName);
 	namestrcpy(&cname, constraintName);
@@ -404,7 +404,7 @@ ConstraintNameIsUsed(ConstraintCategory conCat, Oid objId,
 	SysScanDesc conscan;
 	ScanKeyData skey[3];
 
-	conDesc = table_open(ConstraintRelationId, AccessShareLock);
+	conDesc = table_open(ConstraintRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey[0],
 				Anum_pg_constraint_conrelid,
@@ -448,7 +448,7 @@ ConstraintNameExists(const char *conname, Oid namespaceid)
 	SysScanDesc conscan;
 	ScanKeyData skey[2];
 
-	conDesc = table_open(ConstraintRelationId, AccessShareLock);
+	conDesc = table_open(ConstraintRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey[0],
 				Anum_pg_constraint_conname,
@@ -508,7 +508,7 @@ ChooseConstraintName(const char *name1, const char *name2,
 	bool		found;
 	ListCell   *l;
 
-	conDesc = table_open(ConstraintRelationId, AccessShareLock);
+	conDesc = table_open(ConstraintRelationId, AccessShareLock, 0);
 
 	/* try the unmodified label first */
 	strlcpy(modlabel, label, sizeof(modlabel));
@@ -574,7 +574,7 @@ findDomainNotNullConstraint(Oid typid)
 	SysScanDesc scan;
 	ScanKeyData key;
 
-	pg_constraint = table_open(ConstraintRelationId, AccessShareLock);
+	pg_constraint = table_open(ConstraintRelationId, AccessShareLock, 0);
 	ScanKeyInit(&key,
 				Anum_pg_constraint_contypid,
 				BTEqualStrategyNumber, F_OIDEQ,
@@ -615,7 +615,7 @@ RemoveConstraintById(Oid conId)
 	HeapTuple	tup;
 	Form_pg_constraint con;
 
-	conDesc = table_open(ConstraintRelationId, RowExclusiveLock);
+	conDesc = table_open(ConstraintRelationId, RowExclusiveLock, 0);
 
 	tup = SearchSysCache1(CONSTROID, ObjectIdGetDatum(conId));
 	if (!HeapTupleIsValid(tup)) /* should not happen */
@@ -633,7 +633,7 @@ RemoveConstraintById(Oid conId)
 		 * If the constraint is for a relation, open and exclusive-lock the
 		 * relation it's for.
 		 */
-		rel = table_open(con->conrelid, AccessExclusiveLock);
+		rel = table_open(con->conrelid, AccessExclusiveLock, 0); /*opening for dropping a part of it so should be in main*/
 
 		/*
 		 * We need to update the relchecks count if it is a check constraint
@@ -646,7 +646,7 @@ RemoveConstraintById(Oid conId)
 			HeapTuple	relTup;
 			Form_pg_class classForm;
 
-			pgrel = table_open(RelationRelationId, RowExclusiveLock);
+			pgrel = table_open(RelationRelationId, RowExclusiveLock, 0);
 			relTup = SearchSysCacheCopy1(RELOID,
 										 ObjectIdGetDatum(con->conrelid));
 			if (!HeapTupleIsValid(relTup))
@@ -706,7 +706,7 @@ RenameConstraintById(Oid conId, const char *newname)
 	HeapTuple	tuple;
 	Form_pg_constraint con;
 
-	conDesc = table_open(ConstraintRelationId, RowExclusiveLock);
+	conDesc = table_open(ConstraintRelationId, RowExclusiveLock, 0);
 
 	tuple = SearchSysCacheCopy1(CONSTROID, ObjectIdGetDatum(conId));
 	if (!HeapTupleIsValid(tuple))
@@ -760,7 +760,7 @@ AlterConstraintNamespaces(Oid ownerId, Oid oldNspId,
 	SysScanDesc scan;
 	HeapTuple	tup;
 
-	conRel = table_open(ConstraintRelationId, RowExclusiveLock);
+	conRel = table_open(ConstraintRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_constraint_conrelid,
@@ -832,7 +832,7 @@ ConstraintSetParentConstraint(Oid childConstrId,
 	ObjectAddress depender;
 	ObjectAddress referenced;
 
-	constrRel = table_open(ConstraintRelationId, RowExclusiveLock);
+	constrRel = table_open(ConstraintRelationId, RowExclusiveLock, 0);
 	tuple = SearchSysCache1(CONSTROID, ObjectIdGetDatum(childConstrId));
 	if (!HeapTupleIsValid(tuple))
 		elog(ERROR, "cache lookup failed for constraint %u", childConstrId);
@@ -902,7 +902,7 @@ get_relation_constraint_oid(Oid relid, const char *conname, bool missing_ok)
 	ScanKeyData skey[3];
 	Oid			conOid = InvalidOid;
 
-	pg_constraint = table_open(ConstraintRelationId, AccessShareLock);
+	pg_constraint = table_open(ConstraintRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey[0],
 				Anum_pg_constraint_conrelid,
@@ -963,7 +963,7 @@ get_relation_constraint_attnos(Oid relid, const char *conname,
 	/* Set *constraintOid, to avoid complaints about uninitialized vars */
 	*constraintOid = InvalidOid;
 
-	pg_constraint = table_open(ConstraintRelationId, AccessShareLock);
+	pg_constraint = table_open(ConstraintRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey[0],
 				Anum_pg_constraint_conrelid,
@@ -1048,7 +1048,7 @@ get_relation_idx_constraint_oid(Oid relationId, Oid indexId)
 	HeapTuple	tuple;
 	Oid			constraintId = InvalidOid;
 
-	pg_constraint = table_open(ConstraintRelationId, AccessShareLock);
+	pg_constraint = table_open(ConstraintRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&key,
 				Anum_pg_constraint_conrelid,
@@ -1095,7 +1095,7 @@ get_domain_constraint_oid(Oid typid, const char *conname, bool missing_ok)
 	ScanKeyData skey[3];
 	Oid			conOid = InvalidOid;
 
-	pg_constraint = table_open(ConstraintRelationId, AccessShareLock);
+	pg_constraint = table_open(ConstraintRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey[0],
 				Anum_pg_constraint_conrelid,
@@ -1158,7 +1158,7 @@ get_primary_key_attnos(Oid relid, bool deferrableOk, Oid *constraintOid)
 	*constraintOid = InvalidOid;
 
 	/* Scan pg_constraint for constraints of the target rel */
-	pg_constraint = table_open(ConstraintRelationId, AccessShareLock);
+	pg_constraint = table_open(ConstraintRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey[0],
 				Anum_pg_constraint_conrelid,

@@ -51,7 +51,7 @@ CreateAccessMethod(CreateAmStmt *stmt)
 	Datum		values[Natts_pg_am];
 	HeapTuple	tup;
 
-	rel = table_open(AccessMethodRelationId, RowExclusiveLock);
+	rel = table_open(AccessMethodRelationId, RowExclusiveLock, 0);
 
 	/* Must be superuser */
 	if (!superuser())

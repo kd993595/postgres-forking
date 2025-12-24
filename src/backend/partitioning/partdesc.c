@@ -228,7 +228,7 @@ retry:
 			SysScanDesc scan;
 			ScanKeyData key[1];
 
-			pg_class = table_open(RelationRelationId, AccessShareLock);
+			pg_class = table_open(RelationRelationId, AccessShareLock, 0);
 			ScanKeyInit(&key[0],
 						Anum_pg_class_oid,
 						BTEqualStrategyNumber, F_OIDEQ,

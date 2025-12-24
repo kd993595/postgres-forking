@@ -129,7 +129,7 @@ unique_key_recheck(PG_FUNCTION_ARGS)
 	 * schema, not against concurrent updates.)
 	 */
 	indexRel = index_open(trigdata->tg_trigger->tgconstrindid,
-						  RowExclusiveLock);
+						  RowExclusiveLock, 0);
 	indexInfo = BuildIndexInfo(indexRel);
 
 	/*

@@ -523,7 +523,7 @@ intorel_startup(DestReceiver *self, int operation, TupleDesc typeinfo)
 	/*
 	 * Finally we can open the target table
 	 */
-	intoRelationDesc = table_open(intoRelationAddr.objectId, AccessExclusiveLock);
+	intoRelationDesc = table_open(intoRelationAddr.objectId, AccessExclusiveLock, 0); /*is creating a new table so only main database*/
 
 	/*
 	 * Make sure the constructed table does not have RLS enabled.

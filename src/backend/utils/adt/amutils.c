@@ -316,7 +316,7 @@ indexam_property(FunctionCallInfo fcinfo,
 					 * amproperty function without opening the rel. But this
 					 * is the generic fallback if it does not.
 					 */
-					Relation	indexrel = index_open(index_oid, AccessShareLock);
+					Relation	indexrel = index_open(index_oid, AccessShareLock, 0);
 
 					res = index_can_return(indexrel, attno);
 					index_close(indexrel, AccessShareLock);

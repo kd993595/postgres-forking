@@ -1391,7 +1391,7 @@ expandTableLikeClause(RangeVar *heapRel, TableLikeClause *table_like_clause)
 			Relation	parent_index;
 			IndexStmt  *index_stmt;
 
-			parent_index = index_open(parent_index_oid, AccessShareLock);
+			parent_index = index_open(parent_index_oid, AccessShareLock, 0);
 
 			/* Build CREATE INDEX statement to recreate the parent_index */
 			index_stmt = generateClonedIndexStmt(heapRel,
@@ -2263,7 +2263,7 @@ transformIndexConstraint(Constraint *constraint, CreateStmtContext *cxt)
 					 parser_errposition(cxt->pstate, constraint->location)));
 
 		/* Open the index (this will throw an error if it is not an index) */
-		index_rel = index_open(index_oid, AccessShareLock);
+		index_rel = index_open(index_oid, AccessShareLock, 0);
 		index_form = index_rel->rd_index;
 
 		/* Check that it does not have an associated constraint already */
@@ -2482,7 +2482,7 @@ transformIndexConstraint(Constraint *constraint, CreateStmtContext *cxt)
 					Relation	rel;
 					int			count;
 
-					rel = table_openrv(inh, AccessShareLock);
+					rel = table_openrv(inh, AccessShareLock, 0); /*just reading metadata so doesn't matter*/
 					/* check user requested inheritance from valid relkind */
 					if (rel->rd_rel->relkind != RELKIND_RELATION &&
 						rel->rd_rel->relkind != RELKIND_FOREIGN_TABLE &&
@@ -2624,7 +2624,7 @@ transformIndexConstraint(Constraint *constraint, CreateStmtContext *cxt)
 					Relation	rel;
 					int			count;
 
-					rel = table_openrv(inh, AccessShareLock);
+					rel = table_openrv(inh, AccessShareLock, 0); /*same as above*/
 					/* check user requested inheritance from valid relkind */
 					if (rel->rd_rel->relkind != RELKIND_RELATION &&
 						rel->rd_rel->relkind != RELKIND_FOREIGN_TABLE &&
@@ -2999,7 +2999,7 @@ transformRuleStmt(RuleStmt *stmt, const char *queryString,
 	 * DefineQueryRewrite(), and we don't want to grab a lesser lock
 	 * beforehand.
 	 */
-	rel = table_openrv(stmt->relation, AccessExclusiveLock);
+	rel = table_openrv(stmt->relation, AccessExclusiveLock, 0);
 
 	if (rel->rd_rel->relkind == RELKIND_MATVIEW)
 		ereport(ERROR,

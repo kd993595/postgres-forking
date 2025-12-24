@@ -252,7 +252,7 @@ CreateOpFamily(CreateOpFamilyStmt *stmt, const char *opfname,
 	ObjectAddress myself,
 				referenced;
 
-	rel = table_open(OperatorFamilyRelationId, RowExclusiveLock);
+	rel = table_open(OperatorFamilyRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Make sure there is no existing opfamily of this name (this is just to
@@ -595,7 +595,7 @@ DefineOpClass(CreateOpClassStmt *stmt)
 							stmt->amname)));
 	}
 
-	rel = table_open(OperatorClassRelationId, RowExclusiveLock);
+	rel = table_open(OperatorClassRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Make sure there is no existing opclass of this name (this is just to
@@ -1438,7 +1438,7 @@ storeOperators(List *opfamilyname, Oid amoid, Oid opfamilyoid,
 				referenced;
 	ListCell   *l;
 
-	rel = table_open(AccessMethodOperatorRelationId, RowExclusiveLock);
+	rel = table_open(AccessMethodOperatorRelationId, RowExclusiveLock, 0);
 
 	foreach(l, operators)
 	{
@@ -1568,7 +1568,7 @@ storeProcedures(List *opfamilyname, Oid amoid, Oid opfamilyoid,
 				referenced;
 	ListCell   *l;
 
-	rel = table_open(AccessMethodProcedureRelationId, RowExclusiveLock);
+	rel = table_open(AccessMethodProcedureRelationId, RowExclusiveLock, 0);
 
 	foreach(l, procedures)
 	{

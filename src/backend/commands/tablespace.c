@@ -309,7 +309,7 @@ CreateTableSpace(CreateTableSpaceStmt *stmt)
 	 * lock the proposed tablename against other would-be creators. The
 	 * insertion will roll back if we find problems below.
 	 */
-	rel = table_open(TableSpaceRelationId, RowExclusiveLock);
+	rel = table_open(TableSpaceRelationId, RowExclusiveLock, 0);
 
 	if (IsBinaryUpgrade)
 	{
@@ -407,7 +407,7 @@ DropTableSpace(DropTableSpaceStmt *stmt)
 	/*
 	 * Find the target tuple
 	 */
-	rel = table_open(TableSpaceRelationId, RowExclusiveLock);
+	rel = table_open(TableSpaceRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&entry[0],
 				Anum_pg_tablespace_spcname,
@@ -939,7 +939,7 @@ RenameTableSpace(const char *oldname, const char *newname)
 	ObjectAddress address;
 
 	/* Search pg_tablespace */
-	rel = table_open(TableSpaceRelationId, RowExclusiveLock);
+	rel = table_open(TableSpaceRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&entry[0],
 				Anum_pg_tablespace_spcname,
@@ -1028,7 +1028,7 @@ AlterTableSpaceOptions(AlterTableSpaceOptionsStmt *stmt)
 	HeapTuple	newtuple;
 
 	/* Search pg_tablespace */
-	rel = table_open(TableSpaceRelationId, RowExclusiveLock);
+	rel = table_open(TableSpaceRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&entry[0],
 				Anum_pg_tablespace_spcname,
@@ -1436,7 +1436,7 @@ get_tablespace_oid(const char *tablespacename, bool missing_ok)
 	 * index on name, on the theory that pg_tablespace will usually have just
 	 * a few entries and so an indexed lookup is a waste of effort.
 	 */
-	rel = table_open(TableSpaceRelationId, AccessShareLock);
+	rel = table_open(TableSpaceRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&entry[0],
 				Anum_pg_tablespace_spcname,
@@ -1482,7 +1482,7 @@ get_tablespace_name(Oid spc_oid)
 	 * index on oid, on the theory that pg_tablespace will usually have just a
 	 * few entries and so an indexed lookup is a waste of effort.
 	 */
-	rel = table_open(TableSpaceRelationId, AccessShareLock);
+	rel = table_open(TableSpaceRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&entry[0],
 				Anum_pg_tablespace_oid,

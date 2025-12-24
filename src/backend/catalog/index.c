@@ -535,7 +535,7 @@ AppendAttributeTuples(Relation indexRelation, const Datum *attopts, const Nullab
 	/*
 	 * open the attribute relation and its indexes
 	 */
-	pg_attribute = table_open(AttributeRelationId, RowExclusiveLock);
+	pg_attribute = table_open(AttributeRelationId, RowExclusiveLock, 0);
 
 	indstate = CatalogOpenIndexes(pg_attribute);
 
@@ -627,7 +627,7 @@ UpdateIndexRelation(Oid indexoid,
 	/*
 	 * open the system catalog index relation
 	 */
-	pg_index = table_open(IndexRelationId, RowExclusiveLock);
+	pg_index = table_open(IndexRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * Build a pg_index tuple
@@ -771,7 +771,7 @@ index_create(Relation heapRelation,
 	relkind = partitioned ? RELKIND_PARTITIONED_INDEX : RELKIND_INDEX;
 	is_exclusion = (indexInfo->ii_ExclusionOps != NULL);
 
-	pg_class = table_open(RelationRelationId, RowExclusiveLock);
+	pg_class = table_open(RelationRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * The index will be in the same namespace as its parent table, and is
@@ -1316,7 +1316,11 @@ index_concurrently_create_copy(Relation heapRelation, Oid oldIndexId,
 	List	   *indexExprs = NIL;
 	List	   *indexPreds = NIL;
 
-	indexRelation = index_open(oldIndexId, RowExclusiveLock);
+	if(MyDBForkId != 0){
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("Cannot index_concurrently_create_copy in non main database")));
+	}
+
+	indexRelation = index_open(oldIndexId, RowExclusiveLock, 0);
 
 	/* The new index needs some information from the old index */
 	oldInfo = BuildIndexInfo(indexRelation);
@@ -1492,8 +1496,12 @@ index_concurrently_build(Oid heapRelationId,
 	/* This had better make sure that a snapshot is active */
 	Assert(ActiveSnapshotSet());
 
+	if(MyDBForkId != 0){
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("Cannot index_concurrently_build in non main database")));
+	}
+
 	/* Open and lock the parent heap relation */
-	heapRel = table_open(heapRelationId, ShareUpdateExclusiveLock);
+	heapRel = table_open(heapRelationId, ShareUpdateExclusiveLock, 0); /*should only be happening in a define index so main database*/
 
 	/*
 	 * Switch to the table owner's userid, so that any index functions are run
@@ -1506,7 +1514,7 @@ index_concurrently_build(Oid heapRelationId,
 	save_nestlevel = NewGUCNestLevel();
 	RestrictSearchPath();
 
-	indexRelation = index_open(indexRelationId, RowExclusiveLock);
+	indexRelation = index_open(indexRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * We have to re-build the IndexInfo struct, since it was lost in the
@@ -1579,7 +1587,7 @@ index_concurrently_swap(Oid newIndexId, Oid oldIndexId, const char *oldName)
 	newClassRel = relation_open(newIndexId, ShareUpdateExclusiveLock, 0);
 
 	/* Now swap names and dependencies of those indexes */
-	pg_class = table_open(RelationRelationId, RowExclusiveLock);
+	pg_class = table_open(RelationRelationId, RowExclusiveLock, 0);
 
 	oldClassTuple = SearchSysCacheCopy1(RELOID,
 										ObjectIdGetDatum(oldIndexId));
@@ -1609,7 +1617,7 @@ index_concurrently_swap(Oid newIndexId, Oid oldIndexId, const char *oldName)
 	heap_freetuple(newClassTuple);
 
 	/* Now swap index info */
-	pg_index = table_open(IndexRelationId, RowExclusiveLock);
+	pg_index = table_open(IndexRelationId, RowExclusiveLock, 0);
 
 	oldIndexTuple = SearchSysCacheCopy1(INDEXRELID,
 										ObjectIdGetDatum(oldIndexId));
@@ -1666,8 +1674,8 @@ index_concurrently_swap(Oid newIndexId, Oid oldIndexId, const char *oldName)
 	if (OidIsValid(indexConstraintOid))
 		constraintOids = lappend_oid(constraintOids, indexConstraintOid);
 
-	pg_constraint = table_open(ConstraintRelationId, RowExclusiveLock);
-	pg_trigger = table_open(TriggerRelationId, RowExclusiveLock);
+	pg_constraint = table_open(ConstraintRelationId, RowExclusiveLock, 0);
+	pg_trigger = table_open(TriggerRelationId, RowExclusiveLock, 0);
 
 	foreach(lc, constraintOids)
 	{
@@ -1753,7 +1761,7 @@ index_concurrently_swap(Oid newIndexId, Oid oldIndexId, const char *oldName)
 					BTEqualStrategyNumber, F_INT4EQ,
 					Int32GetDatum(0));
 
-		description = table_open(DescriptionRelationId, RowExclusiveLock);
+		description = table_open(DescriptionRelationId, RowExclusiveLock, 0);
 
 		sd = systable_beginscan(description, DescriptionObjIndexId, true,
 								NULL, 3, skey);
@@ -1833,8 +1841,8 @@ index_concurrently_set_dead(Oid heapId, Oid indexId)
 	 * existing predicate locks, so now is the time to move them to the heap
 	 * relation.
 	 */
-	userHeapRelation = table_open(heapId, ShareUpdateExclusiveLock);
-	userIndexRelation = index_open(indexId, ShareUpdateExclusiveLock);
+	userHeapRelation = table_open(heapId, ShareUpdateExclusiveLock, 0); /*again operation should only happen in main database*/
+	userIndexRelation = index_open(indexId, ShareUpdateExclusiveLock, 0);
 	TransferPredicateLocksToHeapRelation(userIndexRelation);
 
 	/*
@@ -2059,7 +2067,7 @@ index_constraint_create(Relation heapRelation,
 		bool		dirty = false;
 		bool		marked_as_primary = false;
 
-		pg_index = table_open(IndexRelationId, RowExclusiveLock);
+		pg_index = table_open(IndexRelationId, RowExclusiveLock, 0);
 
 		indexTuple = SearchSysCacheCopy1(INDEXRELID,
 										 ObjectIdGetDatum(indexRelationId));
@@ -2138,6 +2146,10 @@ index_drop(Oid indexId, bool concurrent, bool concurrent_lock_mode)
 	Assert(get_rel_persistence(indexId) != RELPERSISTENCE_TEMP ||
 		   (!concurrent && !concurrent_lock_mode));
 
+	if(MyDBForkId != 0){
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot drop index outside of main database")));
+	}
+
 	/*
 	 * To drop an index safely, we must grab exclusive lock on its parent
 	 * table.  Exclusive lock on the index alone is insufficient because
@@ -2158,8 +2170,8 @@ index_drop(Oid indexId, bool concurrent, bool concurrent_lock_mode)
 	 */
 	heapId = IndexGetRelation(indexId, false);
 	lockmode = (concurrent || concurrent_lock_mode) ? ShareUpdateExclusiveLock : AccessExclusiveLock;
-	userHeapRelation = table_open(heapId, lockmode);
-	userIndexRelation = index_open(indexId, lockmode);
+	userHeapRelation = table_open(heapId, lockmode, 0);
+	userIndexRelation = index_open(indexId, lockmode, 0);
 
 	/*
 	 * We might still have open queries using it in our own session, which the
@@ -2299,8 +2311,8 @@ index_drop(Oid indexId, bool concurrent, bool concurrent_lock_mode)
 		 * leave nothing to chance and grab AccessExclusiveLock on the index
 		 * before the physical deletion.
 		 */
-		userHeapRelation = table_open(heapId, ShareUpdateExclusiveLock);
-		userIndexRelation = index_open(indexId, AccessExclusiveLock);
+		userHeapRelation = table_open(heapId, ShareUpdateExclusiveLock, 0);
+		userIndexRelation = index_open(indexId, AccessExclusiveLock, 0);
 	}
 	else
 	{
@@ -2329,7 +2341,7 @@ index_drop(Oid indexId, bool concurrent, bool concurrent_lock_mode)
 	/*
 	 * fix INDEX relation, and check for expressional index
 	 */
-	indexRelation = table_open(IndexRelationId, RowExclusiveLock);
+	indexRelation = table_open(IndexRelationId, RowExclusiveLock, 0);
 
 	tuple = SearchSysCache1(INDEXRELID, ObjectIdGetDatum(indexId));
 	if (!HeapTupleIsValid(tuple))
@@ -2860,7 +2872,7 @@ index_update_stats(Relation rel,
 	 * what's really important.
 	 */
 
-	pg_class = table_open(RelationRelationId, RowExclusiveLock);
+	pg_class = table_open(RelationRelationId, RowExclusiveLock, 0);
 
 	ScanKeyInit(&key[0],
 				Anum_pg_class_oid,
@@ -3074,7 +3086,7 @@ index_build(Relation heapRelation,
 		HeapTuple	indexTuple;
 		Form_pg_index indexForm;
 
-		pg_index = table_open(IndexRelationId, RowExclusiveLock);
+		pg_index = table_open(IndexRelationId, RowExclusiveLock, 0);
 
 		indexTuple = SearchSysCacheCopy1(INDEXRELID,
 										 ObjectIdGetDatum(indexId));
@@ -3319,7 +3331,7 @@ validate_index(Oid heapId, Oid indexId, Snapshot snapshot)
 	}
 
 	/* Open and lock the parent heap relation */
-	heapRelation = table_open(heapId, ShareUpdateExclusiveLock);
+	heapRelation = table_open(heapId, ShareUpdateExclusiveLock, 0); /*hopefully someone above this function check main database since its for index build*/
 
 	/*
 	 * Switch to the table owner's userid, so that any index functions are run
@@ -3332,7 +3344,7 @@ validate_index(Oid heapId, Oid indexId, Snapshot snapshot)
 	save_nestlevel = NewGUCNestLevel();
 	RestrictSearchPath();
 
-	indexRelation = index_open(indexId, RowExclusiveLock);
+	indexRelation = index_open(indexId, RowExclusiveLock, 0);
 
 	/*
 	 * Fetch info needed for index_insert.  (You might think this should be
@@ -3451,7 +3463,7 @@ index_set_state_flags(Oid indexId, IndexStateFlagsAction action)
 	Form_pg_index indexForm;
 
 	/* Open pg_index and fetch a writable copy of the index's tuple */
-	pg_index = table_open(IndexRelationId, RowExclusiveLock);
+	pg_index = table_open(IndexRelationId, RowExclusiveLock, 0);
 
 	indexTuple = SearchSysCacheCopy1(INDEXRELID,
 									 ObjectIdGetDatum(indexId));
@@ -3565,6 +3577,10 @@ reindex_index(const ReindexStmt *stmt, Oid indexId,
 	bool		progress = ((params->options & REINDEXOPT_REPORT_PROGRESS) != 0);
 	bool		set_tablespace = false;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot reindex_index in non main database")));
+	}
+
 	pg_rusage_init(&ru0);
 
 	/*
@@ -3578,9 +3594,9 @@ reindex_index(const ReindexStmt *stmt, Oid indexId,
 		return;
 
 	if ((params->options & REINDEXOPT_MISSING_OK) != 0)
-		heapRelation = try_table_open(heapId, ShareLock);
+		heapRelation = try_table_open(heapId, ShareLock, 0);
 	else
-		heapRelation = table_open(heapId, ShareLock);
+		heapRelation = table_open(heapId, ShareLock, 0);
 
 	/* if relation is gone, leave */
 	if (!heapRelation)
@@ -3618,9 +3634,9 @@ reindex_index(const ReindexStmt *stmt, Oid indexId,
 	 * ensure that no one else is touching this particular index.
 	 */
 	if ((params->options & REINDEXOPT_MISSING_OK) != 0)
-		iRel = try_index_open(indexId, AccessExclusiveLock);
+		iRel = try_index_open(indexId, AccessExclusiveLock, 0);
 	else
-		iRel = index_open(indexId, AccessExclusiveLock);
+		iRel = index_open(indexId, AccessExclusiveLock, 0);
 
 	/* if index relation is gone, leave */
 	if (!iRel)
@@ -3795,7 +3811,7 @@ reindex_index(const ReindexStmt *stmt, Oid indexId,
 		Form_pg_index indexForm;
 		bool		index_bad;
 
-		pg_index = table_open(IndexRelationId, RowExclusiveLock);
+		pg_index = table_open(IndexRelationId, RowExclusiveLock, 0);
 
 		indexTuple = SearchSysCacheCopy1(INDEXRELID,
 										 ObjectIdGetDatum(indexId));
@@ -3900,15 +3916,18 @@ reindex_relation(const ReindexStmt *stmt, Oid relid, int flags,
 	ListCell   *indexId;
 	int			i;
 
+	if(MyDBForkId != 0){
+		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot reindex_relation in non main database")));
+	}
 	/*
 	 * Open and lock the relation.  ShareLock is sufficient since we only need
 	 * to prevent schema and data changes in it.  The lock level used here
 	 * should match ReindexTable().
 	 */
 	if ((params->options & REINDEXOPT_MISSING_OK) != 0)
-		rel = try_table_open(relid, ShareLock);
+		rel = try_table_open(relid, ShareLock, 0); /*should only reindex in main database*/
 	else
-		rel = table_open(relid, ShareLock);
+		rel = table_open(relid, ShareLock, 0);
 
 	/* if relation is gone, leave */
 	if (!rel)

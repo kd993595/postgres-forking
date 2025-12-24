@@ -159,7 +159,7 @@ get_row_security_policies(Query *root, RangeTblEntry *rte, int rt_index,
 	 * for example in UPDATE t1 ... FROM t2 we need to apply t1's UPDATE
 	 * policies and t2's SELECT policies.
 	 */
-	rel = table_open(rte->relid, NoLock);
+	rel = table_open(rte->relid, NoLock, 0);
 
 	commandType = rt_index == root->resultRelation ?
 		root->commandType : CMD_SELECT;

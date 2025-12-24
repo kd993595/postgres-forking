@@ -90,7 +90,7 @@ ParameterAclCreate(const char *parameter)
 	 * We don't take a strong enough lock to prevent concurrent insertions,
 	 * relying instead on the unique index.
 	 */
-	rel = table_open(ParameterAclRelationId, RowExclusiveLock);
+	rel = table_open(ParameterAclRelationId, RowExclusiveLock, 0);
 	tupDesc = RelationGetDescr(rel);
 	parameterId = GetNewOidWithIndex(rel,
 									 ParameterAclOidIndexId,
