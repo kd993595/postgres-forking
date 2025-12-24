@@ -993,8 +993,7 @@ void DBForkShmemInit(void)
 			}else{
 				num_read = fread(&last_entry, sizeof(DBForkEntry), 1, dbfork_config);
 				Assert(num_read == 1);
-				pg_atomic_init_u32(&DBForkShmem->fork_id_counter, last_entry.forkId);
-
+				pg_atomic_init_u32(&DBForkShmem->fork_id_counter, last_entry.forkId+1);
 			}
 			fclose(dbfork_config);
 		}else{
@@ -1002,7 +1001,7 @@ void DBForkShmemInit(void)
 			pg_atomic_init_u32(&DBForkShmem->fork_id_counter,1);
 		}
 		
-		Assert(dbfork_config != NULL);
+		// Assert(dbfork_config != NULL);
 		pfree(tmpPath);
 	}
 }

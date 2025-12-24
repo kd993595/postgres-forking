@@ -51,6 +51,7 @@
 #include "common/file_perm.h"
 #include "mb/pg_wchar.h"
 #include "miscadmin.h"
+#include "nodes/makefuncs.h"
 #include "pgstat.h"
 #include "postmaster/bgwriter.h"
 #include "replication/slot.h"
@@ -572,7 +573,7 @@ CreateDatabaseUsingFileCopy(Oid src_dboid, Oid dst_dboid, Oid src_tsid,
 	 * Iterate through all tablespaces of the template database, and copy each
 	 * one to the new database.
 	 */
-	rel = table_open(TableSpaceRelationId, AccessShareLock);
+	rel = table_open(TableSpaceRelationId, AccessShareLock, 0);
 	scan = table_beginscan_catalog(rel, 0, NULL);
 	while ((tuple = heap_getnext(scan, ForwardScanDirection)) != NULL)
 	{
@@ -1377,7 +1378,7 @@ createdb(ParseState *pstate, const CreatedbStmt *stmt)
 	 * filename conflict with anything already existing in the tablespace
 	 * directories.
 	 */
-	pg_database_rel = table_open(DatabaseRelationId, RowExclusiveLock);
+	pg_database_rel = table_open(DatabaseRelationId, RowExclusiveLock, 0);
 
 	/*
 	 * If database OID is configured, check if the OID is already in use or
@@ -1546,52 +1547,82 @@ int32 createfork(ParseState *pstate, const CreateforkStmt *stmt)
 	/* Get a new unique fork id from the main process and store here */
 	int32 newForkId = DBForkNewId();
 	DBForkSetNewIdExpensive(newForkId);
+	ereport(INFO, (errmsg("Current fork id globally: %d", MyDBForkId)));
 
-	pg_class_rel = table_open(RelationRelationId, AccessShareLock);
+	pg_class_rel = table_open(RelationRelationId, AccessShareLock, 0);
 	scan = table_beginscan_catalog(pg_class_rel, 0, NULL);
 
 	while((tuple = heap_getnext(scan,ForwardScanDirection)) != NULL)
 	{ /* look at vacuum.c it has an example like this */
+		Relation newRel;
+		bool is_system;
 		Form_pg_class classForm = (Form_pg_class) GETSTRUCT(tuple);
 
 		if(classForm->relfilenode == InvalidRelFileNumber)
 			continue;
 
-		if(classForm->relkind == RELKIND_RELATION) /*filter for regular tables*/
-		{
-			Relation newRel;
-			/*Oid namespaceoid = classForm->relnamespace;
-			char *nspname = get_namespace_name(namespaceoid);
-			if(strcmp(nspname, "pg_catalog")==0 || strcmp(nspname,"information_schema")==0 || strcmp(nspname, "pg_toast")==0)
-				continue;*/
-
-			/* Create a new fork file for the relation - using md should probably change to smgr later */
-			ereport(LOG,
-					(errmsg("Found table: %s (RelFileNumber %u))", NameStr(classForm->relname), classForm->relfilenode)));
-
-			// mdcreatedbfork(classForm->relfilenode, newForkId);
-			newRel = relation_open(classForm->oid, AccessExclusiveLock, newForkId);
-			mdcreate(RelationGetSmgr(newRel), MAIN_FORKNUM, false);
-			relation_close(newRel, AccessExclusiveLock);
-
-			/*pfree(nspname);*/
-		}else if(classForm->relkind == RELKIND_INDEX)
-		{/* index relations */
-			Relation newRel;
-			ereport(LOG,
-					(errmsg("Found index: %s (RelFileNumber %u))", NameStr(classForm->relname), classForm->relfilenode)));
-
-			//mdcreatedbfork(classForm->relfilenode, newForkId);
-			/*fork initilization process*/
-			newRel = relation_open(classForm->oid, AccessExclusiveLock, newForkId);
-			mdcreate(RelationGetSmgr(newRel), MAIN_FORKNUM, false);
-			mdcreate(RelationGetSmgr(newRel), INIT_FORKNUM, false);
-			newRel->rd_indam->ambuildempty(newRel);
-			relation_close(newRel, AccessExclusiveLock);
+		newRel = relation_open(classForm->oid, AccessShareLock, 0);
+		is_system = IsSystemRelation(newRel) || IsCatalogNamespace(RelationGetRelid(newRel));
+		relation_close(newRel, AccessShareLock);
+		if(is_system){
+			// ereport(LOG, errmsg("Found system table: %s (RelFileNumber: %d)", NameStr(classForm->relname), newRel->rd_locator.relNumber));
+			continue;
 		}
 
+		if(classForm->relkind == RELKIND_RELATION) /*filter for regular tables*/
+		{
+			newRel = table_open(classForm->oid, AccessShareLock, newForkId);
+			// ereport(LOG, errmsg("Found user table: %s (RelFileNumber: %d)", NameStr(classForm->relname), newRel->rd_locator.relNumber));
+			// mdcreatedbfork(classForm->relfilenode, newForkId);
+			mdcreate(RelationGetSmgr(newRel), MAIN_FORKNUM, false);
+			table_close(newRel, AccessShareLock);
+		}else if(classForm->relkind == RELKIND_INDEX)
+		{
+			Relation parentHeap;
+			IndexInfo *indexInfo;
+			Form_pg_index indexStruct;
+			int i;
+			int numAtts;
+			newRel = index_open(classForm->oid, AccessShareLock, newForkId);
+			parentHeap = table_open(newRel->rd_index->indrelid, AccessShareLock, newForkId);
+			// indexInfo = BuildIndexInfo(newRel);
+			/*BuildIndexInfo function replicated here to avoid conflict with access*/
+			indexStruct = newRel->rd_index;
+			numAtts = indexStruct->indnatts;
+			if (numAtts < 1 || numAtts > INDEX_MAX_KEYS)
+				elog(ERROR, "invalid indnatts %d for index %u",	numAtts, RelationGetRelid(newRel));
+
+			indexInfo = makeIndexInfo(indexStruct->indnatts,
+					   		indexStruct->indnkeyatts,
+					   		newRel->rd_rel->relam,
+					   		RelationGetIndexExpressions(newRel),
+					   		RelationGetIndexPredicate(newRel),
+					   		indexStruct->indisunique,
+					   		indexStruct->indnullsnotdistinct,
+					   		indexStruct->indisready,
+					   		false,
+					   		newRel->rd_indam->amsummarizing);
+
+			for (i = 0; i < numAtts; i++)
+				indexInfo->ii_IndexAttrNumbers[i] = indexStruct->indkey.values[i];
+
+			if (indexStruct->indisexclusion)
+			{
+				RelationGetExclusionInfo(newRel, &indexInfo->ii_ExclusionOps, &indexInfo->ii_ExclusionProcs, &indexInfo->ii_ExclusionStrats);
+			}/*end of function*/
+			// ereport(LOG, errmsg("Found index table: %s (RelFileNumber: %d)", NameStr(classForm->relname), newRel->rd_locator.relNumber));
+			//mdcreatedbfork(classForm->relfilenode, newForkId);
+
+			mdcreate(RelationGetSmgr(newRel), MAIN_FORKNUM, false);
+			newRel->rd_indam->ambuild(parentHeap, newRel, indexInfo);
+			// mdcreate(RelationGetSmgr(newRel), INIT_FORKNUM, false);
+			// newRel->rd_indam->ambuildempty(newRel); //this is for unlogged tables
+			table_close(parentHeap, AccessShareLock);
+			index_close(newRel, AccessShareLock);
+		}else{
+			ereport(LOG, errmsg("Found smthg else: %s (RelFileNumber: %d) (%c)", NameStr(classForm->relname), newRel->rd_locator.relNumber, classForm->relkind));
+		}
 	}
-	ereport(LOG, (errmsg("Current fork id globally: %d", MyDBForkId)));
 
 	table_endscan(scan);
 	table_close(pg_class_rel, AccessShareLock);
@@ -1721,7 +1752,7 @@ dropdb(const char *dbname, bool missing_ok, bool force)
 	 * using it as a CREATE DATABASE template or trying to delete it for
 	 * themselves.
 	 */
-	pgdbrel = table_open(DatabaseRelationId, RowExclusiveLock);
+	pgdbrel = table_open(DatabaseRelationId, RowExclusiveLock, 0);
 
 	if (!get_db_info(dbname, AccessExclusiveLock, &db_id, NULL, NULL,
 					 &db_istemplate, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
@@ -1961,7 +1992,7 @@ RenameDatabase(const char *oldname, const char *newname)
 	 * Look up the target database's OID, and get exclusive lock on it. We
 	 * need this for the same reasons as DROP DATABASE.
 	 */
-	rel = table_open(DatabaseRelationId, RowExclusiveLock);
+	rel = table_open(DatabaseRelationId, RowExclusiveLock, 0);
 
 	if (!get_db_info(oldname, AccessExclusiveLock, &db_id, NULL, NULL, NULL,
 					 NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
@@ -2073,7 +2104,7 @@ movedb(const char *dbname, const char *tblspcname)
 	 * we are moving it, and that no one is using it as a CREATE DATABASE
 	 * template or trying to delete it.
 	 */
-	pgdbrel = table_open(DatabaseRelationId, RowExclusiveLock);
+	pgdbrel = table_open(DatabaseRelationId, RowExclusiveLock, 0);
 
 	if (!get_db_info(dbname, AccessExclusiveLock, &db_id, NULL, NULL, NULL,
 					 NULL, NULL, NULL, NULL, &src_tblspcoid, NULL, NULL, NULL, NULL, NULL, NULL))
@@ -2506,7 +2537,7 @@ AlterDatabase(ParseState *pstate, AlterDatabaseStmt *stmt, bool isTopLevel)
 	 * because we're not going to do anything that would mess up incoming
 	 * connections.
 	 */
-	rel = table_open(DatabaseRelationId, RowExclusiveLock);
+	rel = table_open(DatabaseRelationId, RowExclusiveLock, 0);
 	ScanKeyInit(&scankey,
 				Anum_pg_database_datname,
 				BTEqualStrategyNumber, F_NAMEEQ,
@@ -2599,7 +2630,7 @@ AlterDatabaseRefreshColl(AlterDatabaseRefreshCollStmt *stmt)
 	char	   *oldversion;
 	char	   *newversion;
 
-	rel = table_open(DatabaseRelationId, RowExclusiveLock);
+	rel = table_open(DatabaseRelationId, RowExclusiveLock, 0);
 	ScanKeyInit(&scankey,
 				Anum_pg_database_datname,
 				BTEqualStrategyNumber, F_NAMEEQ,
@@ -2723,7 +2754,7 @@ AlterDatabaseOwner(const char *dbname, Oid newOwnerId)
 	 * because we're not going to do anything that would mess up incoming
 	 * connections.
 	 */
-	rel = table_open(DatabaseRelationId, RowExclusiveLock);
+	rel = table_open(DatabaseRelationId, RowExclusiveLock, 0);
 	ScanKeyInit(&scankey,
 				Anum_pg_database_datname,
 				BTEqualStrategyNumber, F_NAMEEQ,
@@ -2880,7 +2911,7 @@ get_db_info(const char *name, LOCKMODE lockmode,
 	Assert(name);
 
 	/* Caller may wish to grab a better lock on pg_database beforehand... */
-	relation = table_open(DatabaseRelationId, AccessShareLock);
+	relation = table_open(DatabaseRelationId, AccessShareLock, 0);
 
 	/*
 	 * Loop covers the rare case where the database is renamed before we can
@@ -3059,7 +3090,7 @@ remove_dbtablespaces(Oid db_id)
 	int			i;
 	Oid		   *tablespace_ids;
 
-	rel = table_open(TableSpaceRelationId, AccessShareLock);
+	rel = table_open(TableSpaceRelationId, AccessShareLock, 0);
 	scan = table_beginscan_catalog(rel, 0, NULL);
 	while ((tuple = heap_getnext(scan, ForwardScanDirection)) != NULL)
 	{
@@ -3145,7 +3176,7 @@ check_db_file_conflict(Oid db_id)
 	TableScanDesc scan;
 	HeapTuple	tuple;
 
-	rel = table_open(TableSpaceRelationId, AccessShareLock);
+	rel = table_open(TableSpaceRelationId, AccessShareLock, 0);
 	scan = table_beginscan_catalog(rel, 0, NULL);
 	while ((tuple = heap_getnext(scan, ForwardScanDirection)) != NULL)
 	{
@@ -3223,7 +3254,7 @@ get_database_oid(const char *dbname, bool missing_ok)
 	 * There's no syscache for pg_database indexed by name, so we must look
 	 * the hard way.
 	 */
-	pg_database = table_open(DatabaseRelationId, AccessShareLock);
+	pg_database = table_open(DatabaseRelationId, AccessShareLock, 0);
 	ScanKeyInit(&entry[0],
 				Anum_pg_database_datname,
 				BTEqualStrategyNumber, F_NAMEEQ,
