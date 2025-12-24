@@ -373,7 +373,7 @@ verify_heapam(PG_FUNCTION_ARGS)
 
 		/* Main relation has associated toast relation */
 		ctx.toast_rel = table_open(ctx.rel->rd_rel->reltoastrelid,
-								   AccessShareLock);
+								   AccessShareLock, 0);
 		offset = toast_open_indexes(ctx.toast_rel,
 									AccessShareLock,
 									&(ctx.toast_indexes),

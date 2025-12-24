@@ -1791,7 +1791,7 @@ postgresPlanForeignModify(PlannerInfo *root,
 	 * Core code already has some lock on each rel being planned, so we can
 	 * use NoLock here.
 	 */
-	rel = table_open(rte->relid, NoLock);
+	rel = table_open(rte->relid, NoLock, 0);
 
 	/*
 	 * In an INSERT, we transmit all columns that are defined in the foreign
@@ -2536,7 +2536,7 @@ postgresPlanDirectModify(PlannerInfo *root,
 	 * Core code already has some lock on each rel being planned, so we can
 	 * use NoLock here.
 	 */
-	rel = table_open(rte->relid, NoLock);
+	rel = table_open(rte->relid, NoLock, 0);
 
 	/*
 	 * Recall the qual clauses that must be evaluated remotely.  (These are

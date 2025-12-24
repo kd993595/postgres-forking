@@ -449,7 +449,7 @@ get_file_fdw_attribute_options(Oid relid)
 
 	List	   *options = NIL;
 
-	rel = table_open(relid, AccessShareLock);
+	rel = table_open(relid, AccessShareLock, 0);
 	tupleDesc = RelationGetDescr(rel);
 	natts = tupleDesc->natts;
 
@@ -919,7 +919,7 @@ check_selective_binary_conversion(RelOptInfo *baserel,
 	}
 
 	/* Convert attribute numbers to column names. */
-	rel = table_open(foreigntableid, AccessShareLock);
+	rel = table_open(foreigntableid, AccessShareLock, 0);
 	tupleDesc = RelationGetDescr(rel);
 
 	attidx = -1;

@@ -76,7 +76,7 @@ sepgsql_database_post_create(Oid databaseId, const char *dtemplate)
 	 * XXX - upcoming version of libselinux supports to take object name to
 	 * handle special treatment on default security label.
 	 */
-	rel = table_open(DatabaseRelationId, AccessShareLock);
+	rel = table_open(DatabaseRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey,
 				Anum_pg_database_oid,

@@ -689,7 +689,7 @@ exec_object_restorecon(struct selabel_handle *sehnd, Oid catalogId)
 	 * Open the target catalog. We don't want to allow writable accesses by
 	 * other session during initial labeling.
 	 */
-	rel = table_open(catalogId, AccessShareLock);
+	rel = table_open(catalogId, AccessShareLock, 0);
 
 	sscan = systable_beginscan(rel, InvalidOid, false,
 							   NULL, 0, NULL);

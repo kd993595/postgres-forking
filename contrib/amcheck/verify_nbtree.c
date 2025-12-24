@@ -313,7 +313,7 @@ bt_index_check_internal(Oid indrelid, bool parentcheck, bool heapallindexed,
 	heapid = IndexGetRelation(indrelid, true);
 	if (OidIsValid(heapid))
 	{
-		heaprel = table_open(heapid, lockmode);
+		heaprel = table_open(heapid, lockmode, 0);
 
 		/*
 		 * Switch to the table owner's userid, so that any index functions are
@@ -347,7 +347,7 @@ bt_index_check_internal(Oid indrelid, bool parentcheck, bool heapallindexed,
 	 * committed or recently dead heap tuples lacking index entries due to
 	 * concurrent activity.)
 	 */
-	indrel = index_open(indrelid, lockmode);
+	indrel = index_open(indrelid, lockmode, 0);
 
 	/*
 	 * Since we did the IndexGetRelation call above without any lock, it's

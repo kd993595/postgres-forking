@@ -65,7 +65,7 @@ sepgsql_attribute_post_create(Oid relOid, AttrNumber attnum)
 	 * Compute a default security label of the new column underlying the
 	 * specified relation, and check permission to create it.
 	 */
-	rel = table_open(AttributeRelationId, AccessShareLock);
+	rel = table_open(AttributeRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey[0],
 				Anum_pg_attribute_attrelid,
@@ -257,7 +257,7 @@ sepgsql_relation_post_create(Oid relOid)
 	 * Fetch catalog record of the new relation. Because pg_class entry is not
 	 * visible right now, we need to scan the catalog using SnapshotSelf.
 	 */
-	rel = table_open(RelationRelationId, AccessShareLock);
+	rel = table_open(RelationRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey,
 				Anum_pg_class_oid,
@@ -356,7 +356,7 @@ sepgsql_relation_post_create(Oid relOid)
 		HeapTuple	atup;
 		Form_pg_attribute attForm;
 
-		arel = table_open(AttributeRelationId, AccessShareLock);
+		arel = table_open(AttributeRelationId, AccessShareLock, 0);
 
 		ScanKeyInit(&akey,
 					Anum_pg_attribute_attrelid,
@@ -649,7 +649,7 @@ sepgsql_relation_setattr(Oid relOid)
 	/*
 	 * Fetch newer catalog
 	 */
-	rel = table_open(RelationRelationId, AccessShareLock);
+	rel = table_open(RelationRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey,
 				Anum_pg_class_oid,
@@ -761,7 +761,7 @@ sepgsql_relation_setattr_extra(Relation catalog,
 static void
 sepgsql_index_modify(Oid indexOid)
 {
-	Relation	catalog = table_open(IndexRelationId, AccessShareLock);
+	Relation	catalog = table_open(IndexRelationId, AccessShareLock, 0);
 
 	/* check db_table:{setattr} permission of the table being indexed */
 	sepgsql_relation_setattr_extra(catalog,

@@ -54,7 +54,7 @@ sepgsql_schema_post_create(Oid namespaceId)
 	 * handle special treatment on default security label; such as special
 	 * label on "pg_temp" schema.
 	 */
-	rel = table_open(NamespaceRelationId, AccessShareLock);
+	rel = table_open(NamespaceRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey,
 				Anum_pg_namespace_oid,

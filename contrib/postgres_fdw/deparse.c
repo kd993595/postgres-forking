@@ -1354,7 +1354,7 @@ deparseSelectSql(List *tlist, bool is_subquery, List **retrieved_attrs,
 		 * Core code already has some lock on each rel being planned, so we
 		 * can use NoLock here.
 		 */
-		Relation	rel = table_open(rte->relid, NoLock);
+		Relation	rel = table_open(rte->relid, NoLock, 0);
 
 		deparseTargetList(buf, rte, foreignrel->relid, rel, false,
 						  fpinfo->attrs_used, false, retrieved_attrs);
@@ -1983,7 +1983,7 @@ deparseFromExprForRel(StringInfo buf, PlannerInfo *root, RelOptInfo *foreignrel,
 		 * Core code already has some lock on each rel being planned, so we
 		 * can use NoLock here.
 		 */
-		Relation	rel = table_open(rte->relid, NoLock);
+		Relation	rel = table_open(rte->relid, NoLock, 0);
 
 		deparseRelation(buf, rel);
 
@@ -2723,7 +2723,7 @@ deparseColumnRef(StringInfo buf, int varno, int varattno, RangeTblEntry *rte,
 		 * The lock on the relation will be held by upper callers, so it's
 		 * fine to open it with no lock here.
 		 */
-		rel = table_open(rte->relid, NoLock);
+		rel = table_open(rte->relid, NoLock, 0);
 
 		/*
 		 * The local name of the foreign table can not be recognized by the

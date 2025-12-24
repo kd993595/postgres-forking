@@ -216,7 +216,7 @@ gist_page_items(PG_FUNCTION_ARGS)
 	InitMaterializedSRF(fcinfo, 0);
 
 	/* Open the relation */
-	indexRel = index_open(indexRelid, AccessShareLock);
+	indexRel = index_open(indexRelid, AccessShareLock, 0);
 
 	if (!IS_GIST(indexRel))
 		ereport(ERROR,

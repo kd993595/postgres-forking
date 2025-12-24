@@ -166,7 +166,7 @@ brin_page_items(PG_FUNCTION_ARGS)
 				 errmsg("function has wrong number of declared columns"),
 				 errhint("To resolve the problem, update the \"pageinspect\" extension to the latest version.")));
 
-	indexRel = index_open(indexRelid, AccessShareLock);
+	indexRel = index_open(indexRelid, AccessShareLock, 0);
 
 	if (!IS_BRIN(indexRel))
 		ereport(ERROR,

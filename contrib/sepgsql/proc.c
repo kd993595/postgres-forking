@@ -54,7 +54,7 @@ sepgsql_proc_post_create(Oid functionId)
 	 * Fetch namespace of the new procedure. Because pg_proc entry is not
 	 * visible right now, we need to scan the catalog using SnapshotSelf.
 	 */
-	rel = table_open(ProcedureRelationId, AccessShareLock);
+	rel = table_open(ProcedureRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey,
 				Anum_pg_proc_oid,
@@ -248,7 +248,7 @@ sepgsql_proc_setattr(Oid functionId)
 	/*
 	 * Fetch newer catalog
 	 */
-	rel = table_open(ProcedureRelationId, AccessShareLock);
+	rel = table_open(ProcedureRelationId, AccessShareLock, 0);
 
 	ScanKeyInit(&skey,
 				Anum_pg_proc_oid,
