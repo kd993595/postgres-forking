@@ -131,11 +131,11 @@ static inline void validate_relation_kind(Relation r);
  * ----------------
  */
 Relation
-index_open(Oid relationId, LOCKMODE lockmode)
+index_open(Oid relationId, LOCKMODE lockmode, int32 dbforkId)
 {
 	Relation	r;
 
-	r = relation_open(relationId, lockmode, MyDBForkId); //check MyDBForkId later
+	r = relation_open(relationId, lockmode, dbforkId);
 
 	validate_relation_kind(r);
 
@@ -150,11 +150,11 @@ index_open(Oid relationId, LOCKMODE lockmode)
  * ----------------
  */
 Relation
-try_index_open(Oid relationId, LOCKMODE lockmode)
+try_index_open(Oid relationId, LOCKMODE lockmode, int32 dbforkId)
 {
 	Relation	r;
 
-	r = try_relation_open(relationId, lockmode, MyDBForkId);
+	r = try_relation_open(relationId, lockmode, dbforkId);
 
 	/* leave if index does not exist */
 	if (!r)

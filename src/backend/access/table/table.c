@@ -38,11 +38,11 @@ static inline void validate_relation_kind(Relation r);
  * ----------------
  */
 Relation
-table_open(Oid relationId, LOCKMODE lockmode)
+table_open(Oid relationId, LOCKMODE lockmode, int32 dbforkId)
 {
 	Relation	r;
 
-	r = relation_open(relationId, lockmode, 0);
+	r = relation_open(relationId, lockmode, dbforkId);
 
 	validate_relation_kind(r);
 
@@ -58,11 +58,11 @@ table_open(Oid relationId, LOCKMODE lockmode)
  * ----------------
  */
 Relation
-try_table_open(Oid relationId, LOCKMODE lockmode)
+try_table_open(Oid relationId, LOCKMODE lockmode, int32 dbforkId)
 {
 	Relation	r;
 
-	r = try_relation_open(relationId, lockmode, 0);
+	r = try_relation_open(relationId, lockmode, dbforkId);
 
 	/* leave if table does not exist */
 	if (!r)
@@ -81,11 +81,11 @@ try_table_open(Oid relationId, LOCKMODE lockmode)
  * ----------------
  */
 Relation
-table_openrv(const RangeVar *relation, LOCKMODE lockmode)
+table_openrv(const RangeVar *relation, LOCKMODE lockmode, int32 dbforkId)
 {
 	Relation	r;
 
-	r = relation_openrv(relation, lockmode, 0);
+	r = relation_openrv(relation, lockmode, dbforkId);
 
 	validate_relation_kind(r);
 
@@ -102,11 +102,11 @@ table_openrv(const RangeVar *relation, LOCKMODE lockmode)
  */
 Relation
 table_openrv_extended(const RangeVar *relation, LOCKMODE lockmode,
-					  bool missing_ok)
+					  bool missing_ok, int32 dbforkId)
 {
 	Relation	r;
 
-	r = relation_openrv_extended(relation, lockmode, missing_ok, 0);
+	r = relation_openrv_extended(relation, lockmode, missing_ok, dbforkId);
 
 	if (r)
 		validate_relation_kind(r);
