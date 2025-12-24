@@ -18,11 +18,11 @@
 #include "storage/lockdefs.h"
 #include "utils/relcache.h"
 
-extern Relation table_open(Oid relationId, LOCKMODE lockmode);
-extern Relation table_openrv(const RangeVar *relation, LOCKMODE lockmode);
+extern Relation table_open(Oid relationId, LOCKMODE lockmode, int32 dbforkId);
+extern Relation table_openrv(const RangeVar *relation, LOCKMODE lockmode, int32 dbforkId);
 extern Relation table_openrv_extended(const RangeVar *relation,
-									  LOCKMODE lockmode, bool missing_ok);
-extern Relation try_table_open(Oid relationId, LOCKMODE lockmode);
+									  LOCKMODE lockmode, bool missing_ok, int32 dbforkId);
+extern Relation try_table_open(Oid relationId, LOCKMODE lockmode, int32 dbforkId);
 extern void table_close(Relation relation, LOCKMODE lockmode);
 
 #endif							/* TABLE_H */
