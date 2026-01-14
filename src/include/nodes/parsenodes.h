@@ -3770,7 +3770,7 @@ typedef struct CreatedbStmt
 } CreatedbStmt;
 
 /* -------------------------
- * 		Createfork Statement - pgforking
+ * 	Createfork Statement - pgforking
  * -------------------------
  */
 typedef struct CreateforkStmt
@@ -3778,6 +3778,17 @@ typedef struct CreateforkStmt
 	NodeTag type;
 	long    forkid;
 } CreateforkStmt;
+
+/* -------------------------
+ * 	Set fork Statement - pgforking
+ * -------------------------
+ */
+typedef struct SetforkStmt
+{
+	NodeTag type;
+	long    forkid;
+} SetforkStmt;
+
 
 /* ----------------------
  *	Alter Database

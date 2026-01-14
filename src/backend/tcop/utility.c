@@ -193,6 +193,7 @@ ClassifyUtilityCommandAsReadOnly(Node *parsetree)
 		case T_CreateUserMappingStmt:
 		case T_CreatedbStmt:
 		case T_CreateforkStmt:
+		case T_SetforkStmt:
 		case T_DefineStmt:
 		case T_DropOwnedStmt:
 		case T_DropRoleStmt:
@@ -774,6 +775,11 @@ standard_ProcessUtility(PlannedStmt *pstmt,
 		case T_CreateforkStmt:
 			PreventInTransactionBlock(isTopLevel,"CREATE DBFORK");
 			createfork(pstate, (CreateforkStmt *) parsetree);
+			break;
+
+		case T_SetforkStmt:
+			PreventInTransactionBlock(isTopLevel, "SET DBFORK");
+			setfork(pstate, (SetforkStmt *)parsetree);
 			break;
 
 		case T_AlterDatabaseStmt:
@@ -2841,6 +2847,10 @@ CreateCommandTag(Node *parsetree)
 			tag = CMDTAG_CREATE_DBFORK;
 			break;
 
+		case T_SetforkStmt:
+			tag = CMDTAG_SET;
+			break;
+
 		case T_AlterDatabaseStmt:
 		case T_AlterDatabaseRefreshCollStmt:
 		case T_AlterDatabaseSetStmt:
@@ -3495,6 +3505,10 @@ GetCommandLogLevel(Node *parsetree)
 
 		case T_CreateforkStmt:
 			lev = LOGSTMT_DDL;
+			break;
+
+		case T_SetforkStmt:
+			lev = LOGSTMT_ALL;
 			break;
 
 		case T_AlterDatabaseStmt:

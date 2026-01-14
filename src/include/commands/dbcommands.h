@@ -30,6 +30,7 @@ extern ObjectAddress AlterDatabaseOwner(const char *dbname, Oid newOwnerId);
 
 extern int32 createfork(ParseState *pstate, const CreateforkStmt *stmt); //pgforking
 extern void dropfork(ParseState *pstate, const DropforkStmt *stmt); //pgforking
+extern void setfork(ParseState *pstate, const SetforkStmt *stmt); //pgforking
 
 extern Oid	get_database_oid(const char *dbname, bool missing_ok);
 extern char *get_database_name(Oid dbid);

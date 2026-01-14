@@ -311,7 +311,7 @@ static Node *makeRecursiveViewSelect(char *relname, List *aliases, Node *query);
 		RuleActionStmt RuleActionStmtOrEmpty RuleStmt
 		SecLabelStmt SelectStmt TransactionStmt TransactionStmtLegacy TruncateStmt
 		UnlistenStmt UpdateStmt VacuumStmt
-		VariableResetStmt VariableSetStmt VariableShowStmt
+		VariableResetStmt VariableSetForkStmt VariableSetStmt VariableShowStmt
 		ViewStmt CheckPointStmt CreateConversionStmt
 		DeallocateStmt PrepareStmt ExecuteStmt
 		DropOwnedStmt ReassignOwnedStmt
@@ -1121,6 +1121,7 @@ stmt:
 			| UpdateStmt
 			| VacuumStmt
 			| VariableResetStmt
+			| VariableSetForkStmt
 			| VariableSetStmt
 			| VariableShowStmt
 			| ViewStmt
@@ -1606,6 +1607,18 @@ schema_stmt:
 			| ViewStmt
 		;
 
+
+/*****
+* Set for forking processes - pgforking
+*/
+VariableSetForkStmt:
+			SET DBFORK SignedIconst
+				{
+					SetforkStmt *n = makeNode(SetforkStmt);
+					n->forkid = $3;
+					$$ = (Node *)n;
+				}
+		;
 
 /*****************************************************************************
  *

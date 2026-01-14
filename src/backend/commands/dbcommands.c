@@ -1629,6 +1629,15 @@ int32 createfork(ParseState *pstate, const CreateforkStmt *stmt)
 	return newForkId;	
 }
 
+/*
+ * SET DBFORK - pgforking
+ */
+void setfork(ParseState *pstate, const SetforkStmt *stmt)
+{
+	elog(LOG, "Passed in fork id: %ld", stmt->forkid);
+}
+
+
 
 /*
  * Check whether chosen encoding matches chosen locale settings.  This
