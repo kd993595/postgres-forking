@@ -1092,7 +1092,7 @@ brinbuildCallbackParallel(Relation index,
  * brinbuild() -- build a new BRIN index.
  */
 IndexBuildResult *
-brinbuild(Relation heap, Relation index, IndexInfo *indexInfo)
+brinbuild(Relation heap, Relation index, IndexInfo *indexInfo, bool regularCreate)
 {
 	IndexBuildResult *result;
 	double		reltuples;
@@ -1158,7 +1158,7 @@ brinbuild(Relation heap, Relation index, IndexInfo *indexInfo)
 	 * for btree, but not for BRIN, which can do with much less memory. So
 	 * maybe make that somehow less strict, optionally?
 	 */
-	if (indexInfo->ii_ParallelWorkers > 0)
+	if (indexInfo->ii_ParallelWorkers > 0 && regularCreate)
 		_brin_begin_parallel(state, heap, index, indexInfo->ii_Concurrent,
 							 indexInfo->ii_ParallelWorkers);
 
@@ -1171,7 +1171,7 @@ brinbuild(Relation heap, Relation index, IndexInfo *indexInfo)
 	 * In serial mode, simply scan the table and build the index one index
 	 * tuple at a time.
 	 */
-	if (state->bs_leader)
+	if (state->bs_leader && regularCreate)
 	{
 		SortCoordinate coordinate;
 
@@ -1212,7 +1212,7 @@ brinbuild(Relation heap, Relation index, IndexInfo *indexInfo)
 
 		_brin_end_parallel(state->bs_leader, state);
 	}
-	else						/* no parallel index build */
+	else if(regularCreate)						/* no parallel index build */
 	{
 		/*
 		 * Now scan the relation.  No syncscan allowed here because we want
@@ -1242,6 +1242,8 @@ brinbuild(Relation heap, Relation index, IndexInfo *indexInfo)
 		brin_fill_empty_ranges(state,
 							   state->bs_currRangeStart,
 							   state->bs_maxRangeStart);
+	}else{
+		reltuples = 0;
 	}
 
 	/* release resources */

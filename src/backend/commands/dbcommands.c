@@ -1614,7 +1614,7 @@ int32 createfork(ParseState *pstate, const CreateforkStmt *stmt)
 			//mdcreatedbfork(classForm->relfilenode, newForkId);
 
 			mdcreate(RelationGetSmgr(newRel), MAIN_FORKNUM, false);
-			newRel->rd_indam->ambuild(parentHeap, newRel, indexInfo);
+			newRel->rd_indam->ambuild(parentHeap, newRel, indexInfo, false);
 			// mdcreate(RelationGetSmgr(newRel), INIT_FORKNUM, false);
 			// newRel->rd_indam->ambuildempty(newRel); //this is for unlogged tables
 			table_close(parentHeap, AccessShareLock);

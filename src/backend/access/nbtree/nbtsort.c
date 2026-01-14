@@ -253,6 +253,7 @@ typedef struct BTWriteState
 
 static double _bt_spools_heapscan(Relation heap, Relation index,
 								  BTBuildState *buildstate, IndexInfo *indexInfo);
+static double _bt_spools_heapscan_forceempty(Relation heap, Relation index, BTBuildState *buildstate, IndexInfo *indexInfo);
 static void _bt_spooldestroy(BTSpool *btspool);
 static void _bt_spool(BTSpool *btspool, ItemPointer self,
 					  Datum *values, bool *isnull);
@@ -290,7 +291,7 @@ static void _bt_parallel_scan_and_sort(BTSpool *btspool, BTSpool *btspool2,
  *	btbuild() -- build a new btree index.
  */
 IndexBuildResult *
-btbuild(Relation heap, Relation index, IndexInfo *indexInfo)
+btbuild(Relation heap, Relation index, IndexInfo *indexInfo, bool regularCreate)
 {
 	IndexBuildResult *result;
 	BTBuildState buildstate;
@@ -318,7 +319,12 @@ btbuild(Relation heap, Relation index, IndexInfo *indexInfo)
 		elog(ERROR, "index \"%s\" already contains data",
 			 RelationGetRelationName(index));
 
-	reltuples = _bt_spools_heapscan(heap, index, &buildstate, indexInfo);
+	if(regularCreate){
+		reltuples = _bt_spools_heapscan(heap, index, &buildstate, indexInfo);
+	}else{
+		reltuples = _bt_spools_heapscan_forceempty(heap, index, &buildstate, indexInfo);
+	}
+	elog(LOG, "reltuples = %lf", reltuples);
 
 	/*
 	 * Finish the build by (1) completing the sort of the spool file, (2)
@@ -505,6 +511,64 @@ _bt_spools_heapscan(Relation heap, Relation index, BTBuildState *buildstate,
 		buildstate->spool2 = NULL;
 	}
 
+	return reltuples;
+}
+
+/*
+ *  Same as _bt_spools_heapscan but will not scan the heap for any tuples.
+ *  Always returns 0
+ */
+static double
+_bt_spools_heapscan_forceempty(Relation heap, Relation index, BTBuildState *buildstate,
+					IndexInfo *indexInfo)
+{
+	BTSpool    *btspool = (BTSpool *) palloc0(sizeof(BTSpool));
+	SortCoordinate coordinate = NULL;
+	double		reltuples = 0;
+
+	/*
+	 * We size the sort area as maintenance_work_mem rather than work_mem to
+	 * speed index creation.  This should be OK since a single backend can't
+	 * run multiple index creations in parallel (see also: notes on
+	 * parallelism and maintenance_work_mem below).
+	 */
+	btspool->heap = heap;
+	btspool->index = index;
+	btspool->isunique = indexInfo->ii_Unique;
+	btspool->nulls_not_distinct = indexInfo->ii_NullsNotDistinct;
+
+	/* Save as primary spool */
+	buildstate->spool = btspool;
+
+	/*
+	 * Begin serial/leader tuplesort.
+	 *
+	 * In cases where parallelism is involved, the leader receives the same
+	 * share of maintenance_work_mem as a serial sort (it is generally treated
+	 * in the same way as a serial sort once we return).  Parallel worker
+	 * Tuplesortstates will have received only a fraction of
+	 * maintenance_work_mem, though.
+	 *
+	 * We rely on the lifetime of the Leader Tuplesortstate almost not
+	 * overlapping with any worker Tuplesortstate's lifetime.  There may be
+	 * some small overlap, but that's okay because we rely on leader
+	 * Tuplesortstate only allocating a small, fixed amount of memory here.
+	 * When its tuplesort_performsort() is called (by our caller), and
+	 * significant amounts of memory are likely to be used, all workers must
+	 * have already freed almost all memory held by their Tuplesortstates
+	 * (they are about to go away completely, too).  The overall effect is
+	 * that maintenance_work_mem always represents an absolute high watermark
+	 * on the amount of memory used by a CREATE INDEX operation, regardless of
+	 * the use of parallelism or any other factor.
+	 */
+	buildstate->spool->sortstate =
+		tuplesort_begin_index_btree(heap, index, buildstate->isunique,
+									buildstate->nulls_not_distinct,
+									maintenance_work_mem, coordinate,
+									TUPLESORT_NONE);
+
+	reltuples = 0;
+	
 	return reltuples;
 }
 

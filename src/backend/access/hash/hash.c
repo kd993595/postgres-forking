@@ -112,7 +112,7 @@ hashhandler(PG_FUNCTION_ARGS)
  *	hashbuild() -- build a new hash index.
  */
 IndexBuildResult *
-hashbuild(Relation heap, Relation index, IndexInfo *indexInfo)
+hashbuild(Relation heap, Relation index, IndexInfo *indexInfo, bool regularCreate)
 {
 	IndexBuildResult *result;
 	BlockNumber relpages;
@@ -130,8 +130,12 @@ hashbuild(Relation heap, Relation index, IndexInfo *indexInfo)
 		elog(ERROR, "index \"%s\" already contains data",
 			 RelationGetRelationName(index));
 
-	/* Estimate the number of rows currently present in the table */
-	estimate_rel_size(heap, NULL, &relpages, &reltuples, &allvisfrac);
+	if(regularCreate){
+		/* Estimate the number of rows currently present in the table */
+		estimate_rel_size(heap, NULL, &relpages, &reltuples, &allvisfrac);
+	}else{
+		reltuples = 0;
+	}
 
 	/* Initialize the hash index metadata page and initial buckets */
 	num_buckets = _hash_init(index, reltuples, MAIN_FORKNUM);
@@ -160,7 +164,7 @@ hashbuild(Relation heap, Relation index, IndexInfo *indexInfo)
 	else
 		sort_threshold = Min(sort_threshold, NLocBuffer);
 
-	if (num_buckets >= (uint32) sort_threshold)
+	if (num_buckets >= (uint32) sort_threshold && regularCreate)
 		buildstate.spool = _h_spoolinit(heap, index, num_buckets);
 	else
 		buildstate.spool = NULL;
@@ -169,13 +173,17 @@ hashbuild(Relation heap, Relation index, IndexInfo *indexInfo)
 	buildstate.indtuples = 0;
 	buildstate.heapRel = heap;
 
-	/* do the heap scan */
-	reltuples = table_index_build_scan(heap, index, indexInfo, true, true,
-									   hashbuildCallback,
-									   (void *) &buildstate, NULL);
-	pgstat_progress_update_param(PROGRESS_CREATEIDX_TUPLES_TOTAL,
+	if(regularCreate){
+		/* do the heap scan */
+		reltuples = table_index_build_scan(heap, index, indexInfo, true, true,
+									   	hashbuildCallback,
+									   	(void *) &buildstate, NULL);
+		pgstat_progress_update_param(PROGRESS_CREATEIDX_TUPLES_TOTAL,
 								 buildstate.indtuples);
-
+	}else{
+		reltuples = 0;
+	}
+	
 	if (buildstate.spool)
 	{
 		/* sort the tuples and insert them into the index */

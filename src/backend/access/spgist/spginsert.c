@@ -70,7 +70,7 @@ spgistBuildCallback(Relation index, ItemPointer tid, Datum *values,
  * Build an SP-GiST index.
  */
 IndexBuildResult *
-spgbuild(Relation heap, Relation index, IndexInfo *indexInfo)
+spgbuild(Relation heap, Relation index, IndexInfo *indexInfo, bool regularCreate)
 {
 	IndexBuildResult *result;
 	double		reltuples;
@@ -121,10 +121,14 @@ spgbuild(Relation heap, Relation index, IndexInfo *indexInfo)
 											  "SP-GiST build temporary context",
 											  ALLOCSET_DEFAULT_SIZES);
 
-	reltuples = table_index_build_scan(heap, index, indexInfo, true, true,
+	if(regularCreate){
+		reltuples = table_index_build_scan(heap, index, indexInfo, true, true,
 									   spgistBuildCallback, (void *) &buildstate,
 									   NULL);
-
+	}else{
+		reltuples = 0;
+	}
+	
 	MemoryContextDelete(buildstate.tmpCtx);
 
 	SpGistUpdateMetaPage(index);

@@ -3031,7 +3031,7 @@ index_build(Relation heapRelation,
 	 * Call the access method's build procedure
 	 */
 	stats = indexRelation->rd_indam->ambuild(heapRelation, indexRelation,
-											 indexInfo);
+											 indexInfo, true);
 	Assert(PointerIsValid(stats));
 
 	/*

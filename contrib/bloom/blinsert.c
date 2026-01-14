@@ -118,7 +118,7 @@ bloomBuildCallback(Relation index, ItemPointer tid, Datum *values,
  * Build a new bloom index.
  */
 IndexBuildResult *
-blbuild(Relation heap, Relation index, IndexInfo *indexInfo)
+blbuild(Relation heap, Relation index, IndexInfo *indexInfo, bool regularCreate)
 {
 	IndexBuildResult *result;
 	double		reltuples;
@@ -139,10 +139,14 @@ blbuild(Relation heap, Relation index, IndexInfo *indexInfo)
 											  ALLOCSET_DEFAULT_SIZES);
 	initCachedPage(&buildstate);
 
-	/* Do the heap scan */
-	reltuples = table_index_build_scan(heap, index, indexInfo, true, true,
+	if(regularCreate){
+		/* Do the heap scan */
+		reltuples = table_index_build_scan(heap, index, indexInfo, true, true,
 									   bloomBuildCallback, (void *) &buildstate,
 									   NULL);
+	}else{
+		reltuples = 0;
+	}
 
 	/* Flush last page if needed (it will be, unless heap was empty) */
 	if (buildstate.count > 0)

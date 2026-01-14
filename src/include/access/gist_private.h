@@ -549,7 +549,7 @@ extern void gistSplitByKey(Relation r, Page page, IndexTuple *itup,
 
 /* gistbuild.c */
 extern IndexBuildResult *gistbuild(Relation heap, Relation index,
-								   struct IndexInfo *indexInfo);
+								   struct IndexInfo *indexInfo, bool regularCreate);
 
 /* gistbuildbuffers.c */
 extern GISTBuildBuffers *gistInitBuildBuffers(int pagesPerBuffer, int levelStep,

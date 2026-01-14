@@ -314,7 +314,7 @@ ginBuildCallback(Relation index, ItemPointer tid, Datum *values,
 }
 
 IndexBuildResult *
-ginbuild(Relation heap, Relation index, IndexInfo *indexInfo)
+ginbuild(Relation heap, Relation index, IndexInfo *indexInfo, bool regularCreate)
 {
 	IndexBuildResult *result;
 	double		reltuples;
@@ -375,14 +375,18 @@ ginbuild(Relation heap, Relation index, IndexInfo *indexInfo)
 	buildstate.accum.ginstate = &buildstate.ginstate;
 	ginInitBA(&buildstate.accum);
 
-	/*
-	 * Do the heap scan.  We disallow sync scan here because dataPlaceToPage
-	 * prefers to receive tuples in TID order.
-	 */
-	reltuples = table_index_build_scan(heap, index, indexInfo, false, true,
+	if(regularCreate){
+		/*
+	 	 * Do the heap scan.  We disallow sync scan here because dataPlaceToPage
+	 	 * prefers to receive tuples in TID order.
+	 	 */
+		reltuples = table_index_build_scan(heap, index, indexInfo, false, true,
 									   ginBuildCallback, (void *) &buildstate,
 									   NULL);
-
+	}else{
+		reltuples = 0;
+	}
+	
 	/* dump remaining entries to the index */
 	oldCtx = MemoryContextSwitchTo(buildstate.tmpCtx);
 	ginBeginBAScan(&buildstate.accum);

@@ -102,7 +102,8 @@ typedef struct OpFamilyMember
 /* build new index */
 typedef IndexBuildResult *(*ambuild_function) (Relation heapRelation,
 											   Relation indexRelation,
-											   struct IndexInfo *indexInfo);
+											   struct IndexInfo *indexInfo,
+											   bool regularCreate);
 
 /* build empty index */
 typedef void (*ambuildempty_function) (Relation indexRelation);
