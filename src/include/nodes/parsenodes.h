@@ -2634,6 +2634,14 @@ typedef struct VariableShowStmt
 	char	   *name;
 } VariableShowStmt;
 
+typedef struct VariableShowForkStmt
+{
+	/*must be the same as VariableShowStmt for first 2 since typecasted for some utility processing*/
+	NodeTag 	type;
+	char 		*name;
+	bool 		showpath;
+} VariableShowForkStmt;
+
 /* ----------------------
  *		Create Table Statement
  *

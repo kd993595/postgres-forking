@@ -1966,7 +1966,14 @@ FunctionSetResetClause:
 
 
 VariableShowStmt:
-			SHOW var_name
+			SHOW DBFORK
+				{
+					VariableShowForkStmt *n = makeNode(VariableShowForkStmt);
+					n->name = "dbfork";
+					n->showpath = false;
+					$$ = (Node *) n;
+				}
+			| SHOW var_name
 				{
 					VariableShowStmt *n = makeNode(VariableShowStmt);
 
@@ -17622,7 +17629,6 @@ unreserved_keyword:
 			| DATA_P
 			| DATABASE
 			| DAY_P
-			| DBFORK
 			| DEALLOCATE
 			| DECLARE
 			| DEFAULTS
@@ -18034,6 +18040,7 @@ reserved_keyword:
 			| CURRENT_TIME
 			| CURRENT_TIMESTAMP
 			| CURRENT_USER
+			| DBFORK
 			| DEFAULT
 			| DEFERRABLE
 			| DESC

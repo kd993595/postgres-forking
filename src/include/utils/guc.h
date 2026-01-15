@@ -432,6 +432,7 @@ extern char *ExtractSetVariableArgs(VariableSetStmt *stmt);
 extern void SetPGVariable(const char *name, List *args, bool is_local);
 extern void GetPGVariable(const char *name, DestReceiver *dest);
 extern TupleDesc GetPGVariableResultDesc(const char *name);
+extern void GetDBForkVariable(const char *name, DestReceiver *dest);
 
 /* Support for messages reported from GUC check hooks */
 

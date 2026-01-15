@@ -316,6 +316,7 @@ ClassifyUtilityCommandAsReadOnly(Node *parsetree)
 			}
 
 		case T_ExplainStmt:
+		case T_VariableShowForkStmt:
 		case T_VariableShowStmt:
 			{
 				/*
@@ -890,6 +891,13 @@ standard_ProcessUtility(PlannedStmt *pstmt,
 			ExecSetVariableStmt((VariableSetStmt *) parsetree, isTopLevel);
 			break;
 
+		case T_VariableShowForkStmt:
+			{
+				VariableShowForkStmt *n = (VariableShowForkStmt *) parsetree;
+				GetDBForkVariable(n->name, dest);
+			}
+			break;
+		
 		case T_VariableShowStmt:
 			{
 				VariableShowStmt *n = (VariableShowStmt *) parsetree;
@@ -2079,6 +2087,7 @@ UtilityReturnsTuples(Node *parsetree)
 		case T_ExplainStmt:
 			return true;
 
+		case T_VariableShowForkStmt:
 		case T_VariableShowStmt:
 			return true;
 
@@ -2130,6 +2139,7 @@ UtilityTupleDescriptor(Node *parsetree)
 		case T_ExplainStmt:
 			return ExplainResultDesc((ExplainStmt *) parsetree);
 
+		case T_VariableShowForkStmt:
 		case T_VariableShowStmt:
 			{
 				VariableShowStmt *n = (VariableShowStmt *) parsetree;
@@ -2943,6 +2953,7 @@ CreateCommandTag(Node *parsetree)
 			}
 			break;
 
+		case T_VariableShowForkStmt:
 		case T_VariableShowStmt:
 			tag = CMDTAG_SHOW;
 			break;
@@ -3592,6 +3603,7 @@ GetCommandLogLevel(Node *parsetree)
 			lev = LOGSTMT_ALL;
 			break;
 
+		case T_VariableShowForkStmt:
 		case T_VariableShowStmt:
 			lev = LOGSTMT_ALL;
 			break;
