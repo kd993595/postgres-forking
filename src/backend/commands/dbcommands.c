@@ -1634,7 +1634,16 @@ int32 createfork(ParseState *pstate, const CreateforkStmt *stmt)
  */
 void setfork(ParseState *pstate, const SetforkStmt *stmt)
 {
-	elog(LOG, "Passed in fork id: %ld", stmt->forkid);
+	if(stmt->forkid == 0){
+		MemoryContext oldCtxt;
+		oldCtxt = MemoryContextSwitchTo(TopMemoryContext);
+		pfree(DBForkPath);
+		DBForkPath = NULL;
+		MyDBForkId = 0;
+		MemoryContextSwitchTo(oldCtxt);
+	}else{
+		DBForkSetNewIdExpensive(stmt->forkid);
+	}
 }
 
 
@@ -1968,17 +1977,7 @@ dropdb(const char *dbname, bool missing_ok, bool force)
  */
 void dropfork(ParseState *pstate, const DropforkStmt *stmt)
 {
-	if(stmt->forkid == 0){
-		MemoryContext oldCtxt;
-		oldCtxt = MemoryContextSwitchTo(TopMemoryContext);
-		pfree(DBForkPath);
-		DBForkPath = NULL;
-		MyDBForkId = 0;
-		MemoryContextSwitchTo(oldCtxt);
-	}else{
-		DBForkSetNewIdExpensive(stmt->forkid);
-	}
-	return;
+	ereport(ERROR, errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Not implemented yet"));
 }
 
 
