@@ -6205,7 +6205,10 @@ get_actual_variable_range(PlannerInfo *root, VariableStatData *vardata,
 			 * Open the table and index so we can read from them.  We should
 			 * already have some type of lock on each.
 			 */
-			heapRel = table_open(rte->relid, NoLock, 0); /*NOTE: this should probably be changed to forkid for min/max withing fork files*/
+			heapRel = table_open(rte->relid, NoLock, 0);	/* NOTE: this should
+															 * probably be changed
+															 * to forkid for min/max
+															 * withing fork files */
 			indexRel = index_open(index->indexoid, NoLock, 0);
 
 			/* build some stuff needed for indexscan execution */

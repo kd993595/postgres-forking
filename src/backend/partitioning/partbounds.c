@@ -3309,7 +3309,8 @@ check_default_partition_contents(Relation parent, Relation default_rel,
 		/* Lock already taken above. */
 		if (part_relid != RelationGetRelid(default_rel))
 		{
-			part_rel = table_open(part_relid, NoLock, 0); /*partition stuff so fix later*/
+			part_rel = table_open(part_relid, NoLock, 0);	/* partition stuff so
+															 * fix later */
 
 			/*
 			 * Map the Vars in the constraint expression from default_rel's
@@ -4820,7 +4821,10 @@ satisfies_hash_partition(PG_FUNCTION_ARGS)
 		int			j;
 
 		/* Open parent relation and fetch partition key info */
-		parent = relation_open(parentId, AccessShareLock, 0); /*for partition data just care about metadata from main fork*/
+		parent = relation_open(parentId, AccessShareLock, 0);	/* for partition data
+																 * just care about
+																 * metadata from main
+																 * fork */
 		key = RelationGetPartitionKey(parent);
 
 		/* Reject parent table that is not hash-partitioned. */

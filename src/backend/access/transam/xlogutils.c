@@ -488,7 +488,8 @@ XLogReadBufferExtended(RelFileLocator rlocator, ForkNumber forknum,
 	}
 
 	/* Open the relation at smgr level */
-	smgr = smgropen(rlocator, INVALID_PROC_NUMBER, 0); /*TODO: part of fixing wal for fork */
+	smgr = smgropen(rlocator, INVALID_PROC_NUMBER, 0);	/* TODO: part of fixing
+														 * wal for fork */
 
 	/*
 	 * Create the target file if it doesn't already exist.  This lets us cope
@@ -506,7 +507,8 @@ XLogReadBufferExtended(RelFileLocator rlocator, ForkNumber forknum,
 	{
 		/* page exists in file */
 		buffer = ReadBufferWithoutRelcache(rlocator, forknum, blkno,
-										   mode, NULL, true, 0); /*TODO: part of fixing wal for fork*/
+										   mode, NULL, true, 0);	/* TODO: part of fixing
+																	 * wal for fork */
 	}
 	else
 	{
@@ -617,7 +619,9 @@ CreateFakeRelcacheEntry(RelFileLocator rlocator)
 	 * Set up a non-pinned SMgrRelation reference, so that we don't need to
 	 * worry about unpinning it on error.
 	 */
-	rel->rd_smgr = smgropen(rlocator, INVALID_PROC_NUMBER, 0); /*TODO: part of wal fixing to support forks later*/
+	rel->rd_smgr = smgropen(rlocator, INVALID_PROC_NUMBER, 0);	/* TODO: part of wal
+																 * fixing to support
+																 * forks later */
 
 	return rel;
 }

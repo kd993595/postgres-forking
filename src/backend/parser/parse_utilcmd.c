@@ -995,7 +995,8 @@ transformTableLikeClause(CreateStmtContext *cxt, TableLikeClause *table_like_cla
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("LIKE is not supported for creating foreign tables")));
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("trying to call create table with like from non main fork")));
@@ -1193,7 +1194,8 @@ expandTableLikeClause(RangeVar *heapRel, TableLikeClause *table_like_clause)
 	if (!OidIsValid(table_like_clause->relationOid))
 		elog(ERROR, "expandTableLikeClause called on untransformed LIKE clause");
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("trying to call expand table with like from non main fork")));
@@ -2482,7 +2484,8 @@ transformIndexConstraint(Constraint *constraint, CreateStmtContext *cxt)
 					Relation	rel;
 					int			count;
 
-					rel = table_openrv(inh, AccessShareLock, 0); /*just reading metadata so doesn't matter*/
+					rel = table_openrv(inh, AccessShareLock, 0);	/* just reading metadata
+																	 * so doesn't matter */
 					/* check user requested inheritance from valid relkind */
 					if (rel->rd_rel->relkind != RELKIND_RELATION &&
 						rel->rd_rel->relkind != RELKIND_FOREIGN_TABLE &&
@@ -2624,7 +2627,7 @@ transformIndexConstraint(Constraint *constraint, CreateStmtContext *cxt)
 					Relation	rel;
 					int			count;
 
-					rel = table_openrv(inh, AccessShareLock, 0); /*same as above*/
+					rel = table_openrv(inh, AccessShareLock, 0);	/* same as above */
 					/* check user requested inheritance from valid relkind */
 					if (rel->rd_rel->relkind != RELKIND_RELATION &&
 						rel->rd_rel->relkind != RELKIND_FOREIGN_TABLE &&
@@ -2816,10 +2819,11 @@ transformIndexStmt(Oid relid, IndexStmt *stmt, const char *queryString)
 	if (stmt->transformed)
 		return stmt;
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
-					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-					 errmsg("can't call transform index type of stmt from non main fork")));
+				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				 errmsg("can't call transform index type of stmt from non main fork")));
 	}
 	/* Set up pstate */
 	pstate = make_parsestate(NULL);
@@ -2915,8 +2919,9 @@ transformStatsStmt(Oid relid, CreateStatsStmt *stmt, const char *queryString)
 	/* Nothing to do if statement already transformed. */
 	if (stmt->transformed)
 		return stmt;
-	
-	if(MyDBForkId != 0){
+
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("trying to call from non main fork for transformStatsStmt")));
@@ -3306,8 +3311,9 @@ transformAlterTableStmt(Oid relid, AlterTableStmt *stmt,
 	bool		skipValidation = true;
 	AlterTableCmd *newcmd;
 	ParseNamespaceItem *nsitem;
-	
-	if(MyDBForkId != 0){
+
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("trying to call transformAlterTableStmt from non main fork")));

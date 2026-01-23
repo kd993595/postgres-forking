@@ -430,7 +430,8 @@ ExecRenameStmt(RenameStmt *stmt)
 											 AccessExclusiveLock, false);
 				Assert(relation == NULL);
 
-				catalog = table_open(address.classId, RowExclusiveLock, 0); /*alter stuff all in main database*/
+				catalog = table_open(address.classId, RowExclusiveLock, 0); /* alter stuff all in
+																			 * main database */
 				AlterObjectRename_internal(catalog,
 										   address.objectId,
 										   stmt->newname);
@@ -616,7 +617,8 @@ AlterObjectNamespace_oid(Oid classId, Oid objid, Oid nspOid,
 {
 	Oid			oldNspOid = InvalidOid;
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("cannot AlterObjectNamespace_oid from non main fork")));

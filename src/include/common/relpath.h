@@ -97,7 +97,7 @@ extern char *GetDBForkRelationPath(Oid dbOid, Oid spcOid, RelFileNumber relNumbe
 #define relpath(rlocator, forknum) \
 	relpathbackend((rlocator).locator, (rlocator).backend, forknum)
 
-/* 
+/*
  * note forkNumber is not our fork but postgres fork mechanism for heaps
  */
 #define dbforkrelpath(rlocator, forknum) \

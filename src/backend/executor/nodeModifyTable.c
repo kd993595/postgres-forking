@@ -834,7 +834,8 @@ ExecInsert(ModifyTableContext *context,
 	{
 		/* Flush any pending inserts, so rows are visible to the triggers */
 		if (estate->es_insert_pending_result_relations != NIL)
-			ExecPendingInserts(estate); //probably have to modify this to be aware too
+			ExecPendingInserts(estate);
+		/* probably have to modify this to be aware too */
 
 		if (!ExecBRInsertTriggers(estate, resultRelInfo, slot))
 			return NULL;		/* "do nothing" */
@@ -847,7 +848,8 @@ ExecInsert(ModifyTableContext *context,
 		if (!ExecIRInsertTriggers(estate, resultRelInfo, slot))
 			return NULL;		/* "do nothing" */
 	}
-	else if (resultRelInfo->ri_FdwRoutine) //insertion into foreign table
+	else if (resultRelInfo->ri_FdwRoutine)
+		/* insertion into foreign table */
 	{
 		/*
 		 * GENERATED expressions might reference the tableoid column, so
@@ -972,7 +974,7 @@ ExecInsert(ModifyTableContext *context,
 		 */
 		slot->tts_tableOid = RelationGetRelid(resultRelInfo->ri_RelationDesc);
 	}
-	else /* regular insertion logic here */
+	else						/* regular insertion logic here */
 	{
 		WCOKind		wco_kind;
 
@@ -1034,7 +1036,10 @@ ExecInsert(ModifyTableContext *context,
 			  resultRelInfo->ri_TrigDesc->trig_insert_before_row)))
 			ExecPartitionCheck(resultRelInfo, slot, estate, true);
 
-		if (onconflict != ONCONFLICT_NONE && resultRelInfo->ri_NumIndices > 0) /*should modify conflict resolution here to validate all indexes*/
+		if (onconflict != ONCONFLICT_NONE && resultRelInfo->ri_NumIndices > 0)	/* should modify
+																				 * conflict resolution
+																				 * here to validate all
+																				 * indexes */
 		{
 			/* Perform a speculative insertion. */
 			uint32		specToken;
@@ -4015,8 +4020,8 @@ ExecModifyTable(PlanState *pstate)
 		 * to be updated/deleted/merged.  For a heap relation, that's a TID;
 		 * otherwise we may have a wholerow junk attr that carries the old
 		 * tuple in toto.  Keep this in step with the part of
-		 * ExecInitModifyTable that sets up ri_RowIdAttNo.
-		 * TODO: modify here for furture update to fetch from parent db and also delete
+		 * ExecInitModifyTable that sets up ri_RowIdAttNo. TODO: modify here
+		 * for furture update to fetch from parent db and also delete
 		 */
 		if (operation == CMD_UPDATE || operation == CMD_DELETE ||
 			operation == CMD_MERGE)
@@ -4316,7 +4321,8 @@ ExecInitModifyTable(ModifyTable *node, EState *estate, int eflags)
 	mtstate = makeNode(ModifyTableState);
 	mtstate->ps.plan = (Plan *) node;
 	mtstate->ps.state = estate;
-	mtstate->ps.ExecProcNode = ExecModifyTable; // Execution Function
+	mtstate->ps.ExecProcNode = ExecModifyTable;
+	/* Execution Function */
 
 	mtstate->operation = operation;
 	mtstate->canSetTag = node->canSetTag;

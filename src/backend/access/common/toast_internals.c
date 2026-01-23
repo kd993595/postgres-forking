@@ -511,7 +511,10 @@ toastid_valueid_exists(Oid toastrelid, Oid valueid)
 	bool		result;
 	Relation	toastrel;
 
-	toastrel = table_open(toastrelid, AccessShareLock, 0); /*TODO: probably have to change this to have function be aware of context*/
+	toastrel = table_open(toastrelid, AccessShareLock, 0);	/* TODO: probably have
+															 * to change this to
+															 * have function be
+															 * aware of context */
 
 	result = toastrel_valueid_exists(toastrel, valueid);
 
@@ -536,7 +539,8 @@ toast_get_valid_index(Oid toastoid, LOCKMODE lock)
 	Relation	toastrel;
 
 	/* Open the toast relation */
-	toastrel = table_open(toastoid, lock, 0); /*seems like we just need the metadata*/
+	toastrel = table_open(toastoid, lock, 0);	/* seems like we just need the
+												 * metadata */
 
 	/* Look for the valid index of the toast relation */
 	validIndex = toast_open_indexes(toastrel,

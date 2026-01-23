@@ -66,7 +66,10 @@ RemoveRewriteRuleById(Oid ruleOid)
 	 * suffice if it's not an ON SELECT rule.)
 	 */
 	eventRelationOid = ((Form_pg_rewrite) GETSTRUCT(tuple))->ev_class;
-	event_relation = table_open(eventRelationOid, AccessExclusiveLock, 0); /*rules for now only operate in main database land so just pass 0 for now*/
+	event_relation = table_open(eventRelationOid, AccessExclusiveLock, 0);	/* rules for now only
+																			 * operate in main
+																			 * database land so just
+																			 * pass 0 for now */
 
 	if (!allowSystemTableMods && IsSystemRelation(event_relation))
 		ereport(ERROR,

@@ -678,7 +678,9 @@ ReadRecentBuffer(RelFileLocator rlocator, ForkNumber forkNum, BlockNumber blockN
 
 	ResourceOwnerEnlarge(CurrentResourceOwner);
 	ReservePrivateRefCountEntry();
-	InitBufferTag(&tag, &rlocator, forkNum, blockNum, 0); /*TODO: fix  this since used in wal not necessary rn*/
+	InitBufferTag(&tag, &rlocator, forkNum, blockNum, 0);	/* TODO: fix  this since
+															 * used in wal not
+															 * necessary rn */
 
 	if (BufferIsLocal(recent_buffer))
 	{
@@ -4358,7 +4360,7 @@ FindAndDropRelationBuffers(RelFileLocator rlocator, ForkNumber forkNum,
 
 		if (BufTagMatchesRelFileLocator(&bufHdr->tag, &rlocator) &&
 			BufTagGetForkNum(&bufHdr->tag) == forkNum &&
-			bufHdr->tag.blockNum >= firstDelBlock && 
+			bufHdr->tag.blockNum >= firstDelBlock &&
 			BufTagGetDBForkId(&bufHdr->tag) == dbforkId)
 			InvalidateBuffer(bufHdr);	/* releases spinlock */
 		else
@@ -5815,9 +5817,9 @@ buffertag_comparator(const BufferTag *ba, const BufferTag *bb)
 	if (ba->blockNum > bb->blockNum)
 		return 1;
 
-	if(ba->dbforkId < bb->dbforkId)
+	if (ba->dbforkId < bb->dbforkId)
 		return -1;
-	if(ba->dbforkId > bb->dbforkId)
+	if (ba->dbforkId > bb->dbforkId)
 		return 1;
 
 	return 0;
@@ -5848,9 +5850,9 @@ ckpt_buforder_comparator(const CkptSortItem *a, const CkptSortItem *b)
 	else if (a->forkNum > b->forkNum)
 		return 1;
 	/* compare dbfork id */
-	else if(a->dbforkId < b->dbforkId)
+	else if (a->dbforkId < b->dbforkId)
 		return -1;
-	else if(a->dbforkId > b->dbforkId)
+	else if (a->dbforkId > b->dbforkId)
 		return 1;
 	/* compare block number */
 	else if (a->blockNum < b->blockNum)

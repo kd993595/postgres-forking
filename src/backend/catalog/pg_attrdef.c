@@ -13,7 +13,7 @@
  *-------------------------------------------------------------------------
  */
 #include "postgres.h"
-#include "miscadmin.h" 
+#include "miscadmin.h"
 
 #include "access/genam.h"
 #include "access/relation.h"
@@ -283,7 +283,8 @@ RemoveAttrDefaultById(Oid attrdefId)
 	Oid			myrelid;
 	AttrNumber	myattnum;
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		elog(ERROR, "cannot call RemoveAttrDefaultById from non main fork");
 	}
 	/* Grab an appropriate lock on the pg_attrdef relation */

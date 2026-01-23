@@ -3050,7 +3050,7 @@ table_to_xmlschema(PG_FUNCTION_ARGS)
 	const char *result;
 	Relation	rel;
 
-	rel = table_open(relid, AccessShareLock, 0); /*metadata needed only*/
+	rel = table_open(relid, AccessShareLock, 0);	/* metadata needed only */
 	result = map_sql_table_to_xmlschema(rel->rd_att, relid, nulls,
 										tableforest, targetns);
 	table_close(rel, NoLock);

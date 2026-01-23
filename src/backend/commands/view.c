@@ -52,11 +52,13 @@ DefineVirtualRelation(RangeVar *relation, List *tlist, bool replace,
 	List	   *attrList;
 	ListCell   *t;
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("views cannot be created from non main fork")));
 	}
+
 	/*
 	 * create a list of ColumnDef nodes based on the names and types of the
 	 * (non-junk) targetlist items from the view's SELECT list.

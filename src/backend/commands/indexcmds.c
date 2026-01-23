@@ -292,7 +292,8 @@ CheckIndexCompatible(Oid oldId,
 		return false;
 
 	/* For polymorphic opcintype, column type changes break compatibility. */
-	irel = index_open(oldId, AccessShareLock, 0);	/* caller probably has a lock */
+	irel = index_open(oldId, AccessShareLock, 0);	/* caller probably has a
+													 * lock */
 	for (i = 0; i < old_natts; i++)
 	{
 		if (IsPolymorphicType(get_opclass_input_type(opclassIds[i])) &&
@@ -676,7 +677,9 @@ DefineIndex(Oid tableId,
 	 * functions will need to be updated, too.
 	 */
 	lockmode = concurrent ? ShareUpdateExclusiveLock : ShareLock;
-	rel = table_open(tableId, lockmode, 0); /*indexes should only be made in main database should probably check this higher up*/
+	rel = table_open(tableId, lockmode, 0); /* indexes should only be made in
+											 * main database should probably
+											 * check this higher up */
 
 	/*
 	 * Switch to the table owner's userid, so that any index functions are run
@@ -3430,7 +3433,8 @@ ReindexRelationConcurrently(const ReindexStmt *stmt, Oid relationOid, const Rein
 	};
 	int64		progress_vals[4];
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot reindex system catalogs concurrently for mydbforkid != 0")));
 	}
 
@@ -4276,7 +4280,8 @@ IndexSetParentIndex(Relation partitionIdx, Oid parentOid)
 	Assert(partitionIdx->rd_rel->relkind == RELKIND_INDEX ||
 		   partitionIdx->rd_rel->relkind == RELKIND_PARTITIONED_INDEX);
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("cannot IndexSetParentIndex from non main fork")));

@@ -215,7 +215,9 @@ CreateDatabaseUsingWalLog(Oid src_dboid, Oid dst_dboid,
 		LockRelationId(&dstrelid, AccessShareLock);
 
 		/* Copy relation storage from source to the destination. */
-		CreateAndCopyRelationData(srcrlocator, dstrlocator, relinfo->permanent, 0); /*database copying should be on main fork only*/
+		CreateAndCopyRelationData(srcrlocator, dstrlocator, relinfo->permanent, 0); /* database copying
+																					 * should be on main
+																					 * fork only */
 
 		/* Release the relation locks. */
 		UnlockRelationId(&srcrelid, AccessShareLock);
@@ -277,7 +279,9 @@ ScanSourceDatabasePgClass(Oid tbid, Oid dbid, char *srcpath)
 	rlocator.dbOid = dbid;
 	rlocator.relNumber = relfilenumber;
 
-	smgr = smgropen(rlocator, INVALID_PROC_NUMBER, 0); /* pg_class should always be from the main database */
+	smgr = smgropen(rlocator, INVALID_PROC_NUMBER, 0);	/* pg_class should
+														 * always be from the
+														 * main database */
 	nblocks = smgrnblocks(smgr, MAIN_FORKNUM);
 	smgrclose(smgr);
 
@@ -1536,72 +1540,94 @@ createdb(ParseState *pstate, const CreatedbStmt *stmt)
 /*
  * CREATE DBFORK - pgforking
  */
-int32 createfork(ParseState *pstate, const CreateforkStmt *stmt)
+int32
+createfork(ParseState *pstate, const CreateforkStmt *stmt)
 {
 
-	/* Ignore metadata like relcache and just copy tables in same database directory to a new file */
-	Relation pg_class_rel;
+	/*
+	 * Ignore metadata like relcache and just copy tables in same database
+	 * directory to a new file
+	 */
+	Relation	pg_class_rel;
 	TableScanDesc scan;
-	HeapTuple tuple;
+	HeapTuple	tuple;
 
 	/* Get a new unique fork id from the main process and store here */
-	int32 newForkId = DBForkNewId();
+	int32		newForkId = DBForkNewId();
+
 	DBForkSetNewIdExpensive(newForkId);
 	ereport(INFO, (errmsg("Current fork id globally: %d", MyDBForkId)));
 
 	pg_class_rel = table_open(RelationRelationId, AccessShareLock, 0);
 	scan = table_beginscan_catalog(pg_class_rel, 0, NULL);
 
-	while((tuple = heap_getnext(scan,ForwardScanDirection)) != NULL)
-	{ /* look at vacuum.c it has an example like this */
-		Relation newRel;
-		bool is_system;
+	while ((tuple = heap_getnext(scan, ForwardScanDirection)) != NULL)
+	{							/* look at vacuum.c it has an example like
+								 * this */
+		Relation	newRel;
+		bool		is_system;
 		Form_pg_class classForm = (Form_pg_class) GETSTRUCT(tuple);
 
-		if(classForm->relfilenode == InvalidRelFileNumber)
+		if (classForm->relfilenode == InvalidRelFileNumber)
 			continue;
 
 		newRel = relation_open(classForm->oid, AccessShareLock, 0);
 		is_system = IsSystemRelation(newRel) || IsCatalogNamespace(RelationGetRelid(newRel));
 		relation_close(newRel, AccessShareLock);
-		if(is_system){
-			// ereport(LOG, errmsg("Found system table: %s (RelFileNumber: %d)", NameStr(classForm->relname), newRel->rd_locator.relNumber));
+		if (is_system)
+		{
+			/*
+			 * ereport(LOG, errmsg("Found system table: %s (RelFileNumber:
+			 * %d)", NameStr(classForm->relname),
+			 * newRel->rd_locator.relNumber));
+			 */
 			continue;
 		}
 
-		if(classForm->relkind == RELKIND_RELATION) /*filter for regular tables*/
+		if (classForm->relkind == RELKIND_RELATION) /* filter for regular
+													 * tables */
 		{
 			newRel = table_open(classForm->oid, AccessShareLock, newForkId);
-			// ereport(LOG, errmsg("Found user table: %s (RelFileNumber: %d)", NameStr(classForm->relname), newRel->rd_locator.relNumber));
-			// mdcreatedbfork(classForm->relfilenode, newForkId);
+
+			/*
+			 * ereport(LOG, errmsg("Found user table: %s (RelFileNumber: %d)",
+			 * NameStr(classForm->relname), newRel->rd_locator.relNumber));
+			 */
+			/* mdcreatedbfork(classForm->relfilenode, newForkId); */
 			mdcreate(RelationGetSmgr(newRel), MAIN_FORKNUM, false);
 			table_close(newRel, AccessShareLock);
-		}else if(classForm->relkind == RELKIND_INDEX)
+		}
+		else if (classForm->relkind == RELKIND_INDEX)
 		{
-			Relation parentHeap;
-			IndexInfo *indexInfo;
+			Relation	parentHeap;
+			IndexInfo  *indexInfo;
 			Form_pg_index indexStruct;
-			int i;
-			int numAtts;
+			int			i;
+			int			numAtts;
+
 			newRel = index_open(classForm->oid, AccessShareLock, newForkId);
 			parentHeap = table_open(newRel->rd_index->indrelid, AccessShareLock, newForkId);
-			// indexInfo = BuildIndexInfo(newRel);
-			/*BuildIndexInfo function replicated here to avoid conflict with access*/
+			/* indexInfo = BuildIndexInfo(newRel); */
+
+			/*
+			 * BuildIndexInfo function replicated here to avoid conflict with
+			 * access
+			 */
 			indexStruct = newRel->rd_index;
 			numAtts = indexStruct->indnatts;
 			if (numAtts < 1 || numAtts > INDEX_MAX_KEYS)
-				elog(ERROR, "invalid indnatts %d for index %u",	numAtts, RelationGetRelid(newRel));
+				elog(ERROR, "invalid indnatts %d for index %u", numAtts, RelationGetRelid(newRel));
 
 			indexInfo = makeIndexInfo(indexStruct->indnatts,
-					   		indexStruct->indnkeyatts,
-					   		newRel->rd_rel->relam,
-					   		RelationGetIndexExpressions(newRel),
-					   		RelationGetIndexPredicate(newRel),
-					   		indexStruct->indisunique,
-					   		indexStruct->indnullsnotdistinct,
-					   		indexStruct->indisready,
-					   		false,
-					   		newRel->rd_indam->amsummarizing);
+									  indexStruct->indnkeyatts,
+									  newRel->rd_rel->relam,
+									  RelationGetIndexExpressions(newRel),
+									  RelationGetIndexPredicate(newRel),
+									  indexStruct->indisunique,
+									  indexStruct->indnullsnotdistinct,
+									  indexStruct->indisready,
+									  false,
+									  newRel->rd_indam->amsummarizing);
 
 			for (i = 0; i < numAtts; i++)
 				indexInfo->ii_IndexAttrNumbers[i] = indexStruct->indkey.values[i];
@@ -1609,39 +1635,55 @@ int32 createfork(ParseState *pstate, const CreateforkStmt *stmt)
 			if (indexStruct->indisexclusion)
 			{
 				RelationGetExclusionInfo(newRel, &indexInfo->ii_ExclusionOps, &indexInfo->ii_ExclusionProcs, &indexInfo->ii_ExclusionStrats);
-			}/*end of function*/
-			// ereport(LOG, errmsg("Found index table: %s (RelFileNumber: %d)", NameStr(classForm->relname), newRel->rd_locator.relNumber));
-			//mdcreatedbfork(classForm->relfilenode, newForkId);
+			}					/* end of function */
+
+			/*
+			 * ereport(LOG, errmsg("Found index table: %s (RelFileNumber:
+			 * %d)", NameStr(classForm->relname),
+			 * newRel->rd_locator.relNumber));
+			 */
+			/* mdcreatedbfork(classForm->relfilenode, newForkId); */
 
 			mdcreate(RelationGetSmgr(newRel), MAIN_FORKNUM, false);
 			newRel->rd_indam->ambuild(parentHeap, newRel, indexInfo, false);
-			// mdcreate(RelationGetSmgr(newRel), INIT_FORKNUM, false);
-			// newRel->rd_indam->ambuildempty(newRel); //this is for unlogged tables
+			/* mdcreate(RelationGetSmgr(newRel), INIT_FORKNUM, false); */
+
+			/*
+			 * newRel->rd_indam->ambuildempty(newRel); //this is for unlogged
+			 * tables
+			 */
 			table_close(parentHeap, AccessShareLock);
 			index_close(newRel, AccessShareLock);
-		}else{
+		}
+		else
+		{
 			ereport(LOG, errmsg("Found smthg else: %s (RelFileNumber: %d) (%c)", NameStr(classForm->relname), newRel->rd_locator.relNumber, classForm->relkind));
 		}
 	}
 
 	table_endscan(scan);
 	table_close(pg_class_rel, AccessShareLock);
-	return newForkId;	
+	return newForkId;
 }
 
 /*
  * SET DBFORK - pgforking
  */
-void setfork(ParseState *pstate, const SetforkStmt *stmt)
+void
+setfork(ParseState *pstate, const SetforkStmt *stmt)
 {
-	if(stmt->forkid == 0){
+	if (stmt->forkid == 0)
+	{
 		MemoryContext oldCtxt;
+
 		oldCtxt = MemoryContextSwitchTo(TopMemoryContext);
 		pfree(DBForkPath);
 		DBForkPath = NULL;
 		MyDBForkId = 0;
 		MemoryContextSwitchTo(oldCtxt);
-	}else{
+	}
+	else
+	{
 		DBForkSetNewIdExpensive(stmt->forkid);
 	}
 }
@@ -1975,7 +2017,8 @@ dropdb(const char *dbname, bool missing_ok, bool force)
 /*
  * DROP DBFORK <int> - pgforking
  */
-void dropfork(ParseState *pstate, const DropforkStmt *stmt)
+void
+dropfork(ParseState *pstate, const DropforkStmt *stmt)
 {
 	ereport(ERROR, errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Not implemented yet"));
 }

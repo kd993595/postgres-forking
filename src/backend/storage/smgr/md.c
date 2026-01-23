@@ -212,13 +212,16 @@ mdcreate(SMgrRelation reln, ForkNumber forknum, bool isRedo)
 							reln->smgr_rlocator.locator.dbOid,
 							isRedo);
 
-	if(reln->smgr_rlocator.dbforkId == 0){
+	if (reln->smgr_rlocator.dbforkId == 0)
+	{
 		path = relpath(reln->smgr_rlocator, forknum);
-	}else{
-		path = dbforkrelpath(reln->smgr_rlocator, forknum); 
+	}
+	else
+	{
+		path = dbforkrelpath(reln->smgr_rlocator, forknum);
 		ereport(INFO, errmsg("Making new file with forknum (%d)", forknum));
 	}
-	
+
 	fd = PathNameOpenFile(path, _mdfd_open_flags() | O_CREAT | O_EXCL);
 
 	if (fd < 0)
@@ -252,26 +255,38 @@ mdcreate(SMgrRelation reln, ForkNumber forknum, bool isRedo)
  * mdcreatedbfork() - pgforking - create the new dbfork file for the specific RelFileNumber given
  * TODO: modify to follow md.c guidelines for storing files
  */
-void mdcreatedbfork(RelFileNumber relNumber, int64 forkId)
+void
+mdcreatedbfork(RelFileNumber relNumber, int64 forkId)
 {
-	char *path;
-	File fd;
+	char	   *path;
+	File		fd;
 
-	path = GetDBForkRelationPath(MyDatabaseId, 1663, relNumber, INVALID_PROC_NUMBER, MAIN_FORKNUM, forkId); /* note: using this function will never return null since defaultablespace guaranteed (1663 lookup pg_tablespace_d.h)*/
+	path = GetDBForkRelationPath(MyDatabaseId, 1663, relNumber, INVALID_PROC_NUMBER, MAIN_FORKNUM, forkId); /* note: using this
+																											 * function will never
+																											 * return null since
+																											 * defaultablespace
+																											 * guaranteed (1663
+																											 * lookup
+																											 * pg_tablespace_d.h) */
 	fd = PathNameOpenFile(path, _mdfd_open_flags() | O_CREAT | O_EXCL);
 
-	if(fd < 0)
+	if (fd < 0)
 	{
 		ereport(ERROR,
-		  		(errcode_for_file_access(),
+				(errcode_for_file_access(),
 				 errmsg("custom could not create file \"%s\": %m", path)));
 		return;
 	}
 
 
-	FileClose(fd); /* Immediately close new fork file since we don't need it rn */
+	FileClose(fd);				/* Immediately close new fork file since we
+								 * don't need it rn */
 	pfree(path);
-	/* Don't do all the smgr relation things since we don't necessarily need it here for now */	
+
+	/*
+	 * Don't do all the smgr relation things since we don't necessarily need
+	 * it here for now
+	 */
 }
 
 /*
@@ -379,12 +394,15 @@ mdunlinkfork(RelFileLocatorBackend rlocator, ForkNumber forknum, bool isRedo)
 	int			ret;
 	int			save_errno;
 
-	if(rlocator.dbforkId == 0){
+	if (rlocator.dbforkId == 0)
+	{
 		path = relpath(rlocator, forknum);
-	}else{
+	}
+	else
+	{
 		path = dbforkrelpath(rlocator, forknum);
 	}
-	
+
 	/*
 	 * Truncate and then unlink the first segment, or just register a request
 	 * to unlink it later, as described in the comments for mdunlink().
@@ -680,9 +698,12 @@ mdopenfork(SMgrRelation reln, ForkNumber forknum, int behavior)
 	if (reln->md_num_open_segs[forknum] > 0)
 		return &reln->md_seg_fds[forknum][0];
 
-	if(reln->smgr_rlocator.dbforkId == 0){
+	if (reln->smgr_rlocator.dbforkId == 0)
+	{
 		path = relpath(reln->smgr_rlocator, forknum);
-	}else{
+	}
+	else
+	{
 		elog(LOG, "taking dbfork relpath of (%d) with fork (%d)", reln->smgr_rlocator.locator.relNumber, reln->smgr_rlocator.dbforkId);
 		path = dbforkrelpath(reln->smgr_rlocator, forknum);
 	}
@@ -699,7 +720,7 @@ mdopenfork(SMgrRelation reln, ForkNumber forknum, int behavior)
 		}
 		ereport(ERROR,
 				(errcode_for_file_access(),
-				 errmsg("could not open file (%d) \"%s\": %m", reln->smgr_rlocator.dbforkId,path)));
+				 errmsg("could not open file (%d) \"%s\": %m", reln->smgr_rlocator.dbforkId, path)));
 	}
 
 	pfree(path);
@@ -1494,7 +1515,11 @@ DropRelationFiles(RelFileLocator *delrels, int ndelrels, bool isRedo)
 	srels = palloc(sizeof(SMgrRelation) * ndelrels);
 	for (i = 0; i < ndelrels; i++)
 	{
-		SMgrRelation srel = smgropen(delrels[i], INVALID_PROC_NUMBER, 0); /* TODO: check if we want to drop just main database since ours get garbage collected */
+		SMgrRelation srel = smgropen(delrels[i], INVALID_PROC_NUMBER, 0);	/* TODO: check if we
+																			 * want to drop just
+																			 * main database since
+																			 * ours get garbage
+																			 * collected */
 
 		if (isRedo)
 		{
@@ -1571,9 +1596,12 @@ _mdfd_segpath(SMgrRelation reln, ForkNumber forknum, BlockNumber segno)
 	char	   *path,
 			   *fullpath;
 
-	if(reln->smgr_rlocator.dbforkId == 0){
+	if (reln->smgr_rlocator.dbforkId == 0)
+	{
 		path = relpath(reln->smgr_rlocator, forknum);
-	}else{
+	}
+	else
+	{
 		path = dbforkrelpath(reln->smgr_rlocator, forknum);
 	}
 
@@ -1848,9 +1876,12 @@ mdunlinkfiletag(const FileTag *ftag, char *path)
 	char	   *p;
 
 	/* Compute the path. */
-	if(ftag->dbforkId == 0){
+	if (ftag->dbforkId == 0)
+	{
 		p = relpathperm(ftag->rlocator, MAIN_FORKNUM);
-	}else{
+	}
+	else
+	{
 		p = dbforkrelpathperm(ftag->rlocator, MAIN_FORKNUM, ftag->dbforkId);
 	}
 	strlcpy(path, p, MAXPGPATH);

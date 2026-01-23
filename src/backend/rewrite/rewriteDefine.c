@@ -245,7 +245,8 @@ DefineQueryRewrite(const char *rulename,
 	 *
 	 * Note that this lock level should match the one used in DefineRule.
 	 */
-	event_relation = table_open(event_relid, AccessExclusiveLock, 0); /*rules must be made in main database*/
+	event_relation = table_open(event_relid, AccessExclusiveLock, 0);	/* rules must be made in
+																		 * main database */
 
 	/*
 	 * Verify relation is of a type that rules can sensibly be applied to.
@@ -801,11 +802,13 @@ RenameRewriteRule(RangeVar *relation, const char *oldName,
 	Oid			ruleOid;
 	ObjectAddress address;
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_UNDEFINED_OBJECT),
 				 errmsg("Cannot do rewrite rule in non main fork")));
 	}
+
 	/*
 	 * Look up name, check permissions, and acquire lock (which we will NOT
 	 * release until end of transaction).
@@ -816,7 +819,9 @@ RenameRewriteRule(RangeVar *relation, const char *oldName,
 									 NULL);
 
 	/* Have lock already, so just need to build relcache entry. */
-	targetrel = relation_open(relid, NoLock, 0); /*for these operations really only care abt main fork*/
+	targetrel = relation_open(relid, NoLock, 0);	/* for these operations
+													 * really only care abt
+													 * main fork */
 
 	/* Prepare to modify pg_rewrite */
 	pg_rewrite_desc = table_open(RewriteRelationId, RowExclusiveLock, 0);

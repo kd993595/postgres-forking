@@ -1674,11 +1674,13 @@ RemoveAttributeById(Oid relid, AttrNumber attnum)
 	bool		nullsAtt[Natts_pg_attribute] = {0};
 	bool		replacesAtt[Natts_pg_attribute] = {0};
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 				 errmsg("cannot call RemoveAttributeById from non main fork")));
 	}
+
 	/*
 	 * Grab an exclusive lock on the target table, which we will NOT release
 	 * until end of transaction.  (In the simple case where we are directly
@@ -1776,11 +1778,13 @@ heap_drop_with_catalog(Oid relid)
 	Oid			parentOid = InvalidOid,
 				defaultPartOid = InvalidOid;
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 				 errmsg("cannot call heap_drop_with_catalog from non main fork")));
 	}
+
 	/*
 	 * To drop a partition safely, we must grab exclusive lock on its parent,
 	 * because another backend might be about to execute a query on the parent
@@ -2089,7 +2093,9 @@ SetAttrMissing(Oid relid, char *attname, char *value)
 				newtup;
 
 	/* lock the table the attribute belongs to */
-	tablerel = table_open(relid, AccessExclusiveLock, 0); /*binary upgrade should only be in main database alone*/
+	tablerel = table_open(relid, AccessExclusiveLock, 0);	/* binary upgrade should
+															 * only be in main
+															 * database alone */
 
 	/* Don't do anything unless it's a plain table */
 	if (tablerel->rd_rel->relkind != RELKIND_RELATION)
@@ -3087,7 +3093,9 @@ heap_truncate(List *relids)
 		Oid			rid = lfirst_oid(cell);
 		Relation	rel;
 
-		rel = table_open(rid, AccessExclusiveLock, 0); /*this truncation should only happen in a main database*/
+		rel = table_open(rid, AccessExclusiveLock, 0);	/* this truncation
+														 * should only happen in
+														 * a main database */
 		relations = lappend(relations, rel);
 	}
 
@@ -3138,7 +3146,9 @@ heap_truncate_one_rel(Relation rel)
 	toastrelid = rel->rd_rel->reltoastrelid;
 	if (OidIsValid(toastrelid))
 	{
-		Relation	toastrel = table_open(toastrelid, AccessExclusiveLock, 0); /*truncation should only happen in main database*/
+		Relation	toastrel = table_open(toastrelid, AccessExclusiveLock, 0);	/* truncation should
+																				 * only happen in main
+																				 * database */
 
 		table_relation_nontransactional_truncate(toastrel);
 		RelationTruncateIndexes(toastrel);

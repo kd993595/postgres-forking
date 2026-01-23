@@ -774,13 +774,13 @@ standard_ProcessUtility(PlannedStmt *pstmt,
 			break;
 
 		case T_CreateforkStmt:
-			PreventInTransactionBlock(isTopLevel,"CREATE DBFORK");
+			PreventInTransactionBlock(isTopLevel, "CREATE DBFORK");
 			createfork(pstate, (CreateforkStmt *) parsetree);
 			break;
 
 		case T_SetforkStmt:
 			PreventInTransactionBlock(isTopLevel, "SET DBFORK");
-			setfork(pstate, (SetforkStmt *)parsetree);
+			setfork(pstate, (SetforkStmt *) parsetree);
 			break;
 
 		case T_AlterDatabaseStmt:
@@ -894,10 +894,11 @@ standard_ProcessUtility(PlannedStmt *pstmt,
 		case T_VariableShowForkStmt:
 			{
 				VariableShowForkStmt *n = (VariableShowForkStmt *) parsetree;
+
 				GetDBForkVariable(n->name, dest);
 			}
 			break;
-		
+
 		case T_VariableShowStmt:
 			{
 				VariableShowStmt *n = (VariableShowStmt *) parsetree;
@@ -1556,7 +1557,7 @@ ProcessUtilitySlow(ParseState *pstate,
 					 * must treat it like ALTER TABLE ADD INDEX, not CREATE.
 					 * (This is a bit grotty, but currently it doesn't seem
 					 * worth adding a separate bool field for the purpose.)
-	*/
+					 */
 					is_alter_table = stmt->transformed;
 
 					/* Run parse analysis ... */

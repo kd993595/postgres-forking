@@ -343,7 +343,8 @@ fill_seq_with_data(Relation rel, HeapTuple tuple)
 	{
 		SMgrRelation srel;
 
-		srel = smgropen(rel->rd_locator, INVALID_PROC_NUMBER, 0); /*TODO: change sequence to work with forks*/
+		srel = smgropen(rel->rd_locator, INVALID_PROC_NUMBER, 0);	/* TODO: change sequence
+																	 * to work with forks */
 		smgrcreate(srel, INIT_FORKNUM, false);
 		log_smgrcreate(&rel->rd_locator, INIT_FORKNUM);
 		fill_seq_fork_with_data(rel, tuple, INIT_FORKNUM);
@@ -1598,8 +1599,9 @@ process_owned_by(Relation seqrel, List *owned_by, bool for_identity)
 	AttrNumber	attnum;
 
 	deptype = for_identity ? DEPENDENCY_INTERNAL : DEPENDENCY_AUTO;
-	
-	if(MyDBForkId != 0){
+
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("trying to call owned by in create/alter from non main fork not allowed")));

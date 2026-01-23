@@ -390,11 +390,14 @@ GetPGVariable(const char *name, DestReceiver *dest)
 /*
  * SHOW DBFORK command - pgforking
  */
-void GetDBForkVariable(const char *name, DestReceiver *dest)
+void
+GetDBForkVariable(const char *name, DestReceiver *dest)
 {
 	TupOutputState *tstate;
 	TupleDesc	tupdesc;
-
+	Datum		values_[1];
+	bool		isnull_[1];
+	
 	/* need a tuple descriptor representing a single TEXT column */
 	tupdesc = CreateTemplateTupleDesc(1);
 	TupleDescInitBuiltinEntry(tupdesc, (AttrNumber) 1, name,
@@ -404,8 +407,7 @@ void GetDBForkVariable(const char *name, DestReceiver *dest)
 	tstate = begin_tup_output_tupdesc(dest, tupdesc, &TTSOpsVirtual);
 
 	/* Send it */
-	Datum	values_[1];
-	bool	isnull_[1];
+
 	values_[0] = UInt32GetDatum(MyDBForkId);
 	isnull_[0] = false;
 	do_tup_output(tstate, values_, isnull_);
@@ -432,7 +434,7 @@ GetPGVariableResultDesc(const char *name)
 		TupleDescInitEntry(tupdesc, (AttrNumber) 3, "description",
 						   TEXTOID, -1, 0);
 	}
-	else if(guc_name_compare(name, "dbfork") == 0)
+	else if (guc_name_compare(name, "dbfork") == 0)
 	{
 		tupdesc = CreateTemplateTupleDesc(1);
 		TupleDescInitEntry(tupdesc, (AttrNumber) 1, "dbfork", INT4OID, -1, 0);

@@ -385,7 +385,8 @@ currtid_for_view(Relation viewrel, ItemPointer tid)
 						ItemPointer result;
 						Relation	rel;
 
-						rel = table_open(rte->relid, AccessShareLock, 0); /*unsure if this is view stuff in main*/
+						rel = table_open(rte->relid, AccessShareLock, 0);	/* unsure if this is
+																			 * view stuff in main */
 						result = currtid_internal(rel, tid);
 						table_close(rel, AccessShareLock);
 						return result;
@@ -414,7 +415,10 @@ currtid_byrelname(PG_FUNCTION_ARGS)
 	Relation	rel;
 
 	relrv = makeRangeVarFromNameList(textToQualifiedNameList(relname));
-	rel = table_openrv(relrv, AccessShareLock, 0); /*leave this procedure to be in main database only since mainly legacy*/
+	rel = table_openrv(relrv, AccessShareLock, 0);	/* leave this procedure to
+													 * be in main database
+													 * only since mainly
+													 * legacy */
 
 	/* grab the latest tuple version associated to this CTID */
 	result = currtid_internal(rel, tid);

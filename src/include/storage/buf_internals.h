@@ -97,7 +97,7 @@ typedef struct buftag
 	RelFileNumber relNumber;	/* relation file number */
 	ForkNumber	forkNum;		/* fork number */
 	BlockNumber blockNum;		/* blknum relative to begin of reln */
-	int32 	dbforkId; 			/* pgforking id for fork */
+	int32		dbforkId;		/* pgforking id for fork */
 } BufferTag;
 
 static inline RelFileNumber
@@ -113,7 +113,7 @@ BufTagGetForkNum(const BufferTag *tag)
 }
 
 static inline int32_t
-BufTagGetDBForkId(const BufferTag* tag)
+BufTagGetDBForkId(const BufferTag *tag)
 {
 	return tag->dbforkId;
 }
@@ -127,7 +127,9 @@ BufTagSetRelForkDetails(BufferTag *tag, RelFileNumber relnumber,
 }
 
 static inline RelFileLocator
-BufTagGetRelFileLocator(const BufferTag *tag) /* TODO: check all references to this don't need to also check new dbforkid as well */
+BufTagGetRelFileLocator(const BufferTag *tag)	/* TODO: check all references
+												 * to this don't need to also
+												 * check new dbforkid as well */
 {
 	RelFileLocator rlocator;
 
@@ -389,7 +391,7 @@ typedef struct CkptSortItem
 	ForkNumber	forkNum;
 	BlockNumber blockNum;
 	int			buf_id;
-	int64 		dbforkId;
+	int64		dbforkId;
 } CkptSortItem;
 
 extern PGDLLIMPORT CkptSortItem *CkptBufferIds;

@@ -1092,7 +1092,10 @@ CatalogCacheInitializeCache(CatCache *cache)
 
 	CatalogCacheInitializeCache_DEBUG1;
 
-	relation = table_open(cache->cc_reloid, AccessShareLock, 0); /*probably 0 for catalog caches espcially in initialization*/
+	relation = table_open(cache->cc_reloid, AccessShareLock, 0);	/* probably 0 for
+																	 * catalog caches
+																	 * espcially in
+																	 * initialization */
 
 	/*
 	 * switch to the cache context so our allocations do not vanish at the end
@@ -1401,7 +1404,7 @@ SearchCatCacheInternal(CatCache *cache,
 	hashValue = CatalogCacheComputeHashValue(cache, nkeys, v1, v2, v3, v4);
 	hashIndex = HASH_INDEX(hashValue, cache->cc_nbuckets);
 
-	//elog(LOG, "search catcache internal");
+	/* elog(LOG, "search catcache internal"); */
 
 	/*
 	 * scan the hash bucket until we find a match or exhaust our tuples
@@ -1462,8 +1465,8 @@ SearchCatCacheInternal(CatCache *cache,
 			return NULL;
 		}
 	}
-	
-	//elog(LOG, "moving to catcachemiss");
+
+	/* elog(LOG, "moving to catcachemiss"); */
 	return SearchCatCacheMiss(cache, nkeys, hashValue, hashIndex, v1, v2, v3, v4);
 }
 

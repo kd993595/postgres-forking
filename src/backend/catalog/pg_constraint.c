@@ -633,7 +633,9 @@ RemoveConstraintById(Oid conId)
 		 * If the constraint is for a relation, open and exclusive-lock the
 		 * relation it's for.
 		 */
-		rel = table_open(con->conrelid, AccessExclusiveLock, 0); /*opening for dropping a part of it so should be in main*/
+		rel = table_open(con->conrelid, AccessExclusiveLock, 0);	/* opening for dropping
+																	 * a part of it so
+																	 * should be in main */
 
 		/*
 		 * We need to update the relchecks count if it is a check constraint

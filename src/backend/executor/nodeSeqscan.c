@@ -137,7 +137,8 @@ ExecInitSeqScan(SeqScan *node, EState *estate, int eflags)
 	scanstate = makeNode(SeqScanState);
 	scanstate->ss.ps.plan = (Plan *) node;
 	scanstate->ss.ps.state = estate;
-	scanstate->ss.ps.ExecProcNode = ExecSeqScan; //execution function for SeqScan
+	scanstate->ss.ps.ExecProcNode = ExecSeqScan;
+	/* execution function for SeqScan */
 
 	/*
 	 * Miscellaneous initialization

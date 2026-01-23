@@ -391,7 +391,8 @@ expand_partitioned_rtentry(PlannerInfo *root, RelOptInfo *relinfo,
 		 * detached and subsequently dropped, then opening it will fail.  In
 		 * this case, behave as though the partition had been pruned.
 		 */
-		childrel = try_table_open(childOID, lockmode, 0); /*TODO: fix forking id for partition tables */
+		childrel = try_table_open(childOID, lockmode, 0);	/* TODO: fix forking id
+															 * for partition tables */
 		if (childrel == NULL)
 		{
 			relinfo->live_parts = bms_del_member(relinfo->live_parts, i);

@@ -1229,7 +1229,10 @@ get_relation_data_width(Oid relid, int32 *attr_widths)
 	int32		result;
 	Relation	relation;
 
-	/* As above, assume relation is already locked, only care about type metadata */
+	/*
+	 * As above, assume relation is already locked, only care about type
+	 * metadata
+	 */
 	relation = table_open(relid, NoLock, 0);
 
 	result = get_rel_data_width(relation, attr_widths);
@@ -1276,7 +1279,8 @@ get_relation_constraints(PlannerInfo *root,
 	TupleConstr *constr;
 
 	/*
-	 * We assume the relation has already been safely locked. Only care about metadata
+	 * We assume the relation has already been safely locked. Only care about
+	 * metadata
 	 */
 	relation = table_open(relationObjectId, NoLock, 0);
 

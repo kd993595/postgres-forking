@@ -2636,10 +2636,13 @@ typedef struct VariableShowStmt
 
 typedef struct VariableShowForkStmt
 {
-	/*must be the same as VariableShowStmt for first 2 since typecasted for some utility processing*/
-	NodeTag 	type;
-	char 		*name;
-	bool 		showpath;
+	/*
+	 * must be the same as VariableShowStmt for first 2 since typecasted for
+	 * some utility processing
+	 */
+	NodeTag		type;
+	char	   *name;
+	bool		showpath;
 } VariableShowForkStmt;
 
 /* ----------------------
@@ -3783,8 +3786,8 @@ typedef struct CreatedbStmt
  */
 typedef struct CreateforkStmt
 {
-	NodeTag type;
-	long    forkid;
+	NodeTag		type;
+	long		forkid;
 } CreateforkStmt;
 
 /* -------------------------
@@ -3793,8 +3796,8 @@ typedef struct CreateforkStmt
  */
 typedef struct SetforkStmt
 {
-	NodeTag type;
-	long    forkid;
+	NodeTag		type;
+	long		forkid;
 } SetforkStmt;
 
 
@@ -3840,8 +3843,8 @@ typedef struct DropdbStmt
  */
 typedef struct DropforkStmt
 {
-	NodeTag type;
-	long    forkid;
+	NodeTag		type;
+	long		forkid;
 } DropforkStmt;
 
 /* ----------------------

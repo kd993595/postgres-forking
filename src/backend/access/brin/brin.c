@@ -1212,7 +1212,7 @@ brinbuild(Relation heap, Relation index, IndexInfo *indexInfo, bool regularCreat
 
 		_brin_end_parallel(state->bs_leader, state);
 	}
-	else if(regularCreate)						/* no parallel index build */
+	else if (regularCreate)		/* no parallel index build */
 	{
 		/*
 		 * Now scan the relation.  No syncscan allowed here because we want
@@ -1242,7 +1242,9 @@ brinbuild(Relation heap, Relation index, IndexInfo *indexInfo, bool regularCreat
 		brin_fill_empty_ranges(state,
 							   state->bs_currRangeStart,
 							   state->bs_maxRangeStart);
-	}else{
+	}
+	else
+	{
 		reltuples = 0;
 	}
 

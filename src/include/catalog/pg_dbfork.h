@@ -41,9 +41,9 @@ CATALOG(pg_dbfork,6347,SharedDBForkIDRelation) BKI_SHARED_RELATION
 	 * Idk what to put here yet since we custom read it
 	 *
 	 */
-	int32 forkid;
-	int32 parentid;
-	int64 curTime;
+	int32		forkid;
+	int32		parentid;
+	int64		curTime;
 } FormData_pg_dbfork;
 
 /* ----------------
@@ -51,8 +51,8 @@ CATALOG(pg_dbfork,6347,SharedDBForkIDRelation) BKI_SHARED_RELATION
  *		the format of pg_shdepend relation.
  * ----------------
  */
-typedef FormData_pg_dbfork *Form_pg_dbfork;
+typedef FormData_pg_dbfork * Form_pg_dbfork;
 
 DECLARE_UNIQUE_INDEX_PKEY(pg_dbfork_index, 6348, SharedDBForkOidIndexId, pg_dbfork, btree(forkid int4_ops));
 
-#endif 		/* PG_DBFORK_H */
+#endif							/* PG_DBFORK_H */

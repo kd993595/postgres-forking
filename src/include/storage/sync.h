@@ -53,7 +53,7 @@ typedef struct FileTag
 	int16		forknum;		/* ForkNumber, saving space */
 	RelFileLocator rlocator;
 	uint64		segno;
-	int32 		dbforkId;
+	int32		dbforkId;
 } FileTag;
 
 extern void InitSync(void);

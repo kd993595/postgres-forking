@@ -80,7 +80,8 @@ CheckAndCreateToastTable(Oid relOid, Datum reloptions, LOCKMODE lockmode,
 {
 	Relation	rel;
 
-	rel = table_open(relOid, lockmode, 0); /*should only be creating in main database*/
+	rel = table_open(relOid, lockmode, 0);	/* should only be creating in main
+											 * database */
 
 	/* create_toast_table does all the work */
 	(void) create_toast_table(rel, InvalidOid, InvalidOid, reloptions, lockmode,
@@ -99,7 +100,8 @@ BootstrapToastTable(char *relName, Oid toastOid, Oid toastIndexOid)
 {
 	Relation	rel;
 
-	rel = table_openrv(makeRangeVar(NULL, relName, -1), AccessExclusiveLock, 0); /*bootstrap stuff should always be 0*/
+	rel = table_openrv(makeRangeVar(NULL, relName, -1), AccessExclusiveLock, 0);	/* bootstrap stuff
+																					 * should always be 0 */
 
 	if (rel->rd_rel->relkind != RELKIND_RELATION &&
 		rel->rd_rel->relkind != RELKIND_MATVIEW)

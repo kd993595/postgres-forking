@@ -1220,7 +1220,8 @@ AlterPublicationTables(AlterPublicationStmt *stmt, HeapTuple tup,
 				oldrel->whereClause = NULL;
 				oldrel->columns = NIL;
 				oldrel->relation = table_open(oldrelid,
-											  ShareUpdateExclusiveLock, 0); /*alter should be in main database*/
+											  ShareUpdateExclusiveLock, 0); /* alter should be in
+																			 * main database */
 				delrels = lappend(delrels, oldrel);
 			}
 		}
@@ -1568,7 +1569,8 @@ OpenTableList(List *tables)
 		/* Allow query cancel in case this takes a long time */
 		CHECK_FOR_INTERRUPTS();
 
-		rel = table_openrv(t->relation, ShareUpdateExclusiveLock, 0); /*publication stuff should be fixed later*/
+		rel = table_openrv(t->relation, ShareUpdateExclusiveLock, 0);	/* publication stuff
+																		 * should be fixed later */
 		myrelid = RelationGetRelid(rel);
 
 		/*

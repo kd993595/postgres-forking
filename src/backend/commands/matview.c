@@ -178,7 +178,11 @@ RefreshMatViewByOid(Oid matviewOid, bool skipData, bool concurrent,
 	int			save_nestlevel;
 	ObjectAddress address;
 
-	matviewRel = table_open(matviewOid, NoLock, 0); /*matview stuff should stay in main database land and figure out how to convert to safe forks later*/
+	matviewRel = table_open(matviewOid, NoLock, 0); /* matview stuff should
+													 * stay in main database
+													 * land and figure out how
+													 * to convert to safe
+													 * forks later */
 	relowner = matviewRel->rd_rel->relowner;
 
 	/*

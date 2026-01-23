@@ -1316,7 +1316,8 @@ index_concurrently_create_copy(Relation heapRelation, Oid oldIndexId,
 	List	   *indexExprs = NIL;
 	List	   *indexPreds = NIL;
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("Cannot index_concurrently_create_copy in non main database")));
 	}
 
@@ -1496,12 +1497,16 @@ index_concurrently_build(Oid heapRelationId,
 	/* This had better make sure that a snapshot is active */
 	Assert(ActiveSnapshotSet());
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("Cannot index_concurrently_build in non main database")));
 	}
 
 	/* Open and lock the parent heap relation */
-	heapRel = table_open(heapRelationId, ShareUpdateExclusiveLock, 0); /*should only be happening in a define index so main database*/
+	heapRel = table_open(heapRelationId, ShareUpdateExclusiveLock, 0);	/* should only be
+																		 * happening in a define
+																		 * index so main
+																		 * database */
 
 	/*
 	 * Switch to the table owner's userid, so that any index functions are run
@@ -1575,11 +1580,13 @@ index_concurrently_swap(Oid newIndexId, Oid oldIndexId, const char *oldName)
 	List	   *constraintOids = NIL;
 	ListCell   *lc;
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("cannot swap index in a concurrent create index in non main fork")));
 	}
+
 	/*
 	 * Take a necessary lock on the old and new index before swapping them.
 	 */
@@ -1841,7 +1848,9 @@ index_concurrently_set_dead(Oid heapId, Oid indexId)
 	 * existing predicate locks, so now is the time to move them to the heap
 	 * relation.
 	 */
-	userHeapRelation = table_open(heapId, ShareUpdateExclusiveLock, 0); /*again operation should only happen in main database*/
+	userHeapRelation = table_open(heapId, ShareUpdateExclusiveLock, 0); /* again operation
+																		 * should only happen in
+																		 * main database */
 	userIndexRelation = index_open(indexId, ShareUpdateExclusiveLock, 0);
 	TransferPredicateLocksToHeapRelation(userIndexRelation);
 
@@ -2146,7 +2155,8 @@ index_drop(Oid indexId, bool concurrent, bool concurrent_lock_mode)
 	Assert(get_rel_persistence(indexId) != RELPERSISTENCE_TEMP ||
 		   (!concurrent && !concurrent_lock_mode));
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot drop index outside of main database")));
 	}
 
@@ -3331,7 +3341,11 @@ validate_index(Oid heapId, Oid indexId, Snapshot snapshot)
 	}
 
 	/* Open and lock the parent heap relation */
-	heapRelation = table_open(heapId, ShareUpdateExclusiveLock, 0); /*hopefully someone above this function check main database since its for index build*/
+	heapRelation = table_open(heapId, ShareUpdateExclusiveLock, 0); /* hopefully someone
+																	 * above this function
+																	 * check main database
+																	 * since its for index
+																	 * build */
 
 	/*
 	 * Switch to the table owner's userid, so that any index functions are run
@@ -3577,7 +3591,8 @@ reindex_index(const ReindexStmt *stmt, Oid indexId,
 	bool		progress = ((params->options & REINDEXOPT_REPORT_PROGRESS) != 0);
 	bool		set_tablespace = false;
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot reindex_index in non main database")));
 	}
 
@@ -3916,16 +3931,19 @@ reindex_relation(const ReindexStmt *stmt, Oid relid, int flags,
 	ListCell   *indexId;
 	int			i;
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot reindex_relation in non main database")));
 	}
+
 	/*
 	 * Open and lock the relation.  ShareLock is sufficient since we only need
 	 * to prevent schema and data changes in it.  The lock level used here
 	 * should match ReindexTable().
 	 */
 	if ((params->options & REINDEXOPT_MISSING_OK) != 0)
-		rel = try_table_open(relid, ShareLock, 0); /*should only reindex in main database*/
+		rel = try_table_open(relid, ShareLock, 0);	/* should only reindex in
+													 * main database */
 	else
 		rel = table_open(relid, ShareLock, 0);
 

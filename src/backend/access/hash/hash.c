@@ -130,10 +130,13 @@ hashbuild(Relation heap, Relation index, IndexInfo *indexInfo, bool regularCreat
 		elog(ERROR, "index \"%s\" already contains data",
 			 RelationGetRelationName(index));
 
-	if(regularCreate){
+	if (regularCreate)
+	{
 		/* Estimate the number of rows currently present in the table */
 		estimate_rel_size(heap, NULL, &relpages, &reltuples, &allvisfrac);
-	}else{
+	}
+	else
+	{
 		reltuples = 0;
 	}
 
@@ -173,17 +176,20 @@ hashbuild(Relation heap, Relation index, IndexInfo *indexInfo, bool regularCreat
 	buildstate.indtuples = 0;
 	buildstate.heapRel = heap;
 
-	if(regularCreate){
+	if (regularCreate)
+	{
 		/* do the heap scan */
 		reltuples = table_index_build_scan(heap, index, indexInfo, true, true,
-									   	hashbuildCallback,
-									   	(void *) &buildstate, NULL);
+										   hashbuildCallback,
+										   (void *) &buildstate, NULL);
 		pgstat_progress_update_param(PROGRESS_CREATEIDX_TUPLES_TOTAL,
-								 buildstate.indtuples);
-	}else{
+									 buildstate.indtuples);
+	}
+	else
+	{
 		reltuples = 0;
 	}
-	
+
 	if (buildstate.spool)
 	{
 		/* sort the tuples and insert them into the index */

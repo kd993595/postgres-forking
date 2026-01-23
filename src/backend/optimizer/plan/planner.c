@@ -6884,7 +6884,9 @@ plan_create_index_workers(Oid tableOid, Oid indexOid)
 	rel = build_simple_rel(root, 1, NULL);
 
 	/* Rels are assumed already locked by the caller */
-	heap = table_open(tableOid, NoLock, 0); /*create index should only be in main database TODO:: put check above*/
+	heap = table_open(tableOid, NoLock, 0); /* create index should only be in
+											 * main database TODO:: put check
+											 * above */
 	index = index_open(indexOid, NoLock, 0);
 
 	/*

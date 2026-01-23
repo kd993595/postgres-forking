@@ -755,7 +755,10 @@ maybe_send_schema(LogicalDecodingContext *ctx,
 	 */
 	if (relentry->publish_as_relid != RelationGetRelid(relation))
 	{
-		Relation	ancestor = RelationIdGetRelation(relentry->publish_as_relid, 0); /*TODO: like wal logical replication assume main fork and fix later*/
+		Relation	ancestor = RelationIdGetRelation(relentry->publish_as_relid, 0);	/* TODO: like wal
+																						 * logical replication
+																						 * assume main fork and
+																						 * fix later */
 
 		send_relation_and_attrs(ancestor, xid, ctx, relentry->columns);
 		RelationClose(ancestor);

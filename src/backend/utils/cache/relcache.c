@@ -129,7 +129,7 @@ static const FormData_pg_attribute Desc_pg_subscription[Natts_pg_subscription] =
  */
 typedef struct relidcacheent
 {
-	Oid 		reloid;
+	Oid			reloid;
 	Relation	reldesc;
 } RelIdCacheEnt;
 
@@ -2067,7 +2067,7 @@ Relation
 RelationIdGetRelation(Oid relationId, int32 dbforkId)
 {
 	Relation	rd;
-	bool is_system;
+	bool		is_system;
 
 	/* Make sure we're in an xact, even if this ends up being a cache hit */
 	Assert(IsTransactionState());
@@ -2111,13 +2111,15 @@ RelationIdGetRelation(Oid relationId, int32 dbforkId)
 			Assert(rd->rd_isvalid ||
 				   (rd->rd_isnailed && !criticalRelcachesBuilt));
 		}
-		
+
 		is_system = IsSystemRelation(rd) || IsCatalogNamespace(RelationGetRelid(rd));
-		if(is_system){
+		if (is_system)
+		{
 			dbforkId = 0;
 		}
-		/*change relation smgr if incorrect fork*/
-		if(rd->rd_dbforkId != dbforkId){
+		/* change relation smgr if incorrect fork */
+		if (rd->rd_dbforkId != dbforkId)
+		{
 			RelationCloseSmgr(rd);
 			rd->rd_dbforkId = dbforkId;
 			RelationGetSmgr(rd);
@@ -2130,11 +2132,13 @@ RelationIdGetRelation(Oid relationId, int32 dbforkId)
 	 * it.
 	 */
 	rd = RelationBuildDesc(relationId, dbforkId, true);
-	if (RelationIsValid(rd)){
+	if (RelationIsValid(rd))
+	{
 		RelationIncrementReferenceCount(rd);
 		is_system = IsSystemRelation(rd) || IsCatalogNamespace(RelationGetRelid(rd));
-		if(is_system){
-			rd->rd_dbforkId = 0;	
+		if (is_system)
+		{
+			rd->rd_dbforkId = 0;
 		}
 	}
 	return rd;
@@ -3217,7 +3221,9 @@ AssertPendingSyncs_RelationCache(void)
 			LOCKTAG_RELATION)
 			continue;
 		relid = ObjectIdGetDatum(locallock->tag.lock.locktag_field2);
-		r = RelationIdGetRelation(relid, 0); /* doesn't really matter since its for assertion but just checking for main is fine*/
+		r = RelationIdGetRelation(relid, 0);	/* doesn't really matter since
+												 * its for assertion but just
+												 * checking for main is fine */
 		if (!RelationIsValid(r))
 			continue;
 		if (nrels >= maxrels)
@@ -4417,7 +4423,9 @@ load_critical_index(Oid indexoid, Oid heapoid)
 	 */
 	LockRelationOid(heapoid, AccessShareLock);
 	LockRelationOid(indexoid, AccessShareLock);
-	ird = RelationBuildDesc(indexoid, 0, true); /* system index should be part of main fork make sure double check */
+	ird = RelationBuildDesc(indexoid, 0, true); /* system index should be part
+												 * of main fork make sure
+												 * double check */
 	if (ird == NULL)
 		ereport(PANIC,
 				errcode(ERRCODE_DATA_CORRUPTED),
@@ -5566,7 +5574,9 @@ RelationGetIdentityKeyBitmap(Relation relation)
 		return NULL;
 
 	/* Look up the description for the replica identity index */
-	indexDesc = RelationIdGetRelation(replidindex, 0); /*used during logical replication so assume main branch*/
+	indexDesc = RelationIdGetRelation(replidindex, 0);	/* used during logical
+														 * replication so assume
+														 * main branch */
 
 	if (!RelationIsValid(indexDesc))
 		elog(ERROR, "could not open relation with OID %u",

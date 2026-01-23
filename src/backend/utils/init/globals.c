@@ -95,10 +95,10 @@ Oid			MyDatabaseTableSpace = InvalidOid;
 bool		MyDatabaseHasLoginEventTriggers = false;
 
 /* pgforking - global variables for forking mechanism */
-int32 		MyDBForkId = 0;
-int32 		MyParentForkId = 0;
+int32		MyDBForkId = 0;
+int32		MyParentForkId = 0;
 TimestampTz ForkCurrentTimestamp = MIN_TIMESTAMP;
-int32 		*DBForkPath = NULL;
+int32	   *DBForkPath = NULL;
 
 /*
  * DatabasePath is the path (relative to DataDir) of my database's

@@ -152,7 +152,9 @@ CalculateShmemSize(int *num_semaphores)
 	size = add_size(size, WaitEventCustomShmemSize());
 	size = add_size(size, InjectionPointShmemSize());
 	size = add_size(size, SlotSyncShmemSize());
-	size = add_size(size, DBForkShmemSize()); /* pgforking - size is really small for now but could change later */
+	size = add_size(size, DBForkShmemSize());	/* pgforking - size is really
+												 * small for now but could
+												 * change later */
 #ifdef EXEC_BACKEND
 	size = add_size(size, ShmemBackendArraySize());
 #endif
@@ -358,7 +360,7 @@ CreateOrAttachShmemStructs(void)
 	StatsShmemInit();
 	WaitEventCustomShmemInit();
 	InjectionPointShmemInit();
-	DBForkShmemInit(); /* pgforking - initializes dbfork data */
+	DBForkShmemInit();			/* pgforking - initializes dbfork data */
 }
 
 /*

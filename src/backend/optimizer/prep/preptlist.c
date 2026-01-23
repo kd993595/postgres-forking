@@ -89,7 +89,9 @@ preprocess_targetlist(PlannerInfo *root)
 		if (target_rte->rtekind != RTE_RELATION)
 			elog(ERROR, "result relation must be a regular relation");
 
-		target_relation = table_open(target_rte->relid, NoLock, 0); /*NOTE: this is probably related to the forking stuff*/
+		target_relation = table_open(target_rte->relid, NoLock, 0); /* NOTE: this is
+																	 * probably related to
+																	 * the forking stuff */
 	}
 	else
 		Assert(command_type == CMD_SELECT);

@@ -147,7 +147,8 @@ cluster(ParseState *pstate, ClusterStmt *stmt, bool isTopLevel)
 											0,
 											RangeVarCallbackMaintainsTable,
 											NULL);
-		rel = table_open(tableOid, NoLock, 0); /*get rel forkid from the stmt->relation somehow*/
+		rel = table_open(tableOid, NoLock, 0);	/* get rel forkid from the
+												 * stmt->relation somehow */
 
 		/*
 		 * Reject clustering a remote temp table ... their local buffer
@@ -317,7 +318,8 @@ cluster_rel(Oid tableOid, Oid indexOid, ClusterParams *params)
 	bool		verbose = ((params->options & CLUOPT_VERBOSE) != 0);
 	bool		recheck = ((params->options & CLUOPT_RECHECK) != 0);
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("cannot cluster from non main fork")));
@@ -703,7 +705,10 @@ make_new_heap(Oid OIDOldHeap, Oid NewTableSpace, Oid NewAccessMethod,
 	bool		isNull;
 	Oid			namespaceid;
 
-	OldHeap = table_open(OIDOldHeap, lockmode, 0); /*should probably add in context into function call for appropriate table*/
+	OldHeap = table_open(OIDOldHeap, lockmode, 0);	/* should probably add in
+													 * context into function
+													 * call for appropriate
+													 * table */
 	OldHeapDesc = RelationGetDescr(OldHeap);
 
 	/*
@@ -844,7 +849,9 @@ copy_table_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 	/*
 	 * Open the relations we need.
 	 */
-	NewHeap = table_open(OIDNewHeap, AccessExclusiveLock, 0); /*again context should be put in function call*/
+	NewHeap = table_open(OIDNewHeap, AccessExclusiveLock, 0);	/* again context should
+																 * be put in function
+																 * call */
 	OldHeap = table_open(OIDOldHeap, AccessExclusiveLock, 0);
 	if (OidIsValid(OIDOldIndex))
 		OldIndex = index_open(OIDOldIndex, AccessExclusiveLock, 0);
@@ -1082,7 +1089,8 @@ swap_relation_files(Oid r1, Oid r2, bool target_is_pg_class,
 	Oid			relam1,
 				relam2;
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("cannot call this swap_relation_files from non main fork since mainly in altering schema stuff")));
@@ -1590,7 +1598,10 @@ finish_heap_swap(Oid OIDOldHeap, Oid OIDNewHeap,
 	{
 		Relation	newrel;
 
-		newrel = table_open(OIDOldHeap, NoLock, 0); /*context should come form the person making the new heap files for the cluster cmd*/
+		newrel = table_open(OIDOldHeap, NoLock, 0); /* context should come
+													 * form the person making
+													 * the new heap files for
+													 * the cluster cmd */
 		if (OidIsValid(newrel->rd_rel->reltoastrelid))
 		{
 			Oid			toastidx;

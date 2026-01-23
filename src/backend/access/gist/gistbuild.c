@@ -270,15 +270,18 @@ gistbuild(Relation heap, Relation index, IndexInfo *indexInfo, bool regularCreat
 														  NULL,
 														  TUPLESORT_NONE);
 
-		if(regularCreate){
+		if (regularCreate)
+		{
 			/* Scan the table, adding all tuples to the tuplesort */
 			reltuples = table_index_build_scan(heap, index, indexInfo, true, true,
-										   gistSortedBuildCallback,
-										   (void *) &buildstate, NULL);
-		}else{
+											   gistSortedBuildCallback,
+											   (void *) &buildstate, NULL);
+		}
+		else
+		{
 			reltuples = 0;
 		}
-		
+
 		/*
 		 * Perform the sort and build index pages.
 		 */
@@ -313,15 +316,18 @@ gistbuild(Relation heap, Relation index, IndexInfo *indexInfo, bool regularCreat
 
 		END_CRIT_SECTION();
 
-		if(regularCreate){
+		if (regularCreate)
+		{
 			/* Scan the table, inserting all the tuples to the index. */
 			reltuples = table_index_build_scan(heap, index, indexInfo, true, true,
-										   gistBuildCallback,
-										   (void *) &buildstate, NULL);
-		}else{
+											   gistBuildCallback,
+											   (void *) &buildstate, NULL);
+		}
+		else
+		{
 			reltuples = 0;
 		}
-		
+
 		/*
 		 * If buffering was used, flush out all the tuples that are still in
 		 * the buffers.

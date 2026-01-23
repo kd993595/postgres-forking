@@ -375,18 +375,21 @@ ginbuild(Relation heap, Relation index, IndexInfo *indexInfo, bool regularCreate
 	buildstate.accum.ginstate = &buildstate.ginstate;
 	ginInitBA(&buildstate.accum);
 
-	if(regularCreate){
+	if (regularCreate)
+	{
 		/*
-	 	 * Do the heap scan.  We disallow sync scan here because dataPlaceToPage
-	 	 * prefers to receive tuples in TID order.
-	 	 */
+		 * Do the heap scan.  We disallow sync scan here because
+		 * dataPlaceToPage prefers to receive tuples in TID order.
+		 */
 		reltuples = table_index_build_scan(heap, index, indexInfo, false, true,
-									   ginBuildCallback, (void *) &buildstate,
-									   NULL);
-	}else{
+										   ginBuildCallback, (void *) &buildstate,
+										   NULL);
+	}
+	else
+	{
 		reltuples = 0;
 	}
-	
+
 	/* dump remaining entries to the index */
 	oldCtx = MemoryContextSwitchTo(buildstate.tmpCtx);
 	ginBeginBAScan(&buildstate.accum);

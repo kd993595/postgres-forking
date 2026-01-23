@@ -1341,7 +1341,8 @@ get_relation_by_qualified_name(ObjectType objtype, List *object,
 	address.objectId = InvalidOid;
 	address.objectSubId = 0;
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 				 errmsg("ObjectAddress attempt to call from DDL command in non main fork not allowed")));
@@ -1513,7 +1514,8 @@ get_object_address_attribute(ObjectType objtype, List *object,
 		ereport(ERROR,
 				(errcode(ERRCODE_SYNTAX_ERROR),
 				 errmsg("column name must be qualified")));
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 				 errmsg("ObjectAddress attempt to call from DDL command in non main fork not allowed")));
@@ -1571,7 +1573,8 @@ get_object_address_attrdef(ObjectType objtype, List *object,
 		ereport(ERROR,
 				(errcode(ERRCODE_SYNTAX_ERROR),
 				 errmsg("column name must be qualified")));
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 				 errmsg("ObjectAddress attempt to call from DDL command in non main fork not allowed")));
@@ -1887,7 +1890,8 @@ get_object_address_publication_rel(List *object,
 
 	ObjectAddressSet(address, PublicationRelRelationId, InvalidOid);
 
-	if(MyDBForkId != 0){
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 				 errmsg("Object address attempt to be called from non main fork in ddl statmenet")));
@@ -4275,7 +4279,9 @@ pg_identify_object(PG_FUNCTION_ARGS)
 	if (is_objectclass_supported(address.classId))
 	{
 		HeapTuple	objtup;
-		Relation	catalog = table_open(address.classId, AccessShareLock, 0); /*seems to be only getting metadata for types in a relation*/
+		Relation	catalog = table_open(address.classId, AccessShareLock, 0);	/* seems to be only
+																				 * getting metadata for
+																				 * types in a relation */
 
 		objtup = get_catalog_object_by_oid(catalog,
 										   get_object_attnum_oid(address.classId),

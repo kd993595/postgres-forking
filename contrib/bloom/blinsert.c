@@ -139,12 +139,15 @@ blbuild(Relation heap, Relation index, IndexInfo *indexInfo, bool regularCreate)
 											  ALLOCSET_DEFAULT_SIZES);
 	initCachedPage(&buildstate);
 
-	if(regularCreate){
+	if (regularCreate)
+	{
 		/* Do the heap scan */
 		reltuples = table_index_build_scan(heap, index, indexInfo, true, true,
-									   bloomBuildCallback, (void *) &buildstate,
-									   NULL);
-	}else{
+										   bloomBuildCallback, (void *) &buildstate,
+										   NULL);
+	}
+	else
+	{
 		reltuples = 0;
 	}
 

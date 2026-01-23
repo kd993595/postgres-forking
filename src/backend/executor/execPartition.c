@@ -510,7 +510,8 @@ ExecInitPartitionInfo(ModifyTableState *mtstate, EState *estate,
 
 	oldcxt = MemoryContextSwitchTo(proute->memcxt);
 
-	partrel = table_open(partOid, RowExclusiveLock, 0);/*partition stuff needs to be fixed later*/
+	partrel = table_open(partOid, RowExclusiveLock, 0); /* partition stuff needs
+														 * to be fixed later */
 
 	leaf_part_rri = makeNode(ResultRelInfo);
 	InitResultRelInfo(leaf_part_rri,

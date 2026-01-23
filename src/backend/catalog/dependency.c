@@ -1194,7 +1194,8 @@ DropObjectById(const ObjectAddress *object)
 
 	cacheId = get_object_catcache_oid(object->classId);
 
-	rel = table_open(object->classId, RowExclusiveLock, 0); /*dropping stuff should be in main database*/
+	rel = table_open(object->classId, RowExclusiveLock, 0); /* dropping stuff should
+															 * be in main database */
 
 	/*
 	 * Use the system cache for the oid column, if one exists.

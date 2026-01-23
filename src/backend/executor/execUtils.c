@@ -782,7 +782,9 @@ ExecGetRangeTableRelation(EState *estate, Index rti)
 			 * seems sufficient to check this only when rellockmode is higher
 			 * than the minimum.
 			 */
-			rel = table_open(rte->relid, NoLock, MyDBForkId); /*NOTE: at this point we need to know which forkid to use*/
+			rel = table_open(rte->relid, NoLock, MyDBForkId);	/* NOTE: at this point
+																 * we need to know which
+																 * forkid to use */
 			Assert(rte->rellockmode == AccessShareLock ||
 				   CheckRelationLockedByMe(rel, rte->rellockmode, false));
 		}

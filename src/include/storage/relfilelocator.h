@@ -74,7 +74,7 @@ typedef struct RelFileLocatorBackend
 {
 	RelFileLocator locator;
 	ProcNumber	backend;
-	int32 		dbforkId; /* adding 8 bytes should not matter since it will be 24 bytes may want to change later so be careful to make sure no padding */
+	int32		dbforkId;
 } RelFileLocatorBackend;
 
 #define RelFileLocatorBackendIsTemp(rlocator) \

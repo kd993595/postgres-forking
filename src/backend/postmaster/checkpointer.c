@@ -930,33 +930,35 @@ CheckpointerShmemInit(void)
 typedef struct
 {
 	pg_atomic_uint32 fork_id_counter;
-} DBForkShmemStruct;
+}			DBForkShmemStruct;
 
 typedef struct DBForkEntry
 {
-	int32 forkId;
-	int32 parentId;
+	int32		forkId;
+	int32		parentId;
 	TimestampTz createdAt;
-} DBForkEntry;
+}			DBForkEntry;
 
-typedef struct DBForkNode{
+typedef struct DBForkNode
+{
 	DBForkEntry entry;
 	struct DBForkNode *firstChild;
 	struct DBForkNode *nextSibling;
 	struct DBForkNode *parent;
-	int depth;
-} DBForkNode;
+	int			depth;
+}			DBForkNode;
 
-static DBForkShmemStruct *DBForkShmem;
+static DBForkShmemStruct * DBForkShmem;
 
-bool InsertDBForkNode(DBForkNode *root, DBForkNode *insert, int curDepth);
+bool		InsertDBForkNode(DBForkNode * root, DBForkNode * insert, int curDepth);
 
 /*
  * DBForkShmemSize - computer the space needed for the dbforking-related shared memory
  */
-Size DBForkShmemSize(void)
+Size
+DBForkShmemSize(void)
 {
-	Size size = 0;
+	Size		size = 0;
 
 	size = add_size(size, sizeof(DBForkShmemStruct));
 	return size;
@@ -967,41 +969,53 @@ Size DBForkShmemSize(void)
  * TODO: have to add more checks for things like out of mem or file access
  * This issue is here it has to do with trying to access file outside of the bootstrap mode.
  */
-void DBForkShmemInit(void)
+void
+DBForkShmemInit(void)
 {
-	Size size = DBForkShmemSize();
-	bool found;
+	Size		size = DBForkShmemSize();
+	bool		found;
 
-	DBForkShmem = (DBForkShmemStruct *)ShmemInitStruct("DBForking Data", size, &found);
+	DBForkShmem = (DBForkShmemStruct *) ShmemInitStruct("DBForking Data", size, &found);
 
 	if (!found)
 	{
-		char *tmpPath;
-		FILE *dbfork_config;
+		char	   *tmpPath;
+		FILE	   *dbfork_config;
+
 		/* First time through, so initialize. */
 		tmpPath = psprintf("global/%d", SharedDBForkIDRelation);
 		dbfork_config = fopen(tmpPath, "rb");
-		if(dbfork_config != NULL){
+		if (dbfork_config != NULL)
+		{
 			/* File already exists so we have to read it */
 			DBForkEntry last_entry;
-			size_t num_read;
-			int seek_res;
+			size_t		num_read;
+			int			seek_res;
+
 			seek_res = fseek(dbfork_config, -sizeof(DBForkEntry), SEEK_END);
-			if(seek_res != 0){
-				/*file probably doesn't have anything so we just initialize to 1*/
+			if (seek_res != 0)
+			{
+				/*
+				 * file probably doesn't have anything so we just initialize
+				 * to 1
+				 */
 				pg_atomic_init_u32(&DBForkShmem->fork_id_counter, 1);
-			}else{
+			}
+			else
+			{
 				num_read = fread(&last_entry, sizeof(DBForkEntry), 1, dbfork_config);
 				Assert(num_read == 1);
-				pg_atomic_init_u32(&DBForkShmem->fork_id_counter, last_entry.forkId+1);
+				pg_atomic_init_u32(&DBForkShmem->fork_id_counter, last_entry.forkId + 1);
 			}
 			fclose(dbfork_config);
-		}else{
-			//fprintf(stderr, "file cannot be opened for some reason");
-			pg_atomic_init_u32(&DBForkShmem->fork_id_counter,1);
 		}
-		
-		// Assert(dbfork_config != NULL);
+		else
+		{
+			/* fprintf(stderr, "file cannot be opened for some reason"); */
+			pg_atomic_init_u32(&DBForkShmem->fork_id_counter, 1);
+		}
+
+		/* Assert(dbfork_config != NULL); */
 		pfree(tmpPath);
 	}
 }
@@ -1010,12 +1024,13 @@ void DBForkShmemInit(void)
  * DBForkNewId - pgforking
  * creates a new fork id and inserts into the dbfork config file so everyone else aware.
  */
-int32 DBForkNewId(void)
+int32
+DBForkNewId(void)
 {
-	int32 newForkId;
+	int32		newForkId;
 	DBForkEntry new_entry;
-	FILE *dbfork_config;
-	char *tmpPath;
+	FILE	   *dbfork_config;
+	char	   *tmpPath;
 
 	LWLockAcquire(DBForkCounterLock, LW_EXCLUSIVE);
 
@@ -1025,11 +1040,14 @@ int32 DBForkNewId(void)
 	new_entry.createdAt = GetCurrentTimestamp();
 	tmpPath = psprintf("global/%d", SharedDBForkIDRelation);
 	dbfork_config = AllocateFile(tmpPath, PG_BINARY_A);
-	if(dbfork_config == NULL){
+	if (dbfork_config == NULL)
+	{
 		ereport(ERROR,
 				(errcode_for_file_access(),
 				 errmsg("could not open dbfork config file 6347\n")));
-	}else{
+	}
+	else
+	{
 		fwrite(&new_entry, sizeof(DBForkEntry), 1, dbfork_config);
 	}
 
@@ -1040,70 +1058,94 @@ int32 DBForkNewId(void)
 }
 
 
-bool InsertDBForkNode(DBForkNode *root, DBForkNode *insert, int curDepth)
+bool
+InsertDBForkNode(DBForkNode * root, DBForkNode * insert, int curDepth)
 {
-	if(insert->entry.parentId == root->entry.forkId){
-		/*insert the current node into the child of the root node*/
-		if(root->firstChild == NULL){
+	if (insert->entry.parentId == root->entry.forkId)
+	{
+		/* insert the current node into the child of the root node */
+		if (root->firstChild == NULL)
+		{
 			root->firstChild = insert;
-		}else{
+		}
+		else
+		{
 			DBForkNode *tmpNode = root->firstChild;
-			while(tmpNode->nextSibling != NULL){
+
+			while (tmpNode->nextSibling != NULL)
+			{
 				tmpNode = tmpNode->nextSibling;
 			}
 			tmpNode->nextSibling = insert;
 		}
-		insert->depth = curDepth+1;
+		insert->depth = curDepth + 1;
 		insert->parent = root;
 		return true;
 	}
 	/* check next sibling to see if we can insert into any of them */
-	if(root->nextSibling != NULL){
-		if(InsertDBForkNode(root->nextSibling, insert, curDepth)){
+	if (root->nextSibling != NULL)
+	{
+		if (InsertDBForkNode(root->nextSibling, insert, curDepth))
+		{
 			return true;
 		}
 	}
 	/* check first child to see if we can insert into it */
-	if(root->firstChild != NULL){
-		if(InsertDBForkNode(root->firstChild, insert, curDepth+1)){
+	if (root->firstChild != NULL)
+	{
+		if (InsertDBForkNode(root->firstChild, insert, curDepth + 1))
+		{
 			return true;
 		}
 	}
 	return false;
 }
 
-/* DBForkSetNewId - pgforking 
+/* DBForkSetNewId - pgforking
  * set the backend process to use the current id passed in
  */
-int32 DBForkSetNewIdExpensive(int32 newId)
+int32
+DBForkSetNewIdExpensive(int32 newId)
 {
-	char *tmpPath;
-	FILE *dbfork_config;
+	char	   *tmpPath;
+	FILE	   *dbfork_config;
 
 
-	/* traverse the config file to build the tree until we get to the current id and then fetch path to our path */
+	/*
+	 * traverse the config file to build the tree until we get to the current
+	 * id and then fetch path to our path
+	 */
 	LWLockAcquire(DBForkCounterLock, LW_SHARED);
 	tmpPath = psprintf("global/%d", SharedDBForkIDRelation);
 	dbfork_config = AllocateFile(tmpPath, PG_BINARY_R);
-	if(dbfork_config == NULL){
+	if (dbfork_config == NULL)
+	{
 		ereport(ERROR,
 				(errcode_for_file_access(),
 				 errmsg("could not open dbfork config file 0$1259 ")));
-	}else{
+	}
+	else
+	{
 		DBForkEntry new_entry;
-		DBForkNode headNode;
-		MemoryContext oldcontext, tmpcontext;
+		DBForkNode	headNode;
+		MemoryContext oldcontext,
+					tmpcontext;
+
 		MyParentForkId = MyDBForkId;
 		MyDBForkId = newId;
 
-		headNode.entry = (DBForkEntry){0,0,MIN_TIMESTAMP};
+		headNode.entry = (DBForkEntry)
+		{
+			0, 0, MIN_TIMESTAMP
+		};
 		headNode.firstChild = NULL;
 		headNode.nextSibling = NULL;
 		headNode.parent = NULL;
 		headNode.depth = 0;
 
 		oldcontext = MemoryContextSwitchTo(TopMemoryContext);
-		if(DBForkPath != NULL){
+		if (DBForkPath != NULL)
+		{
 			pfree(DBForkPath);
 			DBForkPath = NULL;
 		}
@@ -1112,25 +1154,35 @@ int32 DBForkSetNewIdExpensive(int32 newId)
 		tmpcontext = AllocSetContextCreate(CurrentMemoryContext, "DBFork fork tree temporary context", ALLOCSET_SMALL_SIZES);
 		oldcontext = MemoryContextSwitchTo(tmpcontext);
 
-		while(fread(&new_entry, sizeof(DBForkEntry), 1, dbfork_config) == 1){
-			bool isInserted;
+		while (fread(&new_entry, sizeof(DBForkEntry), 1, dbfork_config) == 1)
+		{
+			bool		isInserted;
 			DBForkNode *tmpNode = palloc(sizeof(DBForkNode));
+
 			tmpNode->entry = new_entry;
 			tmpNode->firstChild = NULL;
 			tmpNode->nextSibling = NULL;
 			tmpNode->parent = NULL;
 			isInserted = InsertDBForkNode(&headNode, tmpNode, 1);
-			if(!isInserted){
+			if (!isInserted)
+			{
 				ereport(ERROR,
 						(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-						 errmsg("invalid forkid given: %d" , newId)));
+						 errmsg("invalid forkid given: %d", newId)));
 			}
-			if(new_entry.forkId == newId){
+			if (new_entry.forkId == newId)
+			{
 				/* get path from this node to headnode */
-				MemoryContextSwitchTo(TopMemoryContext);/* allocate in the topmemory so it doesnt get erase for our cached path */
+				MemoryContextSwitchTo(TopMemoryContext);	/* allocate in the
+															 * topmemory so it
+															 * doesnt get erase for
+															 * our cached path */
 				DBForkPath = palloc(sizeof(int32) * tmpNode->depth);
-				DBForkPath[0] = (int32)tmpNode->depth; /*set first int32 to be the depth of the forks*/
-				for(int i=tmpNode->depth-1;i>=1;i--){
+				DBForkPath[0] = (int32) tmpNode->depth; /* set first int32 to be
+														 * the depth of the
+														 * forks */
+				for (int i = tmpNode->depth - 1; i >= 1; i--)
+				{
 					DBForkPath[i] = tmpNode->entry.forkId;
 					tmpNode = tmpNode->parent;
 				}
@@ -1139,7 +1191,8 @@ int32 DBForkSetNewIdExpensive(int32 newId)
 			}
 		}
 
-		if(DBForkPath == NULL){
+		if (DBForkPath == NULL)
+		{
 			ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Could not create the new dbfork path")));
 		}
 		MemoryContextSwitchTo(oldcontext);

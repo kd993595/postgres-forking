@@ -121,14 +121,17 @@ spgbuild(Relation heap, Relation index, IndexInfo *indexInfo, bool regularCreate
 											  "SP-GiST build temporary context",
 											  ALLOCSET_DEFAULT_SIZES);
 
-	if(regularCreate){
+	if (regularCreate)
+	{
 		reltuples = table_index_build_scan(heap, index, indexInfo, true, true,
-									   spgistBuildCallback, (void *) &buildstate,
-									   NULL);
-	}else{
+										   spgistBuildCallback, (void *) &buildstate,
+										   NULL);
+	}
+	else
+	{
 		reltuples = 0;
 	}
-	
+
 	MemoryContextDelete(buildstate.tmpCtx);
 
 	SpGistUpdateMetaPage(index);

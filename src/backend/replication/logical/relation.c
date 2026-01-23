@@ -355,7 +355,11 @@ logicalrep_rel_open(LogicalRepRelId remoteid, LOCKMODE lockmode)
 	 */
 	if (entry->localrelvalid)
 	{
-		entry->localrel = try_table_open(entry->localreloid, lockmode, 0); /* TODO: future fix for logic replication should incorporate dbforkid in logicalrelmapentry*/
+		entry->localrel = try_table_open(entry->localreloid, lockmode, 0);	/* TODO: future fix for
+																			 * logic replication
+																			 * should incorporate
+																			 * dbforkid in
+																			 * logicalrelmapentry */
 		if (!entry->localrel)
 		{
 			/* Table was renamed or dropped. */
@@ -397,7 +401,8 @@ logicalrep_rel_open(LogicalRepRelId remoteid, LOCKMODE lockmode)
 					(errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
 					 errmsg("logical replication target relation \"%s.%s\" does not exist",
 							remoterel->nspname, remoterel->relname)));
-		entry->localrel = table_open(relid, NoLock, 0);/*TODO: fix this in logical fix*/
+		entry->localrel = table_open(relid, NoLock, 0); /* TODO: fix this in
+														 * logical fix */
 		entry->localreloid = relid;
 
 		/* Check for supported relkind. */

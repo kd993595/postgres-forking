@@ -207,7 +207,9 @@ CreateTriggerFiringOn(CreateTrigStmt *stmt, const char *queryString,
 	bool		existing_isClone = false;
 
 	if (OidIsValid(relOid))
-		rel = table_open(relOid, ShareRowExclusiveLock, 0); /*create trigger on relation in main database*/
+		rel = table_open(relOid, ShareRowExclusiveLock, 0); /* create trigger on
+															 * relation in main
+															 * database */
 	else
 		rel = table_openrv(stmt->relation, ShareRowExclusiveLock, 0);
 
@@ -1162,7 +1164,8 @@ CreateTriggerFiringOn(CreateTrigStmt *stmt, const char *queryString,
 			Relation	childTbl;
 			Node	   *qual;
 
-			childTbl = table_open(partdesc->oids[i], ShareRowExclusiveLock, 0); /*create trigger in main database*/
+			childTbl = table_open(partdesc->oids[i], ShareRowExclusiveLock, 0); /* create trigger in
+																				 * main database */
 
 			/*
 			 * Initialize our fabricated parse node by copying the original
@@ -1314,7 +1317,9 @@ RemoveTriggerById(Oid trigOid)
 	 */
 	relid = ((Form_pg_trigger) GETSTRUCT(tup))->tgrelid;
 
-	rel = table_open(relid, AccessExclusiveLock, 0); /*trigger deletion should be in main database*/
+	rel = table_open(relid, AccessExclusiveLock, 0);	/* trigger deletion
+														 * should be in main
+														 * database */
 
 	if (rel->rd_rel->relkind != RELKIND_RELATION &&
 		rel->rd_rel->relkind != RELKIND_VIEW &&
@@ -1469,12 +1474,14 @@ renametrig(RenameStmt *stmt)
 	ScanKeyData key[2];
 	Oid			relid;
 	ObjectAddress address;
-	
-	if(MyDBForkId != 0){
+
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("trying to call rename trigger from non main fork")));
 	}
+
 	/*
 	 * Look up name, check permissions, and acquire lock (which we will NOT
 	 * release until end of transaction).
@@ -1675,7 +1682,8 @@ renametrig_partition(Relation tgrel, Oid partitionId, Oid parentTriggerOid,
 		if (tgform->tgparentid != parentTriggerOid)
 			continue;			/* not our trigger */
 
-		partitionRel = table_open(partitionId, NoLock, 0); /*part of partition fix for forking*/
+		partitionRel = table_open(partitionId, NoLock, 0);	/* part of partition fix
+															 * for forking */
 
 		/* Rename the trigger on this partition */
 		renametrig_internal(tgrel, partitionRel, tuple, newname, expected_name);
@@ -1733,8 +1741,9 @@ EnableDisableTrigger(Relation rel, const char *tgname, Oid tgparent,
 	HeapTuple	tuple;
 	bool		found;
 	bool		changed;
-	
-	if(MyDBForkId != 0){
+
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("trying to call ENableDisableTrigger from non main fork")));

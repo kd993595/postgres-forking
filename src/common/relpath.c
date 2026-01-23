@@ -222,18 +222,21 @@ GetRelationPath(Oid dbOid, Oid spcOid, RelFileNumber relNumber,
  * TODO: accept spcOid other than DEFAULTTABLESPACE_OID.
  */
 
-char *GetDBForkRelationPath(Oid dbOid, Oid spcOid, RelFileNumber relNumber, int procNumber, ForkNumber forkNumber, int32 forkId)
+char *
+GetDBForkRelationPath(Oid dbOid, Oid spcOid, RelFileNumber relNumber, int procNumber, ForkNumber forkNumber, int32 forkId)
 {
 	char	   *path;
 
-	if(spcOid == GLOBALTABLESPACE_OID){
+	if (spcOid == GLOBALTABLESPACE_OID)
+	{
 #ifndef FRONTEND
 		ereport(ERROR,
-			(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-			 errmsg("invalid spdOid should be using function above for global paths")));
+				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				 errmsg("invalid spdOid should be using function above for global paths")));
 #endif
 		path = NULL;
-	}else if (spcOid == DEFAULTTABLESPACE_OID)
+	}
+	else if (spcOid == DEFAULTTABLESPACE_OID)
 	{
 		/* The default tablespace is {datadir}/base */
 		if (procNumber == INVALID_PROC_NUMBER)
@@ -287,4 +290,3 @@ char *GetDBForkRelationPath(Oid dbOid, Oid spcOid, RelFileNumber relNumber, int 
 	}
 	return path;
 }
-

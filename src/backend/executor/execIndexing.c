@@ -202,7 +202,8 @@ ExecOpenIndices(ResultRelInfo *resultRelInfo, bool speculative)
 		Relation	indexDesc;
 		IndexInfo  *ii;
 
-		indexDesc = index_open(indexOid, RowExclusiveLock, resultRelation->rd_dbforkId); //use forkid from relation since all should be the same
+		indexDesc = index_open(indexOid, RowExclusiveLock, resultRelation->rd_dbforkId);
+		/* use forkid from relation since all should be the same */
 
 		/* extract index key information from the index's pg_index info */
 		ii = BuildIndexInfo(indexDesc);

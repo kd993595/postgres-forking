@@ -589,8 +589,9 @@ CreatePolicy(CreatePolicyStmt *stmt)
 	ObjectAddress target;
 	ObjectAddress myself;
 	int			i;
-	
-	if(MyDBForkId != 0){
+
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("trying to call transformAlterTableStmt from non main fork")));
@@ -796,8 +797,9 @@ AlterPolicy(AlterPolicyStmt *stmt)
 	char		polcmd;
 	bool		polcmd_isnull;
 	int			i;
-	
-	if(MyDBForkId != 0){
+
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("trying to call transformAlterTableStmt from non main fork")));
@@ -1113,8 +1115,9 @@ rename_policy(RenameStmt *stmt)
 	SysScanDesc sscan;
 	HeapTuple	policy_tuple;
 	ObjectAddress address;
-	
-	if(MyDBForkId != 0){
+
+	if (MyDBForkId != 0)
+	{
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("trying to call rename_policy from non main fork")));

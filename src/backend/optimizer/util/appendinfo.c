@@ -1003,7 +1003,8 @@ distribute_row_identity_vars(PlannerInfo *root)
 	{
 		Relation	target_relation;
 
-		target_relation = table_open(target_rte->relid, NoLock, 0); /*unsure if this should be in fork stuff*/
+		target_relation = table_open(target_rte->relid, NoLock, 0); /* unsure if this should
+																	 * be in fork stuff */
 		add_row_identity_columns(root, result_relation,
 								 target_rte, target_relation);
 		table_close(target_relation, NoLock);

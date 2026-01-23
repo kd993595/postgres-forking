@@ -20,7 +20,6 @@
  */
 
 #include "postgres.h"
-// #include "miscadmin.h" /*check for globals.c to include mydbforkid*/
 
 #include "access/relation.h"
 #include "access/table.h"

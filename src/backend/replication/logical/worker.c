@@ -2881,7 +2881,8 @@ FindReplTupleInLocalRel(ApplyExecutionData *edata, Relation localrel,
 	if (OidIsValid(localidxoid))
 	{
 #ifdef USE_ASSERT_CHECKING
-		Relation	idxrel = index_open(localidxoid, AccessShareLock, 0); /*part of fix for publication later*/
+		Relation	idxrel = index_open(localidxoid, AccessShareLock, 0);	/* part of fix for
+																			 * publication later */
 
 		/* Index must be PK, RI, or usable for REPLICA IDENTITY FULL tables */
 		Assert(GetRelationIdentityOrPK(idxrel) == localidxoid ||
@@ -3222,7 +3223,9 @@ apply_handle_truncate(StringInfo s)
 					continue;
 
 				/* find_all_inheritors already got lock */
-				childrel = table_open(childrelid, NoLock, 0); /*part of logical replication fix for forking*/
+				childrel = table_open(childrelid, NoLock, 0);	/* part of logical
+																 * replication fix for
+																 * forking */
 
 				/*
 				 * Ignore temp tables of other backends.  See similar code in

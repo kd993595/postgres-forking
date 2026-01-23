@@ -3411,7 +3411,9 @@ get_rels_with_domain(Oid domainOid, LOCKMODE lockmode)
 			Relation	rel;
 
 			/* Acquire requested lock on relation */
-			rel = relation_open(pg_depend->objid, lockmode, 0); /*only care about metadata from main fork*/
+			rel = relation_open(pg_depend->objid, lockmode, 0); /* only care about
+																 * metadata from main
+																 * fork */
 
 			/*
 			 * Check to see if rowtype is stored anyplace as a composite-type

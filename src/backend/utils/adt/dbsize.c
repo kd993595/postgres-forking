@@ -350,7 +350,9 @@ pg_relation_size(PG_FUNCTION_ARGS)
 	Relation	rel;
 	int64		size;
 
-	rel = try_relation_open(relOid, AccessShareLock, 0); /*should really only care about main fork for dbsize*/
+	rel = try_relation_open(relOid, AccessShareLock, 0);	/* should really only
+															 * care about main fork
+															 * for dbsize */
 
 	/*
 	 * Before 9.2, we used to throw an error if the relation didn't exist, but

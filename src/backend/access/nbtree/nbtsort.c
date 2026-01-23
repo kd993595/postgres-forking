@@ -319,9 +319,12 @@ btbuild(Relation heap, Relation index, IndexInfo *indexInfo, bool regularCreate)
 		elog(ERROR, "index \"%s\" already contains data",
 			 RelationGetRelationName(index));
 
-	if(regularCreate){
+	if (regularCreate)
+	{
 		reltuples = _bt_spools_heapscan(heap, index, &buildstate, indexInfo);
-	}else{
+	}
+	else
+	{
 		reltuples = _bt_spools_heapscan_forceempty(heap, index, &buildstate, indexInfo);
 	}
 	elog(LOG, "reltuples = %lf", reltuples);
@@ -520,7 +523,7 @@ _bt_spools_heapscan(Relation heap, Relation index, BTBuildState *buildstate,
  */
 static double
 _bt_spools_heapscan_forceempty(Relation heap, Relation index, BTBuildState *buildstate,
-					IndexInfo *indexInfo)
+							   IndexInfo *indexInfo)
 {
 	BTSpool    *btspool = (BTSpool *) palloc0(sizeof(BTSpool));
 	SortCoordinate coordinate = NULL;
@@ -568,7 +571,7 @@ _bt_spools_heapscan_forceempty(Relation heap, Relation index, BTBuildState *buil
 									TUPLESORT_NONE);
 
 	reltuples = 0;
-	
+
 	return reltuples;
 }
 
@@ -1852,7 +1855,10 @@ _bt_parallel_build_main(dsm_segment *seg, shm_toc *toc)
 	}
 
 	/* Open relations within worker */
-	heapRel = table_open(btshared->heaprelid, heapLockmode, 0); /*should only be called in main database for creating index parallel*/
+	heapRel = table_open(btshared->heaprelid, heapLockmode, 0); /* should only be called
+																 * in main database for
+																 * creating index
+																 * parallel */
 	indexRel = index_open(btshared->indexrelid, indexLockmode, 0);
 
 	/* Initialize worker's own spool */

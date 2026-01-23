@@ -39,7 +39,9 @@ sequence_open(Oid relationId, LOCKMODE lockmode)
 {
 	Relation	r;
 
-	r = relation_open(relationId, lockmode, 0); /*probably won't work since sequence not supported in create*/
+	r = relation_open(relationId, lockmode, 0); /* probably won't work since
+												 * sequence not supported in
+												 * create */
 
 	validate_relation_kind(r);
 

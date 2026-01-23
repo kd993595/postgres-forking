@@ -1422,7 +1422,11 @@ parserOpenTable(ParseState *pstate, const RangeVar *relation, int lockmode)
 	ParseCallbackState pcbstate;
 
 	setup_parser_errposition_callback(&pcbstate, pstate, relation->location);
-	rel = table_openrv_extended(relation, lockmode, true, 0); /*table being opened in parser - assume dbforkid already set idk though check later*/
+	rel = table_openrv_extended(relation, lockmode, true, 0);	/* table being opened in
+																 * parser - assume
+																 * dbforkid already set
+																 * idk though check
+																 * later */
 	if (rel == NULL)
 	{
 		if (relation->schemaname)
@@ -3022,7 +3026,8 @@ expandRelation(Oid relid, Alias *eref, int rtindex, int sublevels_up,
 	Relation	rel;
 
 	/* Get the tupledesc and turn it over to expandTupleDesc */
-	rel = relation_open(relid, AccessShareLock, 0); /*only care about metadata from main fork*/
+	rel = relation_open(relid, AccessShareLock, 0); /* only care about
+													 * metadata from main fork */
 	expandTupleDesc(rel->rd_att, eref, rel->rd_att->natts, 0,
 					rtindex, sublevels_up,
 					location, include_dropped,
@@ -3844,7 +3849,7 @@ isQueryUsingTempRelation_walker(Node *node, void *context)
 
 			if (rte->rtekind == RTE_RELATION)
 			{
-				Relation	rel = table_open(rte->relid, AccessShareLock, 0); /*metadata stuff*/
+				Relation	rel = table_open(rte->relid, AccessShareLock, 0);	/* metadata stuff */
 				char		relpersistence = rel->rd_rel->relpersistence;
 
 				table_close(rel, AccessShareLock);
