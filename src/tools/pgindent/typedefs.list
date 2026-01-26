@@ -558,6 +558,7 @@ CustomScan
 CustomScanMethods
 CustomScanState
 CycleCtr
+DBForkShmemStruct
 DBState
 DCHCacheEntry
 DEADLOCK_INFO

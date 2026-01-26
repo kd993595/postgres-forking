@@ -17,6 +17,7 @@ OBJS = \
 	auxprocess.o \
 	bgworker.o \
 	bgwriter.o \
+	dbforkmem.o \
 	checkpointer.o \
 	fork_process.o \
 	interrupt.o \

@@ -54,6 +54,7 @@
 #include "nodes/makefuncs.h"
 #include "pgstat.h"
 #include "postmaster/bgwriter.h"
+#include "postmaster/dbforkmem.h"
 #include "replication/slot.h"
 #include "storage/copydir.h"
 #include "storage/fd.h"
