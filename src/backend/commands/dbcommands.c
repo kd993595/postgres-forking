@@ -1556,7 +1556,7 @@ createfork(ParseState *pstate, const CreateforkStmt *stmt)
 	/* Get a new unique fork id from the main process and store here */
 	int32		newForkId = DBForkNewId();
 
-	DBForkSetNewIdExpensive(newForkId);
+	DBForkSetNewId(newForkId, true); /*mark for fast path*/
 	ereport(INFO, (errmsg("Current fork id globally: %d", MyDBForkId)));
 
 	pg_class_rel = table_open(RelationRelationId, AccessShareLock, 0);
@@ -1673,20 +1673,7 @@ createfork(ParseState *pstate, const CreateforkStmt *stmt)
 void
 setfork(ParseState *pstate, const SetforkStmt *stmt)
 {
-	if (stmt->forkid == 0)
-	{
-		MemoryContext oldCtxt;
-
-		oldCtxt = MemoryContextSwitchTo(TopMemoryContext);
-		pfree(DBForkPath);
-		DBForkPath = NULL;
-		MyDBForkId = 0;
-		MemoryContextSwitchTo(oldCtxt);
-	}
-	else
-	{
-		DBForkSetNewIdExpensive(stmt->forkid);
-	}
+	DBForkSetNewId(stmt->forkid, false);
 }
 
 

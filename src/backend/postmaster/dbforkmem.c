@@ -129,12 +129,10 @@ DBForkShmemInit(void)
 			fclose(dbfork_config);
 		}
 		else
-		{
-			/* fprintf(stderr, "file cannot be opened for some reason"); */
+		{ /* during bootstrap global files not made yet and during testing so just pass 1 for now */
 			pg_atomic_init_u32(&DBForkShmem->fork_id_counter, 1);
 		}
 
-		/* Assert(dbfork_config != NULL); */
 		pfree(tmpPath);
 	}
 }
@@ -142,6 +140,7 @@ DBForkShmemInit(void)
 /*
  * DBForkNewId - pgforking
  * creates a new fork id and inserts into the dbfork config file so everyone else aware.
+ * Does not switch to the new id must call DBForkSetNewId()
  */
 int32
 DBForkNewId(void)
@@ -222,27 +221,80 @@ InsertDBForkNode(DBForkNode * root, DBForkNode * insert, int curDepth)
 
 /* DBForkSetNewId - pgforking
  * set the backend process to use the current id passed in
- * TODO: fix for 4 states of changing
+ *
+ * There currently exists 4 scenarios ot account for.
+ * 1 - switching to main database with newId=0 in which case this operation
+ * is fast involving only setting the global variables.
+ * 2 - switching to a newId that exists in the current DBForkPath in which
+ * case we just need to truncate for the smaller path.
+ * 3 - switching to a newly created fork in which case we know to extend the
+ * path by 1 more element for the new fork id.
+ * 4 - worst case scenario we do not know anything and need to read our fork
+ * file to determine the path of the newId, slowest case as well.
  */
 int32
-DBForkSetNewIdExpensive(int32 newId)
+DBForkSetNewId(int32 newId, bool fastpath)
 {
 	char	   *tmpPath;
 	FILE	   *dbfork_config;
+	MemoryContext oldCtxt;
 
+	if(newId == 0)
+	{ /* fastest resetting back to main database */
+		if (DBForkPath != NULL)
+		{
+			oldCtxt = MemoryContextSwitchTo(TopMemoryContext);
+			pfree(DBForkPath);
+			DBForkPath = NULL;
+			MemoryContextSwitchTo(oldCtxt);
+		}
+		MyDBForkId = 0;
+		return 0;
+	}
+
+	if(DBForkPath != NULL){
+		int i;
+		int idx = 0;
+
+		for(i = 1; i <= DBForkPath[0]; i++){
+			if(DBForkPath[i] == newId){
+				idx = i;
+				break;
+			}
+		}
+		if(idx != 0){
+			DBForkPath[0] = idx;
+			MyDBForkId = newId;
+			return newId;
+		}
+	}
+
+	if(fastpath){ /* have to account for this in deletion */
+		oldCtxt = MemoryContextSwitchTo(TopMemoryContext);
+		if(DBForkPath == NULL){
+			DBForkPath = palloc(sizeof(int32) * 2);
+			DBForkPath[0] = 1;
+			DBForkPath[1] = newId;
+		}else{
+			int newsize = DBForkPath[0] + 2;
+			DBForkPath = repalloc(DBForkPath, sizeof(int32) * newsize);
+			DBForkPath[newsize - 1] = newId;
+			DBForkPath[0] = newsize - 1;
+		}
+		MemoryContextSwitchTo(oldCtxt);
+		return newId;
+	}
 
 	/*
-	 * traverse the config file to build the tree until we get to the current
-	 * id and then fetch path to our path
-	 */
+	* traverse the config file to build the tree until we get to the current
+	* id and then fetch path to our path. Slowest option therefore last.
+	*/
 	LWLockAcquire(DBForkCounterLock, LW_SHARED);
 	tmpPath = psprintf("global/%d", SharedDBForkIDRelation);
 	dbfork_config = AllocateFile(tmpPath, PG_BINARY_R);
 	if (dbfork_config == NULL)
 	{
-		ereport(ERROR,
-				(errcode_for_file_access(),
-				 errmsg("could not open dbfork config file 0$1259 ")));
+		ereport(ERROR, (errcode_for_file_access(), errmsg("could not open dbfork config file 0$%d", SharedDBForkIDRelation)));
 	}
 	else
 	{
@@ -288,19 +340,19 @@ DBForkSetNewIdExpensive(int32 newId)
 			{
 				ereport(ERROR,
 						(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-						 errmsg("invalid forkid given: %d", newId)));
+						errmsg("invalid forkid given: %d", newId)));
 			}
 			if (new_entry.forkid == newId)
 			{
 				/* get path from this node to headnode */
 				MemoryContextSwitchTo(TopMemoryContext);	/* allocate in the
-															 * topmemory so it
-															 * doesnt get erase for
-															 * our cached path */
+															* topmemory so it
+															* doesnt get erase for
+															* our cached path */
 				DBForkPath = palloc(sizeof(int32) * tmpNode->depth);
 				DBForkPath[0] = (int32) tmpNode->depth; /* set first int32 to be
-														 * the depth of the
-														 * forks */
+														* the depth of the
+														* forks */
 				for (int i = tmpNode->depth - 1; i >= 1; i--)
 				{
 					DBForkPath[i] = tmpNode->entry.forkid;
@@ -323,4 +375,5 @@ DBForkSetNewIdExpensive(int32 newId)
 	FreeFile(dbfork_config);
 	LWLockRelease(DBForkCounterLock);
 	return newId;
+	
 }

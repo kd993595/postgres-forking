@@ -20,6 +20,6 @@
 extern Size DBForkShmemSize(void);
 extern void DBForkShmemInit(void);
 extern int32 DBForkNewId(void);
-extern int32 DBForkSetNewIdExpensive(int32 newId);
+extern int32 DBForkSetNewId(int32 newId, bool fastpath);
 
 #endif /* _DBFORKMEM_H */
