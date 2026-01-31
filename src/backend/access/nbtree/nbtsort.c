@@ -327,7 +327,6 @@ btbuild(Relation heap, Relation index, IndexInfo *indexInfo, bool regularCreate)
 	{
 		reltuples = _bt_spools_heapscan_forceempty(heap, index, &buildstate, indexInfo);
 	}
-	elog(LOG, "reltuples = %lf", reltuples);
 
 	/*
 	 * Finish the build by (1) completing the sort of the spool file, (2)

@@ -102,7 +102,7 @@ DBForkShmemInit(void)
 		FILE	   *dbfork_config;
 
 		/* First time through, so initialize. */
-		tmpPath = psprintf("global/%d", SharedDBForkIDRelation);
+		tmpPath = psprintf("base/%d/%d", MyDatabaseId,DBForkIDRelation);
 		dbfork_config = fopen(tmpPath, "rb");
 		if (dbfork_config != NULL)
 		{
@@ -156,7 +156,7 @@ DBForkNewId(void)
 	new_entry.forkid = newForkId;
 	new_entry.parentid = MyDBForkId;
 	new_entry.db_xid = GetCurrentTransactionId();
-	tmpPath = psprintf("global/%d", SharedDBForkIDRelation);
+	tmpPath = psprintf("base/%d/%d", MyDatabaseId, DBForkIDRelation);
 	dbfork_config = AllocateFile(tmpPath, PG_BINARY_A);
 	if (dbfork_config == NULL)
 	{
@@ -177,7 +177,7 @@ DBForkNewId(void)
 
 
 bool
-InsertDBForkNode(DBForkNode * root, DBForkNode * insert, int curDepth)
+InsertDBForkNode(DBForkNode *root, DBForkNode *insert, int curDepth)
 {
 	if (insert->entry.parentid == root->entry.forkid)
 	{
@@ -196,7 +196,7 @@ InsertDBForkNode(DBForkNode * root, DBForkNode * insert, int curDepth)
 			}
 			tmpNode->nextSibling = insert;
 		}
-		insert->depth = curDepth + 1;
+		insert->depth = curDepth;
 		insert->parent = root;
 		return true;
 	}
@@ -249,6 +249,7 @@ DBForkSetNewId(int32 newId, bool fastpath)
 			MemoryContextSwitchTo(oldCtxt);
 		}
 		MyDBForkId = 0;
+		MyParentForkId = 0;
 		return 0;
 	}
 
@@ -264,6 +265,11 @@ DBForkSetNewId(int32 newId, bool fastpath)
 		}
 		if(idx != 0){
 			DBForkPath[0] = idx;
+			if(idx == 1){
+				MyParentForkId = 0;
+			}else{
+				MyParentForkId = DBForkPath[idx - 1];
+			}
 			MyDBForkId = newId;
 			return newId;
 		}
@@ -281,6 +287,8 @@ DBForkSetNewId(int32 newId, bool fastpath)
 			DBForkPath[newsize - 1] = newId;
 			DBForkPath[0] = newsize - 1;
 		}
+		MyParentForkId = MyDBForkId;
+		MyDBForkId = newId;
 		MemoryContextSwitchTo(oldCtxt);
 		return newId;
 	}
@@ -290,11 +298,11 @@ DBForkSetNewId(int32 newId, bool fastpath)
 	* id and then fetch path to our path. Slowest option therefore last.
 	*/
 	LWLockAcquire(DBForkCounterLock, LW_SHARED);
-	tmpPath = psprintf("global/%d", SharedDBForkIDRelation);
+	tmpPath = psprintf("base/%d/%d", MyDatabaseId, DBForkIDRelation);
 	dbfork_config = AllocateFile(tmpPath, PG_BINARY_R);
 	if (dbfork_config == NULL)
 	{
-		ereport(ERROR, (errcode_for_file_access(), errmsg("could not open dbfork config file 0$%d", SharedDBForkIDRelation)));
+		ereport(ERROR, (errcode_for_file_access(), errmsg("could not open dbfork config file 0$%d", DBForkIDRelation)));
 	}
 	else
 	{
@@ -302,9 +310,6 @@ DBForkSetNewId(int32 newId, bool fastpath)
 		DBForkNode	headNode;
 		MemoryContext oldcontext,
 					tmpcontext;
-
-		MyParentForkId = MyDBForkId;
-		MyDBForkId = newId;
 
 		headNode.entry = (FormData_pg_dbfork)
 		{
@@ -338,23 +343,21 @@ DBForkSetNewId(int32 newId, bool fastpath)
 			isInserted = InsertDBForkNode(&headNode, tmpNode, 1);
 			if (!isInserted)
 			{
-				ereport(ERROR,
-						(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+				ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 						errmsg("invalid forkid given: %d", newId)));
 			}
 			if (new_entry.forkid == newId)
 			{
-				/* get path from this node to headnode */
-				MemoryContextSwitchTo(TopMemoryContext);	/* allocate in the
-															* topmemory so it
-															* doesnt get erase for
-															* our cached path */
-				DBForkPath = palloc(sizeof(int32) * tmpNode->depth);
+				/* get path from this node to headnode, allocate in top memory so doesn't get erased after transaction */
+				MemoryContextSwitchTo(TopMemoryContext);
+				DBForkPath = palloc(sizeof(int32) * (tmpNode->depth + 1));
 				DBForkPath[0] = (int32) tmpNode->depth; /* set first int32 to be
 														* the depth of the
 														* forks */
-				for (int i = tmpNode->depth - 1; i >= 1; i--)
+				elog(LOG, "setting path for new dbfork id");
+				for (int i = tmpNode->depth; i >= 1; i--)
 				{
+					elog(LOG, "new forkid added to path: %d", tmpNode->entry.forkid);
 					DBForkPath[i] = tmpNode->entry.forkid;
 					tmpNode = tmpNode->parent;
 				}
@@ -369,6 +372,13 @@ DBForkSetNewId(int32 newId, bool fastpath)
 		}
 		MemoryContextSwitchTo(oldcontext);
 		MemoryContextDelete(tmpcontext);
+
+		if(DBForkPath[0] == 1){
+			MyParentForkId = 0;
+		}else{
+			MyParentForkId = DBForkPath[DBForkPath[0] - 1];
+		}
+		MyDBForkId = newId;
 	}
 
 	pfree(tmpPath);

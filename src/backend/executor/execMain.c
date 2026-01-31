@@ -1609,8 +1609,6 @@ ExecutePlan(QueryDesc *queryDesc,
 	TupleTableSlot *slot;
 	uint64		current_tuple_count;
 
-	elog(LOG, "ExecutePlan being called here");
-
 	/*
 	 * initialize local variables
 	 */

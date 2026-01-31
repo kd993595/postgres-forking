@@ -219,7 +219,6 @@ mdcreate(SMgrRelation reln, ForkNumber forknum, bool isRedo)
 	else
 	{
 		path = dbforkrelpath(reln->smgr_rlocator, forknum);
-		ereport(INFO, errmsg("Making new file with forknum (%d)", forknum));
 	}
 
 	fd = PathNameOpenFile(path, _mdfd_open_flags() | O_CREAT | O_EXCL);

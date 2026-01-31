@@ -895,7 +895,7 @@ standard_ProcessUtility(PlannedStmt *pstmt,
 			{
 				VariableShowForkStmt *n = (VariableShowForkStmt *) parsetree;
 
-				GetDBForkVariable(n->name, dest);
+				GetDBForkVariable(n, dest);
 			}
 			break;
 

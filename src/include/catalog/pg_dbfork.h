@@ -29,7 +29,7 @@
  *		note: db_xid should represent an xid uin32
  * ----------------
  */
-CATALOG(pg_dbfork,6347,SharedDBForkIDRelation) BKI_SHARED_RELATION
+CATALOG(pg_dbfork,6347,DBForkIDRelation)
 {
 	int32		forkid;
 	int32		parentid;
@@ -43,6 +43,6 @@ CATALOG(pg_dbfork,6347,SharedDBForkIDRelation) BKI_SHARED_RELATION
  */
 typedef FormData_pg_dbfork * Form_pg_dbfork;
 
-DECLARE_UNIQUE_INDEX_PKEY(pg_dbfork_index, 6348, SharedDBForkOidIndexId, pg_dbfork, btree(forkid int4_ops));
+DECLARE_UNIQUE_INDEX_PKEY(pg_dbfork_index, 6348, DBForkOidIndexId, pg_dbfork, btree(forkid int4_ops));
 
 #endif							/* PG_DBFORK_H */

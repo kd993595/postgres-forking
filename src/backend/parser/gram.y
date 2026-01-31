@@ -1971,6 +1971,37 @@ VariableShowStmt:
 					VariableShowForkStmt *n = makeNode(VariableShowForkStmt);
 					n->name = "dbfork";
 					n->showpath = false;
+					n->showall = false;
+					n->showfull = false;
+					$$ = (Node *) n;
+				}
+			| SHOW DBFORK ALL SignedIconst
+				{
+					VariableShowForkStmt *n = makeNode(VariableShowForkStmt);
+					n->name = "dbfork";
+					n->showpath = false;
+					n->showall = true;
+					n->showfull = false;
+					n->forkid = $4;
+					$$ = (Node *) n;
+				}
+			| SHOW DBFORK FULL
+				{
+					VariableShowForkStmt *n = makeNode(VariableShowForkStmt);
+					n->name = "fulldbfork";
+					n->showpath = false;
+					n->showall = false;
+					n->showfull = true;
+					n->forkid = -1;
+					$$ = (Node *) n;
+				}
+			| SHOW DBFORK PATH
+				{
+					VariableShowForkStmt *n = makeNode(VariableShowForkStmt);
+					n->name = "dbfork";
+					n->showpath = true;
+					n->showall = false;
+					n->showfull = false;
 					$$ = (Node *) n;
 				}
 			| SHOW var_name

@@ -2643,6 +2643,9 @@ typedef struct VariableShowForkStmt
 	NodeTag		type;
 	char	   *name;
 	bool		showpath;
+	bool 		showall;
+	bool 		showfull;
+	long 		forkid;
 } VariableShowForkStmt;
 
 /* ----------------------

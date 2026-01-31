@@ -284,8 +284,7 @@ IsSharedRelation(Oid relationId)
 		relationId == SharedDescriptionRelationId ||
 		relationId == SharedSecLabelRelationId ||
 		relationId == SubscriptionRelationId ||
-		relationId == TableSpaceRelationId ||
-		relationId == SharedDBForkIDRelation)
+		relationId == TableSpaceRelationId)
 		return true;
 	/* These are their indexes */
 	if (relationId == AuthIdOidIndexId ||
@@ -308,8 +307,7 @@ IsSharedRelation(Oid relationId)
 		relationId == SubscriptionNameIndexId ||
 		relationId == SubscriptionObjectIndexId ||
 		relationId == TablespaceNameIndexId ||
-		relationId == TablespaceOidIndexId ||
-		relationId == SharedDBForkOidIndexId)
+		relationId == TablespaceOidIndexId)
 		return true;
 	/* These are their toast tables and toast indexes */
 	if (relationId == PgAuthidToastTable ||

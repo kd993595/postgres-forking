@@ -22,10 +22,12 @@
 #include "catalog/objectaccess.h"
 #include "catalog/pg_authid.h"
 #include "catalog/pg_parameter_acl.h"
+#include "catalog/pg_dbfork.h"
 #include "funcapi.h"
 #include "guc_internal.h"
 #include "miscadmin.h"
 #include "parser/parse_type.h"
+#include "storage/lwlock.h"
 #include "utils/acl.h"
 #include "utils/builtins.h"
 #include "utils/guc_tables.h"
@@ -391,26 +393,102 @@ GetPGVariable(const char *name, DestReceiver *dest)
  * SHOW DBFORK command - pgforking
  */
 void
-GetDBForkVariable(const char *name, DestReceiver *dest)
+GetDBForkVariable(const VariableShowForkStmt *stmt, DestReceiver *dest)
 {
 	TupOutputState *tstate;
 	TupleDesc	tupdesc;
 	Datum		values_[1];
 	bool		isnull_[1];
+
+	Assert(!(stmt->showall && stmt->showpath));
+
+	if(stmt->showfull){
+		Datum dvalues_[2];
+		bool disnull_[2];
+		char	   *tmpPath;
+		FILE	   *dbfork_config;
+		tupdesc = CreateTemplateTupleDesc(2);
+		TupleDescInitBuiltinEntry(tupdesc, (AttrNumber) 1, "Parent Fork ID", INT4OID, -1, 0);
+		TupleDescInitBuiltinEntry(tupdesc, (AttrNumber) 2, "Fork ID", INT4OID, -1, 0);
+
+		/* prepare for projection of tuples */
+		tstate = begin_tup_output_tupdesc(dest, tupdesc, &TTSOpsVirtual);
+		disnull_[0] = false;
+		disnull_[1] = false;
+		LWLockAcquire(DBForkCounterLock, LW_SHARED);
+		tmpPath = psprintf("base/%d/%d", MyDatabaseId,DBForkIDRelation);
+		dbfork_config = AllocateFile(tmpPath, PG_BINARY_R);
+		if (dbfork_config == NULL)
+		{
+			ereport(ERROR, (errcode_for_file_access(), errmsg("could not open dbfork config file 0$%d", DBForkIDRelation)));
+		}
+		else
+		{
+			FormData_pg_dbfork new_entry;
+			while (fread(&new_entry, sizeof(FormData_pg_dbfork), 1, dbfork_config) == 1)
+			{
+				dvalues_[0] = new_entry.parentid;
+				dvalues_[1] = new_entry.forkid;
+				do_tup_output(tstate, dvalues_, disnull_);
+			}
+		}
+
+		pfree(tmpPath);
+		FreeFile(dbfork_config);
+		LWLockRelease(DBForkCounterLock);
+		return;
+	}
 	
-	/* need a tuple descriptor representing a single TEXT column */
+	/* need a tuple descriptor representing a single INT column */
 	tupdesc = CreateTemplateTupleDesc(1);
-	TupleDescInitBuiltinEntry(tupdesc, (AttrNumber) 1, name,
+	TupleDescInitBuiltinEntry(tupdesc, (AttrNumber) 1, "DBFork ID",
 							  INT4OID, -1, 0);
 
 	/* prepare for projection of tuples */
 	tstate = begin_tup_output_tupdesc(dest, tupdesc, &TTSOpsVirtual);
+	isnull_[0] = false;
 
 	/* Send it */
+	if(stmt->showall){
+		char	   *tmpPath;
+		FILE	   *dbfork_config;
+		uint32 selectId = stmt->forkid;
+		LWLockAcquire(DBForkCounterLock, LW_SHARED);
+		tmpPath = psprintf("base/%d/%d", MyDatabaseId,DBForkIDRelation);
+		dbfork_config = AllocateFile(tmpPath, PG_BINARY_R);
+		if (dbfork_config == NULL)
+		{
+			ereport(ERROR, (errcode_for_file_access(), errmsg("could not open dbfork config file 0$%d", DBForkIDRelation)));
+		}
+		else
+		{
+			FormData_pg_dbfork new_entry;
+			while (fread(&new_entry, sizeof(FormData_pg_dbfork), 1, dbfork_config) == 1)
+			{
+				if(new_entry.parentid == selectId){
+					values_[0] = new_entry.forkid;
+					do_tup_output(tstate, values_, isnull_);
+				}
+			}
+		}
 
-	values_[0] = UInt32GetDatum(MyDBForkId);
-	isnull_[0] = false;
-	do_tup_output(tstate, values_, isnull_);
+		pfree(tmpPath);
+		FreeFile(dbfork_config);
+		LWLockRelease(DBForkCounterLock);
+	}else if(stmt->showpath){
+		values_[0] = UInt32GetDatum(0);
+		do_tup_output(tstate, values_, isnull_);
+		if(DBForkPath){
+			int i;
+			for(i=1;i<=DBForkPath[0];i++){
+				values_[0] = UInt32GetDatum(DBForkPath[i]);
+				do_tup_output(tstate, values_, isnull_);
+			}
+		}
+	}else{
+		values_[0] = UInt32GetDatum(MyDBForkId);
+		do_tup_output(tstate, values_, isnull_);
+	}
 
 	end_tup_output(tstate);
 }
@@ -437,7 +515,11 @@ GetPGVariableResultDesc(const char *name)
 	else if (guc_name_compare(name, "dbfork") == 0)
 	{
 		tupdesc = CreateTemplateTupleDesc(1);
-		TupleDescInitEntry(tupdesc, (AttrNumber) 1, "dbfork", INT4OID, -1, 0);
+		TupleDescInitEntry(tupdesc, (AttrNumber) 1, "DBFork ID", INT4OID, -1, 0);
+	}else if(guc_name_compare(name, "fulldbfork") == 0){
+		tupdesc = CreateTemplateTupleDesc(2);
+		TupleDescInitBuiltinEntry(tupdesc, (AttrNumber) 1, "Parent Fork ID", INT4OID, -1, 0);
+		TupleDescInitBuiltinEntry(tupdesc, (AttrNumber) 2, "Fork ID", INT4OID, -1, 0);
 	}
 	else
 	{

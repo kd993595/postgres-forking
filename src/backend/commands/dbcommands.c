@@ -1557,7 +1557,7 @@ createfork(ParseState *pstate, const CreateforkStmt *stmt)
 	int32		newForkId = DBForkNewId();
 
 	DBForkSetNewId(newForkId, true); /*mark for fast path*/
-	ereport(INFO, (errmsg("Current fork id globally: %d", MyDBForkId)));
+	ereport(INFO, (errmsg("New ForkID: %d", MyDBForkId)));
 
 	pg_class_rel = table_open(RelationRelationId, AccessShareLock, 0);
 	scan = table_beginscan_catalog(pg_class_rel, 0, NULL);
