@@ -3,9 +3,12 @@
 ### Utilities
 
 CREATE DBFORK - creates new fork directly from the current fork number whether main or some fork.
-DROP DBFORK <number> - supposed to delete the current fork and children but for now switches to the given fork id.
-SET DBFORK <number> - TODO
-SHOW DBFORK - TODO
+DROP DBFORK <number> - supposed to delete the current fork but currently in development.
+SET DBFORK <number> - switches to the given fork id provided, returns an error if unable to switch for whatever reason or fork doesn't exist.
+SHOW DBFORK - returns exactly one row consisting of an integer of the current forkid of the current connection.
+SHOW DBFORK PATH - returns n rows representing the path starting from 0 (main database) until the current fork id.
+SHOW DBFORK ALL <number> - returns all the branches for the given id passed.
+SHOW DBFORK FULL - returns the mapping of all forks and their respective parent fork id.
 
 *** All other utility statements like alter, create, drop work the same in the main database with most not working from forked branches.
 
