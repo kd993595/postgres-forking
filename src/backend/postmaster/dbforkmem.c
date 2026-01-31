@@ -357,7 +357,6 @@ DBForkSetNewId(int32 newId, bool fastpath)
 				elog(LOG, "setting path for new dbfork id");
 				for (int i = tmpNode->depth; i >= 1; i--)
 				{
-					elog(LOG, "new forkid added to path: %d", tmpNode->entry.forkid);
 					DBForkPath[i] = tmpNode->entry.forkid;
 					tmpNode = tmpNode->parent;
 				}
